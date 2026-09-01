@@ -57,7 +57,9 @@ Place the authorised CSV at
 `config/licensed_universe_template.csv`. Keep the raw file untracked and retain
 the licence or entitlement reference outside Git. The reference passed below is
 hashed before it enters the public manifest; use a non-confidential local label,
-not a credential. Then prepare and reconcile the universe:
+not a credential. The approved sourcing routes and exact access-request template
+are documented in `docs/licensed_universe_acquisition.md`. Then prepare and
+reconcile the universe:
 
 To populate the normalized file safely, first create the ignored working sheet:
 
