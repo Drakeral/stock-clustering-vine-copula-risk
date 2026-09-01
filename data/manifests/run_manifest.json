@@ -38,15 +38,21 @@
       "status": "present"
     },
     {
-      "bytes": 2990,
+      "bytes": 3488,
       "path": "config/model_config.toml",
-      "sha256": "c697424e75b335d13fd1d7902b9bcb224bdcbed74fb2745a0271c37b3907b809",
+      "sha256": "b3e3d4e85b16c07ca567fab7d55b86c971b02df603553e9d547b8a80b8bdc8b0",
       "status": "present"
     },
     {
       "bytes": 1292,
       "path": "config/observation_reviews.json",
       "sha256": "885adec2858a402501099dbccd7d7637ed9dcea0638418886cf80ffee8fdce5b",
+      "status": "present"
+    },
+    {
+      "bytes": 1346,
+      "path": "config/provenance_amendment.json",
+      "sha256": "3983cfff5c13b3806dac40bd3cb7753ec1f841aa00571ea087267197b4d0c82b",
       "status": "present"
     },
     {
@@ -74,15 +80,13 @@
     "python": "3.12.12"
   },
   "foundation_v2": {
-    "blockers": [
-      "authorized_point_in_time_universe_extract_absent"
-    ],
-    "run_scope": "provisional_diagnostics_only",
-    "status": "blocked"
+    "blockers": [],
+    "run_scope": "provisional_research_results",
+    "status": "provisional_pass"
   },
-  "generated_at_utc": "2026-09-01T15:20:33.570248+00:00",
+  "generated_at_utc": "2026-09-01T16:25:17.246863+00:00",
   "git": {
-    "commit": "4a6b3c87a817039f98cb2397342101507de4cb7d",
+    "commit": "1c97b03f104666979f5f0fb75276c20be0df5623",
     "commit_present": true,
     "repository_initialized": true,
     "worktree_clean": true
@@ -98,6 +102,12 @@
       "bytes": 2944,
       "path": "data/manifests/universe_source_manifest.json",
       "sha256": "6aea72fc31b283e99546b3a0e09a86e14d75c6619f14d0164827c25b2bd38ec6",
+      "status": "present"
+    },
+    {
+      "bytes": 1921,
+      "path": "data/manifests/yahoo_universe_reference_manifest.json",
+      "sha256": "e5e2333b1bbf9eb63cfa81d4141ca6ee48087df2eca222e4a761d57e04219130",
       "status": "present"
     },
     {
@@ -130,9 +140,9 @@
   "manifest_type": "research_run_manifest",
   "outputs": [
     {
-      "bytes": 1702,
+      "bytes": 2038,
       "path": "data/audit/current_gate_status.json",
-      "sha256": "25183b0a2ff70b97c098aa02a136e085507cdd7a0055b151496590b6c61e152c",
+      "sha256": "66df582e2ba6255c8f2e975c0739480562203fd85de06fa24dea0e58b3dd98b9",
       "status": "present"
     },
     {
