@@ -1,0 +1,213 @@
+{
+  "completeness": {
+    "complete": true,
+    "configuration": true,
+    "git_commit_and_clean_worktree_at_capture": true,
+    "inputs": true,
+    "outputs": true
+  },
+  "configuration": [
+    {
+      "bytes": 3162,
+      "path": "config/data_config.toml",
+      "sha256": "b0bc183674d868d3d38b7c17d762fb4bb6998371fbf19b98d869960278e9f847",
+      "status": "present"
+    },
+    {
+      "bytes": 1109,
+      "path": "config/licensed_universe_schema.json",
+      "sha256": "7ed8d2a6fc834e5216428cba060c7e0ca3975adca538c112737aabeb8aaef9f9",
+      "status": "present"
+    },
+    {
+      "bytes": 128,
+      "path": "config/licensed_universe_template.csv",
+      "sha256": "c5b0729c52e323a76ce9c7eece7070fb4ddd52ba79355572a4bfa3e265a0ecbb",
+      "status": "present"
+    },
+    {
+      "bytes": 1406,
+      "path": "config/lifecycle_events.json",
+      "sha256": "cd771631560baf0b40e5c6bd4beb2ce41a137780ed7dc691c3da396ec83ea78d",
+      "status": "present"
+    },
+    {
+      "bytes": 10005,
+      "path": "config/manual_corporate_actions.json",
+      "sha256": "49811d2f6dca754446aa8956e0df378bcbb095abd57396d05b3dcc7c5e52a0eb",
+      "status": "present"
+    },
+    {
+      "bytes": 2990,
+      "path": "config/model_config.toml",
+      "sha256": "c697424e75b335d13fd1d7902b9bcb224bdcbed74fb2745a0271c37b3907b809",
+      "status": "present"
+    },
+    {
+      "bytes": 1292,
+      "path": "config/observation_reviews.json",
+      "sha256": "885adec2858a402501099dbccd7d7637ed9dcea0638418886cf80ffee8fdce5b",
+      "status": "present"
+    },
+    {
+      "bytes": 1506,
+      "path": "config/schemas/forecast_record.schema.json",
+      "sha256": "72527146483078f915cf354485fae545d438b4e8519047046cda542be3775658",
+      "status": "present"
+    },
+    {
+      "bytes": 3983,
+      "path": "config/security_master.json",
+      "sha256": "cec884570c4367699a10a7e68aa9451c6a515a11b84f5af1313aa70e55f6307b",
+      "status": "present"
+    }
+  ],
+  "environment": {
+    "direct_dependency_versions": {
+      "boto3": "1.43.72",
+      "numpy": "2.5.2",
+      "pandas": "2.3.3",
+      "pyarrow": "23.0.1"
+    },
+    "implementation": "CPython",
+    "platform": "macOS-26.6.2-arm64-arm-64bit",
+    "python": "3.12.12"
+  },
+  "foundation_v2": {
+    "blockers": [
+      "authorized_point_in_time_universe_extract_absent"
+    ],
+    "run_scope": "provisional_diagnostics_only",
+    "status": "blocked"
+  },
+  "generated_at_utc": "2026-09-01T15:20:33.570248+00:00",
+  "git": {
+    "commit": "4a6b3c87a817039f98cb2397342101507de4cb7d",
+    "commit_present": true,
+    "repository_initialized": true,
+    "worktree_clean": true
+  },
+  "inputs": [
+    {
+      "bytes": 1450949,
+      "path": "data/manifests/market_input_manifest.json",
+      "sha256": "d1b882291b23b112186d83cef8e480a5f5d29b5a69d23ee28ed0b7b9320dc2f1",
+      "status": "present"
+    },
+    {
+      "bytes": 2944,
+      "path": "data/manifests/universe_source_manifest.json",
+      "sha256": "6aea72fc31b283e99546b3a0e09a86e14d75c6619f14d0164827c25b2bd38ec6",
+      "status": "present"
+    },
+    {
+      "bytes": 60552,
+      "path": "data/raw/universe_sp100_2020-01-02.json",
+      "sha256": "2b0718cde1618e81ddefbef2e29699c8bc83ce37adc77d873174d8efc8a6c296",
+      "status": "present"
+    }
+  ],
+  "locks": [
+    {
+      "bytes": 5,
+      "path": ".python-version",
+      "sha256": "7b55f8e67b5623c4bef3fa691288da9437d79d3aba156de48d481db32ac7d16d",
+      "status": "present"
+    },
+    {
+      "bytes": 311,
+      "path": "pyproject.toml",
+      "sha256": "6c04a053540732e71704751fbb63ea3b7d6297abf554c5dc590106d421df4673",
+      "status": "present"
+    },
+    {
+      "bytes": 28383,
+      "path": "uv.lock",
+      "sha256": "7d3a50f69d7b68bcacdfc3f36f68319c526535a5a0cd6782ef816e37708b7ab3",
+      "status": "present"
+    }
+  ],
+  "manifest_type": "research_run_manifest",
+  "outputs": [
+    {
+      "bytes": 1702,
+      "path": "data/audit/current_gate_status.json",
+      "sha256": "25183b0a2ff70b97c098aa02a136e085507cdd7a0055b151496590b6c61e152c",
+      "status": "present"
+    },
+    {
+      "bytes": 45983,
+      "path": "data/audit/data_quality_report.json",
+      "sha256": "17031bfb7ff67b0a5540b47bac567d73ee9c01109cbd04a1c4cfde1a71741812",
+      "status": "present"
+    },
+    {
+      "bytes": 427,
+      "path": "data/audit/market_input_integrity.json",
+      "sha256": "6cef6e63da367cabf42b7ecd02dbf2ce019df8790945d564bd22b020fd391864",
+      "status": "present"
+    },
+    {
+      "bytes": 7026,
+      "path": "data/audit/portfolio_arithmetic.json",
+      "sha256": "96e11c6b59ff140dc4655ef35b0c20d00c53f0196a3438f76425b496214bcd20",
+      "status": "present"
+    },
+    {
+      "bytes": 668,
+      "path": "data/audit/universe_provenance.json",
+      "sha256": "98809bdb195b82928b26a72985968891e0df935f35255ebef6a27d3626dc692b",
+      "status": "present"
+    },
+    {
+      "bytes": 14741,
+      "path": "data/processed/active_universe_by_year.json",
+      "sha256": "ed3ef62c7f253fcf1af987a589987a63f74d9130e533dcb4c283a661849ba626",
+      "status": "present"
+    },
+    {
+      "bytes": 2037855,
+      "path": "data/processed/daily_simple_total_returns.parquet",
+      "sha256": "72baf2ba650784a411c0bd3c6ac781e5e52e462b47c12e26788999809b64026d",
+      "status": "present"
+    },
+    {
+      "bytes": 2108857,
+      "path": "data/processed/daily_total_returns.parquet",
+      "sha256": "6515f782fa50c9c7f9ce2869a820817dc5ac4843386a5f3741b0ab2262c5ca26",
+      "status": "present"
+    },
+    {
+      "bytes": 69294,
+      "path": "data/processed/final_universe.json",
+      "sha256": "9409bbfbc4fc567ad4da0841c46266818af129e9e0ef9431af29e2740c352943",
+      "status": "present"
+    },
+    {
+      "bytes": 2108859,
+      "path": "data/processed/portfolio_constituent_returns.parquet",
+      "sha256": "dca3227010bffe8c69a6502adbdda3fc564a750ac74775598443ef87b0015b8e",
+      "status": "present"
+    },
+    {
+      "bytes": 2037857,
+      "path": "data/processed/portfolio_constituent_simple_returns.parquet",
+      "sha256": "e37b805bd8c290ace18a9aab120b3272ed10e8d64b3eab70c892b03c72caf3e9",
+      "status": "present"
+    },
+    {
+      "bytes": 13641833,
+      "path": "data/processed/security_daily.parquet",
+      "sha256": "c999f9b2f11b71ea1af6a55e661064f2f959b2983913e949ef15e3a0b8451652",
+      "status": "present"
+    }
+  ],
+  "schema_version": 1,
+  "seed_configuration": {
+    "base_seed": 5110,
+    "bit_generator": "PCG64DXSM",
+    "bootstrap_seed_sequence": "SeedSequence([base_seed, 1])",
+    "common_random_numbers": true,
+    "monthly_seed_sequence": "SeedSequence([base_seed, year, month])"
+  }
+}
