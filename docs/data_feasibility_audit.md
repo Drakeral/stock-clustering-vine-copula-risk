@@ -40,7 +40,7 @@ The daily files share the fields `ticker`, `volume`, `open`, `close`, `high`, `l
 - Unmatched GICS mappings: 0.
 - GICS sectors represented: 11.
 
-These are contemporaneous secondary-source snapshots suitable for provisional pipeline development. The final provenance gate requires an authorised point-in-time S&P/Compustat/vendor extract and cannot be waived silently.
+These are contemporaneous secondary-source snapshots suitable for provisional pipeline development. The original final provenance gate requires an authorised point-in-time S&P/Compustat/vendor extract and cannot be waived silently. Protocol amendment PA-001 explicitly permits Yahoo-supported provisional modelling while preserving that licensed gate as not passed.
 
 ## Data-construction risks
 

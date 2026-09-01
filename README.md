@@ -5,16 +5,22 @@ point-in-time S&P 100 universe described in `FE5110_Project_Plan.md`.
 
 ## Current gate status
 
-`foundation_v2` is intentionally **blocked only at the licensed-universe gate**.
-The independent market-input and strengthened data-construction gates pass. The
-live, separated statuses are in `data/audit/current_gate_status.json`.
+`foundation_v2` has a **provisional pass** under protocol amendment PA-001. The
+independent market-input, strengthened data-construction, arithmetic, and method
+gates pass. The universe is the frozen contemporaneous Wikipedia snapshot,
+supported by a Yahoo metadata and 2 January 2020 price-presence cross-check.
+The live, separated statuses are in `data/audit/current_gate_status.json`.
 
 The exact MediaWiki revision payloads are archived and hashed under
-`data/raw/universe_sources/`. One external input still has to be supplied by an
-authorised user: a licensed point-in-time S&P/Compustat/vendor universe and GICS
-extract for 2 January 2020.
+`data/raw/universe_sources/`. Yahoo does not establish historical index
+membership, point-in-time GICS, or permanent identifiers. Consequently,
+modelling may proceed, but every downstream result must be labelled
+`provisional_research_results`; neither `foundation_v2=pass` nor licensed or
+confirmatory provenance may be claimed.
 
-The repository never fabricates or silently passes either requirement.
+The machine-readable authorization and its narrow conditions are frozen in
+`config/provenance_amendment.json`. A licensed point-in-time extract can still
+supersede the amendment and obtain the strict provenance pass later.
 
 ## Rebuild from a clean clone
 
@@ -52,7 +58,8 @@ curl --fail --silent --show-error --get \
   --output data/raw/universe_sources/sp500_oldid_933762580.json
 ```
 
-Place the authorised CSV at
+The following licensed route is optional under PA-001, but remains the route to
+a strict, non-provisional provenance pass. Place the authorised CSV at
 `data/raw/licensed/universe_sp100_2020-01-02.csv`, using the exact header in
 `config/licensed_universe_template.csv`. Keep the raw file untracked and retain
 the licence or entitlement reference outside Git. The reference passed below is
@@ -103,17 +110,18 @@ Without licensed data, omit the three `--licensed-*` options. The command
 reproduces the current secondary-source candidate and records a blocked
 provenance gate rather than marking the candidate approved.
 
-Yahoo Finance may be used only as an explicitly provisional metadata and price
-cross-check. It cannot satisfy the point-in-time licensed-universe/GICS gate:
+Build the required Yahoo-supported provisional reference:
 
 ```zsh
 uv run python scripts/build_yahoo_universe_reference.py
 ```
 
-This writes an ignored comparison table to
+This writes an ignored row-level comparison table to
 `data/interim/provisional/yahoo_universe_reference.csv`, caches the raw Yahoo
-responses under `data/raw/yahoo/`, and writes a local manifest. It does not
-populate or replace `data/raw/licensed/universe_sp100_2020-01-02.csv`.
+responses under `data/raw/yahoo/`, and writes the sanitized, tracked manifest
+`data/manifests/yahoo_universe_reference_manifest.json`. It does not populate or
+replace `data/raw/licensed/universe_sp100_2020-01-02.csv`. Under PA-001 it can
+support only the explicitly provisional modelling-readiness status.
 
 Load credentials, download immutable provider data, and independently verify
 every input against an XNYS session calendar:
@@ -124,7 +132,7 @@ uv run python scripts/download_market_data.py --workers 8
 uv run python scripts/verify_foundation_inputs.py
 uv run python scripts/build_return_panel.py
 uv run python scripts/validate_portfolio_arithmetic.py
-uv run python scripts/update_foundation_status.py
+uv run python scripts/update_foundation_status.py --require-modelling-ready
 uv run python -m unittest discover -s tests -v
 ```
 
@@ -140,10 +148,13 @@ Immediately before any clustering or risk-model command, require the aggregate
 gate explicitly:
 
 ```zsh
-uv run python scripts/update_foundation_status.py --require-pass
+uv run python scripts/update_foundation_status.py --require-modelling-ready
 ```
 
-An exit status of 2 is expected while the licensed-universe input is absent.
+This accepts either strict `pass` or PA-001 `pass_provisional` modelling
+readiness. Use `--require-pass` when a strict licensed-provenance pass is
+required; it intentionally exits with status 2 while the licensed extract is
+absent.
 
 Finally capture the exact code/environment/configuration/input/output identity:
 
@@ -160,9 +171,10 @@ uv run python scripts/generate_run_manifest.py
   checked against the applicable licence.
 - The historical access audit remains unchanged. New gates supersede its stale
   `next_gate` text through `data/audit/current_gate_status.json`.
-- A run may be computed for diagnostics while provenance is blocked, but all
-  such results must be labelled provisional and must not enter confirmatory
-  modelling.
+- Under PA-001, modelling may proceed with reporting scope
+  `provisional_research_results`. All tables, plots, narrative findings, and run
+  manifests must preserve that label and must not claim licensed or
+  confirmatory universe provenance.
 - Detailed provider-event reconciliation is written only to the ignored
   `data/audit/data_quality_report.local.json`; its public report contains counts
   and a content hash, not licensed event rows.

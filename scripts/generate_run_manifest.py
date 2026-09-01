@@ -117,6 +117,7 @@ def default_input_paths() -> list[Path]:
     return [
         Path("data/raw/universe_sp100_2020-01-02.json"),
         Path("data/manifests/universe_source_manifest.json"),
+        Path("data/manifests/yahoo_universe_reference_manifest.json"),
         Path("data/manifests/market_input_manifest.json"),
     ]
 
@@ -172,10 +173,11 @@ def build_run_manifest(
         foundation_status = {
             "status": foundation.get("status", "unknown"),
             "blockers": foundation.get("blockers", []),
-            "run_scope": (
+            "run_scope": foundation.get(
+                "reporting_scope",
                 "confirmatory"
                 if foundation.get("status") == "pass"
-                else "provisional_diagnostics_only"
+                else "provisional_diagnostics_only",
             ),
         }
     else:

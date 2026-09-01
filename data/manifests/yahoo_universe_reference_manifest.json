@@ -1,0 +1,42 @@
+{
+  "candidate_path": "data/raw/universe_sp100_2020-01-02.json",
+  "candidate_sha256": "2b0718cde1618e81ddefbef2e29699c8bc83ce37adc77d873174d8efc8a6c296",
+  "dataset": "Yahoo Finance provisional universe reference",
+  "gate_eligibility": {
+    "foundation_v2_universe_provenance": false,
+    "reason": "Yahoo does not supply the authorized point-in-time S&P 100 membership, historical GICS, and permanent issuer/security IDs required by the frozen protocol."
+  },
+  "metadata_found_count": 98,
+  "output_path": "data/interim/provisional/yahoo_universe_reference.csv",
+  "output_sha256": "1ce9829e90ff8c5ac85504dc77d658501b7e403b02ca14edb3313dcba13e9772",
+  "price_found_count": 98,
+  "request_failure_count": 3,
+  "request_failures": [
+    {
+      "chart_error": "Yahoo request failed after 4 attempts: https://query2.finance.yahoo.com/v8/finance/chart/AGN?period1=1577836800&period2=1578182400&interval=1d&events=history",
+      "search_error": "",
+      "ticker": "AGN"
+    },
+    {
+      "chart_error": "Yahoo request failed after 4 attempts: https://query2.finance.yahoo.com/v8/finance/chart/RTN?period1=1577836800&period2=1578182400&interval=1d&events=history",
+      "search_error": "",
+      "ticker": "RTN"
+    },
+    {
+      "chart_error": "Yahoo request failed after 4 attempts: https://query2.finance.yahoo.com/v8/finance/chart/WBA?period1=1577836800&period2=1578182400&interval=1d&events=history",
+      "search_error": "",
+      "ticker": "WBA"
+    }
+  ],
+  "retrieved_at_utc": "2026-09-01T16:23:34+00:00",
+  "row_count": 101,
+  "schema_version": 1,
+  "source": {
+    "chart_endpoint": "https://query2.finance.yahoo.com/v8/finance/chart/{symbol}",
+    "name": "Yahoo Finance",
+    "search_endpoint": "https://query2.finance.yahoo.com/v1/finance/search",
+    "terms_url": "https://legal.yahoo.com/us/en/yahoo/terms/otos/index.html"
+  },
+  "status": "provisional_non_licensed",
+  "target_date": "2020-01-02"
+}

@@ -1,0 +1,29 @@
+{
+  "accepted_yahoo_missing_tickers": [
+    "AGN",
+    "RTN",
+    "WBA"
+  ],
+  "amended_universe_provenance_status": "provisional_authorized_yahoo",
+  "amendment_id": "PA-001",
+  "authorization": {
+    "authorized_by": "project_user",
+    "authorized_on": "2026-09-02",
+    "instruction": "Proceed using Yahoo as the project foundation and label universe provenance provisional rather than licensed."
+  },
+  "expected_public_universe_sha256": "2b0718cde1618e81ddefbef2e29699c8bc83ce37adc77d873174d8efc8a6c296",
+  "expected_universe_source_manifest_sha256": "6aea72fc31b283e99546b3a0e09a86e14d75c6619f14d0164827c25b2bd38ec6",
+  "licensed_provenance_claim_allowed": false,
+  "minimum_yahoo_metadata_matches": 98,
+  "minimum_yahoo_price_matches": 98,
+  "modelling_allowed": true,
+  "original_requirement": "authorized_point_in_time_universe_and_gics_extract",
+  "reporting_scope": "provisional_research_results",
+  "schema_version": 1,
+  "status": "active",
+  "substitute_evidence": {
+    "gics": "Frozen contemporaneous Wikipedia revision 933762580; Yahoo current industry labels are comparison-only.",
+    "membership": "Frozen S&P 100 Wikipedia revision 929329274, supported by the provisional Yahoo reference table.",
+    "yahoo_role": "Current metadata and 2020-01-02 price-presence cross-check; not licensed historical membership/GICS."
+  }
+}

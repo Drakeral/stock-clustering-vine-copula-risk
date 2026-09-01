@@ -1,6 +1,16 @@
 schema_version = 1
 protocol_status = "frozen_before_out_of_sample_modelling"
 
+[provenance]
+universe_policy = "provisional_yahoo_supported_secondary_sources"
+amendment_id = "PA-001"
+amendment_path = "config/provenance_amendment.json"
+yahoo_manifest_path = "data/manifests/yahoo_universe_reference_manifest.json"
+yahoo_reference_path = "data/interim/provisional/yahoo_universe_reference.csv"
+allow_modelling_with_provisional_universe = true
+licensed_provenance_claim_allowed = false
+reporting_scope = "provisional_research_results"
+
 [portfolio]
 primary_return_scale = "simple"
 primary_rebalancing = "daily"
@@ -91,3 +101,4 @@ extreme_simple_return_threshold = 0.40
 allow_unclassified_reference_event = false
 allow_unverified_input_hash = false
 allow_failed_universe_provenance = false
+allow_provisional_universe_provenance = true

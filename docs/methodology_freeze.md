@@ -7,6 +7,19 @@ implementations of the return arithmetic, forecast scores, historical simulation
 dependence gap, resampling, and multiplicity corrections are in
 `scripts/research_methods.py`.
 
+## Protocol amendment PA-001: provenance scope
+
+On 2 September 2026, the project user authorized the frozen contemporaneous
+Wikipedia membership/GICS snapshot, supported by the Yahoo reference manifest,
+as the provisional project foundation. This amendment permits model fitting and
+the pre-specified comparisons below, but does not convert Yahoo into a licensed
+or authoritative point-in-time constituent/GICS source. Until licensed
+reconciliation passes, every result has reporting scope
+`provisional_research_results`; references below to confirmatory tests describe
+their pre-specified statistical role, not a licensed-provenance claim. The exact
+authorization, accepted Yahoo gaps, and bound hashes are in
+`config/provenance_amendment.json`.
+
 ## Return and portfolio convention
 
 Stock log total returns are converted to simple returns before cross-sectional

@@ -1,10 +1,10 @@
 {
   "foundation_v2": {
-    "blockers": [
-      "authorized_point_in_time_universe_extract_absent"
-    ],
-    "note": "Confirmatory modelling remains blocked until every listed foundation condition passes. Diagnostic data outputs are provisional.",
-    "status": "blocked"
+    "blockers": [],
+    "licensed_universe_provenance": false,
+    "note": "Modelling may begin under protocol amendment PA-001. Universe provenance and every downstream result must remain labelled provisional.",
+    "reporting_scope": "provisional_research_results",
+    "status": "provisional_pass"
   },
   "gates": {
     "data_access_feasibility_historical": {
@@ -14,7 +14,8 @@
       "superseded_by": "foundation_v2"
     },
     "data_construction_v2": {
-      "approved_universe_binding": false,
+      "approved_universe_binding": true,
+      "binding_scope": "provisional_amendment",
       "current_file_binding": true,
       "output_scope": "provisional_pending_universe_provenance",
       "source": "data/audit/data_quality_report.json",
@@ -31,8 +32,8 @@
       "status": "pass"
     },
     "modelling_readiness": {
-      "reason": "foundation_v2_not_passed",
-      "status": "blocked"
+      "reason": "authorized_provisional_universe",
+      "status": "pass_provisional"
     },
     "portfolio_arithmetic_v1": {
       "current_file_binding": true,
@@ -40,13 +41,20 @@
       "source": "data/audit/portfolio_arithmetic.json",
       "status": "pass"
     },
+    "provenance_amendment": {
+      "amendment_id": "PA-001",
+      "issues": [],
+      "source": "config/provenance_amendment.json",
+      "status": "pass"
+    },
     "universe_provenance": {
       "blockers": [
         "authorized_point_in_time_universe_extract_absent"
       ],
       "current_file_binding": true,
+      "licensed_provenance": false,
       "source": "data/audit/universe_provenance.json",
-      "status": "blocked"
+      "status": "provisional_authorized_yahoo"
     }
   },
   "historical_access_audit_is_preserved": true,

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Build a clearly provisional Yahoo Finance universe-reference table.
+"""Build the Yahoo-supported, explicitly provisional universe reference.
 
-Yahoo Finance does not provide the licensed, point-in-time S&P 100/GICS
-corroboration required by ``foundation_v2``.  This script therefore writes only
-to provisional/ignored paths and never populates the licensed-universe gate
-input.  It combines current Yahoo search metadata with a check for a price on
+Yahoo Finance does not provide licensed, point-in-time S&P 100/GICS membership.
+Under protocol amendment PA-001, this table supports provisional modelling only;
+it never populates the licensed-universe input or permits a licensed-provenance
+claim. It combines current Yahoo search metadata with a check for a price on
 2 January 2020 and retains the frozen candidate fields for comparison.
 """
 
@@ -339,7 +339,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--manifest-output",
         type=Path,
-        default=Path("data/manifests/yahoo_universe_reference.local.json"),
+        default=Path("data/manifests/yahoo_universe_reference_manifest.json"),
     )
     parser.add_argument(
         "--raw-root", type=Path, default=Path("data/raw/yahoo/universe_reference")
