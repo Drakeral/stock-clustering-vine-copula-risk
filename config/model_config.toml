@@ -1,0 +1,93 @@
+schema_version = 1
+protocol_status = "frozen_before_out_of_sample_modelling"
+
+[portfolio]
+primary_return_scale = "simple"
+primary_rebalancing = "daily"
+membership_rebalancing = "annual"
+group_weighting = "group_size"
+cash_and_verified_halt_return = 0.0
+reconstruction_tolerance = 1e-12
+realised_loss_definition = "negative_simple_portfolio_return"
+secondary_rebalancing = "annual_buy_and_hold"
+
+[forecast]
+var_confidence_levels = [0.95, 0.975, 0.99]
+es_confidence_level = 0.975
+horizon_trading_days = 1
+training_window_calendar_years = 3
+minimum_training_observations = 700
+cluster_refit = "first_trading_day_of_year_using_prior_data"
+model_refit = "first_trading_day_of_month_using_prior_data"
+
+[historical_simulation]
+quantile_method = "inverted_empirical_cdf"
+es_boundary_method = "fractional_order_statistic"
+
+[marginal]
+primary = "AR(1)-GARCH(1,1)-Student-t"
+fallback_order = ["retry_ar_garch_t", "constant_mean_garch_t", "ewma_empirical"]
+ar_absolute_limit = 0.98
+garch_persistence_limit = 0.999
+student_t_df_minimum = 2.1
+ewma_lambda = 0.94
+maximum_ewma_fit_fraction = 0.01
+drop_ar_for_insignificant_p_value = false
+
+[vine]
+dimension = 11
+primary_truncation_tree = 3
+robustness_truncation_tree = 10
+structure_selection = "dissmann_abs_kendall_tau_mst"
+family_selection = "aic_sequential_mle"
+families = ["independence", "gaussian", "student_t", "frank", "clayton", "gumbel"]
+rotations_degrees = [0, 90, 180, 270]
+pit_clip_lower = 1e-6
+pit_clip_upper = 0.999999
+student_t_df_minimum = 2.1
+student_t_df_maximum = 50.0
+pair_failure_action = "independence"
+maximum_failed_pair_fraction = 0.10
+monthly_structure_failure_action = "matched_gaussian"
+maximum_whole_vine_fallback_date_fraction = 0.01
+
+[simulation]
+draws_per_month = 100000
+dimension = 11
+bit_generator = "PCG64DXSM"
+base_seed = 5110
+seed_components = ["base_seed", "year", "month"]
+common_random_numbers = true
+
+[clustering]
+primary_method = "average_linkage_spearman_distance"
+distance = "sqrt((1-rho)/2)"
+group_count_rule = "nonempty_gics_sector_count"
+minimum_paired_fraction = 0.80
+dependence_gap_weighting = "equal_unordered_security_pair"
+singleton_within_treatment = "exclude_not_zero"
+singleton_between_treatment = "include"
+issuer_robustness = "equal_weight_GOOG_GOOGL_simple_returns"
+
+[inference]
+dm_hac_lag = 7
+dm_alternative = "two_sided_then_direction_check"
+dm_difference = "vine_minus_gaussian"
+dm_holm_family_size = 6
+calibration_holm_family_size = 20
+confirmatory_familywise_alpha = 0.05
+h1_bootstrap = "paired_circular_moving_block_within_year"
+h1_block_length_trading_days = 20
+h1_bootstrap_replications = 10000
+h1_confidence_level = 0.95
+ml_multiple_testing = "benjamini_hochberg"
+ml_fdr = 0.05
+annual_99_percent_inference = "descriptive_only"
+
+[quality_gates]
+allow_unexplained_active_missing_day = false
+allow_unreviewed_extreme_return = false
+extreme_simple_return_threshold = 0.40
+allow_unclassified_reference_event = false
+allow_unverified_input_hash = false
+allow_failed_universe_provenance = false

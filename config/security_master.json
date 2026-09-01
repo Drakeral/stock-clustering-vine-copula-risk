@@ -1,0 +1,79 @@
+{
+  "schema_version": 2,
+  "description": "Point-in-time research-security lineages. Provider symbols are mapped only where they represent the same economic security; lifecycle exceptions and consideration events are held in separate versioned controls.",
+  "mappings": {
+    "BKNG": [
+      {"ticker": "PCLN", "start": "2017-01-03", "end": "2018-02-26", "event": "pre_ticker_change_segment"},
+      {"ticker": "BKNG", "start": "2018-02-27", "end": "2025-12-31", "event": "simple_ticker_change"}
+    ],
+    "DD": [
+      {"ticker": "DD", "start": "2017-01-03", "end": "2017-08-31", "event": "predecessor_segment_requires_merger_review"},
+      {"ticker": "DWDP", "start": "2017-09-01", "end": "2019-05-31", "event": "predecessor_segment_requires_spinoff_review"},
+      {"ticker": "DD", "start": "2019-06-03", "end": "2025-12-31", "event": "current_segment"}
+    ],
+    "DOW": [
+      {"ticker": "DOW", "start": "2019-04-02", "end": "2025-12-31", "event": "new_dow_inc_inception"}
+    ],
+    "FB": [
+      {"ticker": "FB", "start": "2017-01-03", "end": "2022-06-08", "event": "pre_ticker_change_segment"},
+      {"ticker": "META", "start": "2022-06-09", "end": "2025-12-31", "event": "simple_ticker_change"}
+    ],
+    "RTN": [
+      {"ticker": "RTN", "start": "2017-01-03", "end": "2020-04-02", "event": "pre_merger_segment"},
+      {"ticker": "RTX", "start": "2020-04-03", "end": "2020-12-31", "event": "stock_merger_successor_until_annual_rebalance"}
+    ],
+    "UTX": [
+      {"ticker": "UTX", "start": "2017-01-03", "end": "2020-04-02", "event": "pre_merger_segment"},
+      {"ticker": "RTX", "start": "2020-04-03", "end": "2025-12-31", "event": "successor_segment_requires_merger_adjustment"}
+    ]
+  },
+  "event_reviews": {
+    "AGN": {
+      "status": "resolved_manual_action",
+      "note": "The 2020-05-08 terminal value is reconstructed as $120.30 cash plus 0.866 ABBV shares, liquidated into cash through the next annual rebalance."
+    },
+    "RTN": {
+      "status": "resolved_manual_action",
+      "note": "The 2.3348-for-1 RTX exchange is applied on 2020-04-03 and the successor return is retained through the next annual rebalance."
+    },
+    "UTX": {
+      "status": "resolved_manual_action",
+      "note": "The RTX successor plus one CARR and 0.5 OTIS distribution is valued on 2020-04-03."
+    },
+    "DD": {
+      "status": "resolved_manual_actions",
+      "note": "The 2017 exchange and both 2019 stock distributions/reverse split are valued explicitly."
+    },
+    "WBA": {
+      "status": "resolved_manual_action",
+      "note": "A synthetic 2025-08-28 terminal row books $11.45 cash plus a $0.53 market-implied DAP value; $0 and $3 DAP values are retained as sensitivity metadata."
+    },
+    "DOW": {
+      "status": "resolved_lineage_split",
+      "note": "Legacy Dow Chemical observations are not mapped to Dow Inc. Dow Inc begins as a new research security on 2019-04-02 with no bridged return."
+    }
+  },
+  "exit_treatments": {
+    "AGN": {
+      "last_market_return_date": "2020-05-08",
+      "cash_carry_start": "2020-05-11",
+      "remove_effective_date": "2021-01-01",
+      "rule": "explicit_cash_and_abbv_consideration_then_zero_return_cash",
+      "source_url": "https://investors.abbvie.com/static-files/010caa6c-8d7c-47ad-8445-12bd582f6f60"
+    },
+    "RTN": {
+      "last_market_return_date": "2020-12-31",
+      "cash_carry_start": null,
+      "remove_effective_date": "2021-01-01",
+      "rule": "rtx_successor_return_until_annual_rebalance",
+      "source_url": "https://investors.rtx.com/news-releases/news-release-details/raytheon-and-united-technologies-obtain-all-regulatory-approvals"
+    },
+    "WBA": {
+      "last_market_return_date": "2025-08-28",
+      "cash_carry_start": "2025-08-29",
+      "remove_effective_date": "2026-01-01",
+      "rule": "synthetic_cash_plus_market_implied_dap_then_zero_return_cash",
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1618921/000119312525190603/d87240dex991.htm"
+    }
+  }
+}

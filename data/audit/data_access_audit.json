@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "audit_date": "2026-08-15",
+  "overall_status": "conditional_pass",
+  "protocol_amendment": {
+    "reason": "Current Massive daily-history entitlement begins in 2017; the original 2015 start is unavailable.",
+    "sample_start": "2017-01-03",
+    "initial_training_end": "2019-12-31",
+    "universe_as_of": "2020-01-02",
+    "out_of_sample_start": "2020-01-02",
+    "sample_end": "2025-12-31"
+  },
+  "access_checks": [
+    {
+      "channel": "REST daily aggregates",
+      "test": "AAPL 2025-01-02 to 2025-01-09",
+      "http_status": 200,
+      "provider_status": "OK",
+      "row_count": 5
+    },
+    {
+      "channel": "REST daily aggregates",
+      "test": "AAPL 2015-01-02 to 2015-01-09",
+      "http_status": 403,
+      "provider_status": "NOT_AUTHORIZED",
+      "note": "Plan does not include this data timeframe."
+    },
+    {
+      "channel": "S3 day aggregates",
+      "test": "Year-boundary HEAD checks",
+      "http_status_by_year": {
+        "2015": 403,
+        "2016": 403,
+        "2017": 200,
+        "2018": 200,
+        "2019": 200,
+        "2020": 200,
+        "2021": 200,
+        "2022": 200,
+        "2023": 200,
+        "2024": 200,
+        "2025": 200
+      }
+    },
+    {
+      "channel": "S3 day aggregates",
+      "test": "2017-01-03 schema and coverage sample",
+      "http_status": 200,
+      "row_count": 7980,
+      "fields": [
+        "ticker",
+        "volume",
+        "open",
+        "close",
+        "high",
+        "low",
+        "window_start",
+        "transactions"
+      ]
+    },
+    {
+      "channel": "S3 day aggregates",
+      "test": "2025-01-02 schema and coverage sample",
+      "http_status": 200,
+      "row_count": 10870,
+      "fields": [
+        "ticker",
+        "volume",
+        "open",
+        "close",
+        "high",
+        "low",
+        "window_start",
+        "transactions"
+      ]
+    },
+    {
+      "channel": "REST splits",
+      "test": "AAPL 2017-2025",
+      "http_status": 200,
+      "event_count": 1
+    },
+    {
+      "channel": "REST dividends",
+      "test": "AAPL 2017-2025",
+      "http_status": 200,
+      "event_count": 36
+    }
+  ],
+  "universe_checks": {
+    "candidate_security_count": 101,
+    "gics_sector_count": 11,
+    "unmatched_gics_tickers": 0,
+    "status": "candidate_pending_full_coverage_test"
+  },
+  "next_gate": "Download 2017-2025, construct adjusted total returns, resolve ticker continuity, and apply the 95% initial-window coverage screen."
+}

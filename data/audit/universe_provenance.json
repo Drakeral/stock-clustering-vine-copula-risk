@@ -1,0 +1,18 @@
+{
+  "blockers": [
+    "authorized_point_in_time_universe_extract_absent"
+  ],
+  "gate": "universe_provenance",
+  "public_universe_sha256": "2b0718cde1618e81ddefbef2e29699c8bc83ce37adc77d873174d8efc8a6c296",
+  "reconciliation": {
+    "detail_scope": "local_untracked_only",
+    "details_sha256": "73c21c02e2985e791babc9f485ee20aa34cb7a5d814aabdac6b9840409d5fd7a",
+    "extra_in_licensed_count": 0,
+    "field_difference_count": 0,
+    "missing_from_licensed_count": 101,
+    "status": "blocked_authorized_extract_absent"
+  },
+  "schema_version": 2,
+  "source_manifest_sha256": "6aea72fc31b283e99546b3a0e09a86e14d75c6619f14d0164827c25b2bd38ec6",
+  "status": "blocked"
+}

@@ -1,0 +1,25 @@
+{
+  "schema_version": 2,
+  "absolute_simple_return_threshold": 0.4,
+  "rule": "Every total simple return whose absolute value exceeds the threshold requires a validated retain, correct, or exclude disposition before foundation_v2 can pass.",
+  "reviews": [
+    {
+      "review_id": "OXY_2020-03-09_EXTREME_RETURN",
+      "research_ticker": "OXY",
+      "date": "2020-03-09",
+      "status": "validated",
+      "disposition": "retain",
+      "source_url": "https://www.oxy.com/news/news-releases/occidental-reduces-capital-spending-and-dividend-to-maximize-cash-flow/",
+      "rationale": "The large loss coincides with the March 2020 oil-price shock. Raw OHLC and the $0.79 cash dividend reconcile to the retained -50.48% total simple return; no winsorisation is applied."
+    },
+    {
+      "review_id": "BIIB_2020-11-04_EXTREME_RETURN",
+      "research_ticker": "BIIB",
+      "date": "2020-11-04",
+      "status": "validated",
+      "disposition": "retain",
+      "source_url": "https://investors.biogen.com/news-releases/news-release-details/biogen-and-eisai-announce-fda-advisory-committee-meeting",
+      "rationale": "The move followed the FDA briefing materials for aducanumab. Raw OHLC reconciles to the retained +43.97% total simple return; no winsorisation is applied."
+    }
+  ]
+}

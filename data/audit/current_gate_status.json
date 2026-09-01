@@ -1,0 +1,54 @@
+{
+  "foundation_v2": {
+    "blockers": [
+      "authorized_point_in_time_universe_extract_absent"
+    ],
+    "note": "Confirmatory modelling remains blocked until every listed foundation condition passes. Diagnostic data outputs are provisional.",
+    "status": "blocked"
+  },
+  "gates": {
+    "data_access_feasibility_historical": {
+      "scope": "Historical access/entitlement feasibility only",
+      "source": "data/audit/data_access_audit.json",
+      "status": "conditional_pass",
+      "superseded_by": "foundation_v2"
+    },
+    "data_construction_v2": {
+      "approved_universe_binding": false,
+      "current_file_binding": true,
+      "output_scope": "provisional_pending_universe_provenance",
+      "source": "data/audit/data_quality_report.json",
+      "status": "pass",
+      "verified_market_binding": true
+    },
+    "market_input_integrity_v2": {
+      "current_file_binding": true,
+      "source": "data/audit/market_input_integrity.json",
+      "status": "pass"
+    },
+    "method_freeze": {
+      "source": "config/model_config.toml",
+      "status": "pass"
+    },
+    "modelling_readiness": {
+      "reason": "foundation_v2_not_passed",
+      "status": "blocked"
+    },
+    "portfolio_arithmetic_v1": {
+      "current_file_binding": true,
+      "current_panel_binding": true,
+      "source": "data/audit/portfolio_arithmetic.json",
+      "status": "pass"
+    },
+    "universe_provenance": {
+      "blockers": [
+        "authorized_point_in_time_universe_extract_absent"
+      ],
+      "current_file_binding": true,
+      "source": "data/audit/universe_provenance.json",
+      "status": "blocked"
+    }
+  },
+  "historical_access_audit_is_preserved": true,
+  "schema_version": 2
+}

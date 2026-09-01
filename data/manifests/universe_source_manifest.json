@@ -1,0 +1,77 @@
+{
+  "checks": {
+    "gics_sector_count": 11,
+    "sectors": [
+      "Communication Services",
+      "Consumer Discretionary",
+      "Consumer Staples",
+      "Energy",
+      "Financials",
+      "Health Care",
+      "Industrials",
+      "Information Technology",
+      "Materials",
+      "Real Estate",
+      "Utilities"
+    ],
+    "security_count": 101,
+    "unmatched_tickers": []
+  },
+  "licensed_corroboration": {
+    "license_reference_recorded": false,
+    "license_reference_sha256": null,
+    "payload_bytes": null,
+    "payload_path": null,
+    "payload_sha256": null,
+    "raw_payload_publishable": false,
+    "reconciliation": {
+      "detail_scope": "local_untracked_only",
+      "details_sha256": "73c21c02e2985e791babc9f485ee20aa34cb7a5d814aabdac6b9840409d5fd7a",
+      "extra_in_licensed_count": 0,
+      "field_difference_count": 0,
+      "missing_from_licensed_count": 101,
+      "status": "blocked_authorized_extract_absent"
+    },
+    "source_name": null,
+    "status": "blocked_authorized_extract_absent"
+  },
+  "manifest_type": "universe_source_manifest",
+  "schema_version": 2,
+  "source_quality_note": "Wikipedia revisions are reproducible secondary sources. The final universe-provenance gate passes only after an authorised point-in-time extract reconciles without differences.",
+  "sources": [
+    {
+      "license": {
+        "access_class": "public_secondary_source",
+        "identifier": "CC-BY-SA-4.0",
+        "name": "Creative Commons Attribution-ShareAlike 4.0 International",
+        "terms_url": "https://foundation.wikimedia.org/wiki/Policy:Terms_of_Use"
+      },
+      "page_title": "S&P 100",
+      "payload_bytes": 9760,
+      "payload_path": "data/raw/universe_sources/sp100_oldid_929329274.json",
+      "payload_sha256": "78921752da4aad119b2a1fe88b6deae272beed5e15f104b63d3e09731ab4464a",
+      "purpose": "S&P 100 membership secondary snapshot",
+      "revision_id": 929329274,
+      "revision_timestamp": "2019-12-05T03:03:35Z",
+      "source_id": "wikipedia_sp100_membership",
+      "url": "https://en.wikipedia.org/w/index.php?title=S%26P_100&oldid=929329274"
+    },
+    {
+      "license": {
+        "access_class": "public_secondary_source",
+        "identifier": "CC-BY-SA-4.0",
+        "name": "Creative Commons Attribution-ShareAlike 4.0 International",
+        "terms_url": "https://foundation.wikimedia.org/wiki/Policy:Terms_of_Use"
+      },
+      "page_title": "List of S&P 500 companies",
+      "payload_bytes": 205219,
+      "payload_path": "data/raw/universe_sources/sp500_oldid_933762580.json",
+      "payload_sha256": "6af4b07a432767f0ecff8f8d87dc7fc8770dcb66d21cad937351662f28677230",
+      "purpose": "Contemporaneous GICS secondary snapshot",
+      "revision_id": 933762580,
+      "revision_timestamp": "2020-01-02T22:21:11Z",
+      "source_id": "wikipedia_sp500_gics",
+      "url": "https://en.wikipedia.org/w/index.php?title=List_of_S%26P_500_companies&oldid=933762580"
+    }
+  ]
+}

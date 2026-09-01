@@ -1,0 +1,62 @@
+[study]
+universe_name = "S&P 100 point-in-time research universe"
+universe_as_of = "2020-01-02"
+membership_snapshot_date = "2019-11-21"
+sample_start = "2017-01-03"
+sample_end = "2025-12-31"
+initial_training_start = "2017-01-03"
+initial_training_end = "2019-12-31"
+out_of_sample_start = "2020-01-02"
+out_of_sample_end = "2025-12-31"
+training_window_years = 3
+minimum_initial_coverage = 0.95
+return_definition = "close-to-close split-and-dividend-adjusted log total return"
+
+[universe]
+membership_source_url = "https://en.wikipedia.org/w/index.php?title=S%26P_100&oldid=929329274"
+gics_source_url = "https://en.wikipedia.org/w/index.php?title=List_of_S%26P_500_companies&oldid=933762580"
+expected_security_count = 101
+expected_gics_sector_count = 11
+include_multiple_share_classes = true
+
+[massive]
+rest_base_url = "https://api.massive.com"
+flat_file_endpoint = "https://files.massive.com"
+flat_file_bucket = "flatfiles"
+daily_aggregate_prefix = "us_stocks_sip/day_aggs_v1"
+flat_file_prices_are_split_adjusted = false
+flat_file_prices_are_dividend_adjusted = false
+rest_api_key_env = "MASSIVE_API_KEY"
+s3_access_key_env = "MASSIVE_S3_ACCESS_KEY"
+s3_secret_key_env = "MASSIVE_S3_SECRET_KEY"
+
+[paths]
+universe_json = "data/raw/universe_sp100_2020-01-02.json"
+universe_source_manifest_json = "data/manifests/universe_source_manifest.json"
+licensed_universe_csv = "data/raw/licensed/universe_sp100_2020-01-02.csv"
+licensed_normalized_universe_json = "data/interim/licensed/universe_sp100_2020-01-02.json"
+licensed_reconciliation_json = "data/interim/licensed/universe_reconciliation.json"
+security_master_json = "config/security_master.json"
+manual_corporate_actions_json = "config/manual_corporate_actions.json"
+lifecycle_events_json = "config/lifecycle_events.json"
+observation_reviews_json = "config/observation_reviews.json"
+licensed_market_data = "data/raw/market"
+data_audit = "data/audit/data_access_audit.json"
+download_manifest_json = "data/raw/market/download_manifest.json"
+market_input_manifest_json = "data/manifests/market_input_manifest.json"
+market_input_audit_json = "data/audit/market_input_integrity.json"
+universe_provenance_audit_json = "data/audit/universe_provenance.json"
+run_manifest_json = "data/manifests/run_manifest.json"
+corporate_actions_directory = "data/raw/market/reference"
+security_daily_parquet = "data/processed/security_daily.parquet"
+return_panel_parquet = "data/processed/daily_total_returns.parquet"
+simple_return_panel_parquet = "data/processed/daily_simple_total_returns.parquet"
+portfolio_return_panel_parquet = "data/processed/portfolio_constituent_returns.parquet"
+portfolio_simple_return_panel_parquet = "data/processed/portfolio_constituent_simple_returns.parquet"
+final_universe_json = "data/processed/final_universe.json"
+active_universe_json = "data/processed/active_universe_by_year.json"
+data_quality_json = "data/audit/data_quality_report.json"
+data_quality_local_json = "data/audit/data_quality_report.local.json"
+data_quality_markdown = "data/audit/data_quality_report.md"
+portfolio_arithmetic_audit_json = "data/audit/portfolio_arithmetic.json"
+current_gate_status_json = "data/audit/current_gate_status.json"

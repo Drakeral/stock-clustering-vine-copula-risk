@@ -1,0 +1,15 @@
+{
+  "checks": {
+    "expected_reference_files": 210,
+    "expected_xnys_sessions": 2262,
+    "recorded_daily_files": 2262,
+    "recorded_reference_files": 210,
+    "verified_daily_files": 2262,
+    "verified_reference_files": 210
+  },
+  "errors": [],
+  "gate": "market_input_integrity",
+  "public_manifest_sha256": "d1b882291b23b112186d83cef8e480a5f5d29b5a69d23ee28ed0b7b9320dc2f1",
+  "schema_version": 2,
+  "status": "pass"
+}

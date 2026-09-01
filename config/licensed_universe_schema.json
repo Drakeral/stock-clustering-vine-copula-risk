@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Normalized row schema for an authorized point-in-time S&P 100/GICS extract. The raw extract remains untracked under data/raw/licensed/.",
+  "properties": {
+    "as_of_date": {"format": "date", "type": "string"},
+    "company_name": {"minLength": 1, "type": "string"},
+    "gics_sector": {"minLength": 1, "type": "string"},
+    "gics_sub_industry": {"minLength": 1, "type": "string"},
+    "issuer_id": {"minLength": 1, "type": "string"},
+    "membership_date": {"format": "date", "type": "string"},
+    "security_id": {"minLength": 1, "type": "string"},
+    "share_class": {"type": "string"},
+    "source_record_id": {"minLength": 1, "type": "string"},
+    "ticker": {"minLength": 1, "type": "string"}
+  },
+  "required": [
+    "security_id",
+    "issuer_id",
+    "ticker",
+    "share_class",
+    "company_name",
+    "gics_sector",
+    "gics_sub_industry",
+    "membership_date",
+    "as_of_date",
+    "source_record_id"
+  ],
+  "title": "Licensed point-in-time universe row",
+  "type": "object"
+}

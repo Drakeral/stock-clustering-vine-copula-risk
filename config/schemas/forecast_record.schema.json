@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/fe5110/forecast_record.schema.json",
+  "title": "FE5110 one-day risk forecast record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "date",
+    "model_id",
+    "grouping_id",
+    "refit_id",
+    "var_95",
+    "var_975",
+    "var_99",
+    "es_975",
+    "realised_simple_return",
+    "realised_loss",
+    "seed_components",
+    "margin_fallback_count",
+    "whole_vine_fallback",
+    "forecast_status"
+  ],
+  "properties": {
+    "date": {"type": "string", "format": "date"},
+    "model_id": {"enum": ["M0", "M1", "M2", "M3", "M4"]},
+    "grouping_id": {"enum": ["none", "gics", "hierarchical"]},
+    "refit_id": {"type": "string", "minLength": 1},
+    "var_95": {"type": "number"},
+    "var_975": {"type": "number"},
+    "var_99": {"type": "number"},
+    "es_975": {"type": "number"},
+    "realised_simple_return": {"type": "number"},
+    "realised_loss": {"type": "number"},
+    "seed_components": {
+      "type": "array",
+      "prefixItems": [
+        {"const": 5110},
+        {"type": "integer", "minimum": 2020, "maximum": 2025},
+        {"type": "integer", "minimum": 1, "maximum": 12}
+      ],
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "margin_fallback_count": {"type": "integer", "minimum": 0},
+    "whole_vine_fallback": {"type": "boolean"},
+    "copula_log_score": {"type": ["number", "null"]},
+    "forecast_status": {"enum": ["ok", "fallback", "failed"]}
+  }
+}

@@ -1,0 +1,39 @@
+# Local credentials
+.env
+.env.*
+!.env.example
+Reference Material/
+*.pem
+*.key
+*.p12
+
+# Downloaded licensed market data and derived large files
+data/raw/market/
+data/raw/licensed/
+data/interim/
+data/processed/
+data/manifests/*.local.json
+data/manifests/**/*.local.json
+data/audit/*.local.json
+data/audit/**/*.local.json
+outputs/
+
+# Local correspondence and copyrighted course/reference copies
+*.eml
+/*.pdf
+Reference Material/*.pdf
+
+# Python and notebook artifacts
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# Local environments and OS metadata
+.venv/
+.DS_Store
+.pytest_cache/
+.coverage
+
+# Local agent state
+.agents/
+.codex/

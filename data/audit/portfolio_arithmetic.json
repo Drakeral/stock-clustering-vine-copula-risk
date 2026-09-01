@@ -1,0 +1,250 @@
+{
+  "aggregation_rule": "annual active group sizes divided by annual active security count",
+  "annual_results": [
+    {
+      "active_security_count": 100,
+      "checked_return_dates": 250,
+      "group_count": 11,
+      "group_sizes": {
+        "Communication Services": 9,
+        "Consumer Discretionary": 10,
+        "Consumer Staples": 11,
+        "Energy": 6,
+        "Financials": 15,
+        "Health Care": 16,
+        "Industrials": 13,
+        "Information Technology": 14,
+        "Materials": 1,
+        "Real Estate": 1,
+        "Utilities": 4
+      },
+      "maximum_absolute_error": 6.938893903907228e-18,
+      "rebalance_date": "2017-01-03",
+      "session_count": 251,
+      "status": "pass",
+      "undefined_initial_dates": [
+        "2017-01-03"
+      ],
+      "year": 2017
+    },
+    {
+      "active_security_count": 100,
+      "checked_return_dates": 251,
+      "group_count": 11,
+      "group_sizes": {
+        "Communication Services": 9,
+        "Consumer Discretionary": 10,
+        "Consumer Staples": 11,
+        "Energy": 6,
+        "Financials": 15,
+        "Health Care": 16,
+        "Industrials": 13,
+        "Information Technology": 14,
+        "Materials": 1,
+        "Real Estate": 1,
+        "Utilities": 4
+      },
+      "maximum_absolute_error": 2.7755575615628914e-17,
+      "rebalance_date": "2018-01-02",
+      "session_count": 251,
+      "status": "pass",
+      "undefined_initial_dates": [],
+      "year": 2018
+    },
+    {
+      "active_security_count": 100,
+      "checked_return_dates": 252,
+      "group_count": 11,
+      "group_sizes": {
+        "Communication Services": 9,
+        "Consumer Discretionary": 10,
+        "Consumer Staples": 11,
+        "Energy": 6,
+        "Financials": 15,
+        "Health Care": 16,
+        "Industrials": 13,
+        "Information Technology": 14,
+        "Materials": 1,
+        "Real Estate": 1,
+        "Utilities": 4
+      },
+      "maximum_absolute_error": 2.0816681711721685e-17,
+      "rebalance_date": "2019-01-02",
+      "session_count": 252,
+      "status": "pass",
+      "undefined_initial_dates": [],
+      "year": 2019
+    },
+    {
+      "active_security_count": 100,
+      "checked_return_dates": 253,
+      "group_count": 11,
+      "group_sizes": {
+        "Communication Services": 9,
+        "Consumer Discretionary": 10,
+        "Consumer Staples": 11,
+        "Energy": 6,
+        "Financials": 15,
+        "Health Care": 16,
+        "Industrials": 13,
+        "Information Technology": 14,
+        "Materials": 1,
+        "Real Estate": 1,
+        "Utilities": 4
+      },
+      "maximum_absolute_error": 5.551115123125783e-17,
+      "rebalance_date": "2020-01-02",
+      "session_count": 253,
+      "status": "pass",
+      "undefined_initial_dates": [],
+      "year": 2020
+    },
+    {
+      "active_security_count": 98,
+      "checked_return_dates": 252,
+      "group_count": 11,
+      "group_sizes": {
+        "Communication Services": 9,
+        "Consumer Discretionary": 10,
+        "Consumer Staples": 11,
+        "Energy": 6,
+        "Financials": 15,
+        "Health Care": 15,
+        "Industrials": 12,
+        "Information Technology": 14,
+        "Materials": 1,
+        "Real Estate": 1,
+        "Utilities": 4
+      },
+      "maximum_absolute_error": 1.3877787807814457e-17,
+      "rebalance_date": "2021-01-04",
+      "session_count": 252,
+      "status": "pass",
+      "undefined_initial_dates": [],
+      "year": 2021
+    },
+    {
+      "active_security_count": 98,
+      "checked_return_dates": 251,
+      "group_count": 11,
+      "group_sizes": {
+        "Communication Services": 9,
+        "Consumer Discretionary": 10,
+        "Consumer Staples": 11,
+        "Energy": 6,
+        "Financials": 15,
+        "Health Care": 15,
+        "Industrials": 12,
+        "Information Technology": 14,
+        "Materials": 1,
+        "Real Estate": 1,
+        "Utilities": 4
+      },
+      "maximum_absolute_error": 2.42861286636753e-17,
+      "rebalance_date": "2022-01-03",
+      "session_count": 251,
+      "status": "pass",
+      "undefined_initial_dates": [],
+      "year": 2022
+    },
+    {
+      "active_security_count": 98,
+      "checked_return_dates": 250,
+      "group_count": 11,
+      "group_sizes": {
+        "Communication Services": 9,
+        "Consumer Discretionary": 10,
+        "Consumer Staples": 11,
+        "Energy": 6,
+        "Financials": 15,
+        "Health Care": 15,
+        "Industrials": 12,
+        "Information Technology": 14,
+        "Materials": 1,
+        "Real Estate": 1,
+        "Utilities": 4
+      },
+      "maximum_absolute_error": 1.734723475976807e-17,
+      "rebalance_date": "2023-01-03",
+      "session_count": 250,
+      "status": "pass",
+      "undefined_initial_dates": [],
+      "year": 2023
+    },
+    {
+      "active_security_count": 98,
+      "checked_return_dates": 252,
+      "group_count": 11,
+      "group_sizes": {
+        "Communication Services": 9,
+        "Consumer Discretionary": 10,
+        "Consumer Staples": 11,
+        "Energy": 6,
+        "Financials": 15,
+        "Health Care": 15,
+        "Industrials": 12,
+        "Information Technology": 14,
+        "Materials": 1,
+        "Real Estate": 1,
+        "Utilities": 4
+      },
+      "maximum_absolute_error": 1.0408340855860843e-17,
+      "rebalance_date": "2024-01-02",
+      "session_count": 252,
+      "status": "pass",
+      "undefined_initial_dates": [],
+      "year": 2024
+    },
+    {
+      "active_security_count": 98,
+      "checked_return_dates": 250,
+      "group_count": 11,
+      "group_sizes": {
+        "Communication Services": 9,
+        "Consumer Discretionary": 10,
+        "Consumer Staples": 11,
+        "Energy": 6,
+        "Financials": 15,
+        "Health Care": 15,
+        "Industrials": 12,
+        "Information Technology": 14,
+        "Materials": 1,
+        "Real Estate": 1,
+        "Utilities": 4
+      },
+      "maximum_absolute_error": 1.734723475976807e-17,
+      "rebalance_date": "2025-01-02",
+      "session_count": 250,
+      "status": "pass",
+      "undefined_initial_dates": [],
+      "year": 2025
+    }
+  ],
+  "checked_return_dates": 2261,
+  "gate_name": "portfolio_arithmetic_v1",
+  "grouping_id": "gics_sector",
+  "inputs": {
+    "active_universe": {
+      "path": "data/processed/active_universe_by_year.json",
+      "sha256": "ed3ef62c7f253fcf1af987a589987a63f74d9130e533dcb4c283a661849ba626"
+    },
+    "final_universe": {
+      "path": "data/processed/final_universe.json",
+      "sha256": "9409bbfbc4fc567ad4da0841c46266818af129e9e0ef9431af29e2740c352943"
+    },
+    "simple_return_panel": {
+      "path": "data/processed/portfolio_constituent_simple_returns.parquet",
+      "sha256": "e37b805bd8c290ace18a9aab120b3272ed10e8d64b3eab70c892b03c72caf3e9"
+    }
+  },
+  "issues": [],
+  "maximum_absolute_error": 5.551115123125783e-17,
+  "portfolio_definition": "daily_rebalanced_equal_weight",
+  "schema_version": 1,
+  "session_count": 2262,
+  "status": "pass",
+  "tolerance": 1e-12,
+  "undefined_initial_dates": [
+    "2017-01-03"
+  ]
+}

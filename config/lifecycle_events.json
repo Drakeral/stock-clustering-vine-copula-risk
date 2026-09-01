@@ -1,0 +1,37 @@
+{
+  "schema_version": 2,
+  "description": "Research-security lifecycle overrides and independently verified non-trading sessions. Dates not covered here must be explained by the security lineage or fail foundation_v2.",
+  "securities": {
+    "DOW": {
+      "listing_date": "2019-04-02",
+      "lineage": "Dow Inc., distinct from legacy Dow Chemical",
+      "source_urls": [
+        "https://www.sec.gov/Archives/edgar/data/1666700/000119312517274834/d426905dex991.htm",
+        "https://investors.dow.com/en/news/news-details/2019/Dow-completes-separation-from-DowDuPont/default.aspx"
+      ]
+    },
+    "AGN": {
+      "terminal_market_date": "2020-05-08"
+    },
+    "RTN": {
+      "terminal_market_date": "2020-12-31"
+    },
+    "WBA": {
+      "terminal_market_date": "2025-08-28"
+    }
+  },
+  "verified_halts": [
+    {
+      "research_ticker": "BIIB",
+      "date": "2020-11-06",
+      "reason": "Trading remained halted pending FDA advisory-committee proceedings; stale-price zero return is used for the missing exchange session.",
+      "source_url": "https://infomemo.theocc.com/infomemos?number=47809"
+    },
+    {
+      "research_ticker": "BIIB",
+      "date": "2023-06-09",
+      "reason": "Nasdaq halted Biogen pending the FDA advisory-committee meeting; stale-price zero return is used for the missing exchange session.",
+      "source_url": "https://investors.biogen.com/node/26871"
+    }
+  ]
+}

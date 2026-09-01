@@ -1,0 +1,204 @@
+{
+  "schema_version": 2,
+  "valuation_rule": "On the effective trading date, value successor and distributed shares at their unadjusted closing prices. The event-day gross return is total closing consideration per old share divided by the prior close. Distributed shares are treated as sold and reinvested in the continuing research security after the event-day return.",
+  "provider_continuity_factor_semantics": "A provider P-prefixed factor is retained for reconciliation only. It is not interpreted as new parent shares per old parent share and is excluded when an explicit parent-plus-distribution action is configured.",
+  "actions": [
+    {
+      "action_id": "DD_2017_DOWDUPONT_MERGER",
+      "event_type": "merger_exchange",
+      "research_ticker": "DD",
+      "effective_date": "2017-09-01",
+      "primary_provider_ticker": "DWDP",
+      "primary_shares_per_old_share": 1.282,
+      "cash_per_old_share": 0.0,
+      "distributed_securities": [],
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1666700/000166670017000026/dowdupont3q17093017.htm",
+      "source_note": "Each legacy DuPont share converted into 1.2820 DowDuPont shares."
+    },
+    {
+      "action_id": "DD_2019_DOW_SPINOFF",
+      "event_type": "spin_off",
+      "research_ticker": "DD",
+      "effective_date": "2019-04-02",
+      "primary_provider_ticker": "DWDP",
+      "primary_shares_per_old_share": 1.0,
+      "cash_per_old_share": 0.0,
+      "distributed_securities": [
+        {"provider_ticker": "DOW", "shares_per_old_share": 0.3333333333333333}
+      ],
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1666700/000119312519095042/d725044dex991.htm",
+      "source_note": "One Dow share was distributed for every three DowDuPont shares; regular-way DOW trading began 2019-04-02."
+    },
+    {
+      "action_id": "DD_2019_CORTEVA_SPIN_AND_REVERSE_SPLIT",
+      "event_type": "spin_off",
+      "research_ticker": "DD",
+      "effective_date": "2019-06-03",
+      "primary_provider_ticker": "DD",
+      "primary_shares_per_old_share": 0.3333333333333333,
+      "provider_event_id": "E93b5397129cc3dcf9e724163840e1ff02ff03806d63aec7d836a8c20a7a72524",
+      "provider_continuity_factor": 0.3333333333333333,
+      "cash_per_old_share": 0.0,
+      "distributed_securities": [
+        {"provider_ticker": "CTVA", "shares_per_old_share": 0.3333333333333333}
+      ],
+      "source_url": "https://s23.q4cdn.com/116192123/files/doc_downloads/2019/07/Form-8937-Attachment-Combined-Corteva-Spin-and-Rev-Stk-Splt-Final.pdf",
+      "source_note": "For every three DowDuPont shares, holders received one Corteva share and one post-reverse-split DuPont share."
+    },
+    {
+      "action_id": "UTX_2020_SPINOFFS_AND_RTX_RENAME",
+      "event_type": "spin_off",
+      "research_ticker": "UTX",
+      "effective_date": "2020-04-03",
+      "primary_provider_ticker": "RTX",
+      "primary_shares_per_old_share": 1.0,
+      "cash_per_old_share": 0.0,
+      "distributed_securities": [
+        {"provider_ticker": "CARR", "shares_per_old_share": 1.0},
+        {"provider_ticker": "OTIS", "shares_per_old_share": 0.5}
+      ],
+      "source_url": "https://investors.rtx.com/node/24981",
+      "source_note": "Each UTC share retained one successor RTX share and received one Carrier share plus 0.5 Otis share."
+    },
+    {
+      "action_id": "RTN_2020_RTX_MERGER",
+      "event_type": "merger_exchange",
+      "research_ticker": "RTN",
+      "effective_date": "2020-04-03",
+      "primary_provider_ticker": "RTX",
+      "primary_shares_per_old_share": 2.3348,
+      "cash_per_old_share": 0.0,
+      "distributed_securities": [],
+      "source_url": "https://investors.rtx.com/news-releases/news-release-details/raytheon-and-united-technologies-obtain-all-regulatory-approvals",
+      "source_note": "Each legacy Raytheon share converted into 2.3348 RTX shares."
+    },
+    {
+      "action_id": "AGN_2020_ABBV_CASH_STOCK_ACQUISITION",
+      "event_type": "cash_acquisition",
+      "research_ticker": "AGN",
+      "effective_date": "2020-05-08",
+      "primary_provider_ticker": "AGN",
+      "primary_shares_per_old_share": 0.0,
+      "cash_per_old_share": 120.30,
+      "distributed_securities": [
+        {"provider_ticker": "ABBV", "shares_per_old_share": 0.866}
+      ],
+      "source_url": "https://news.abbvie.com/2020-05-08-AbbVie-Completes-Transformative-Acquisition-of-Allergan",
+      "source_note": "Each Allergan share received $120.30 cash and 0.8660 AbbVie shares. The ABBV component is valued at its 2020-05-08 close and liquidated into cash."
+    },
+    {
+      "action_id": "IBM_2021_KYNDRYL_SPINOFF",
+      "event_type": "spin_off",
+      "research_ticker": "IBM",
+      "effective_date": "2021-11-04",
+      "primary_provider_ticker": "IBM",
+      "primary_shares_per_old_share": 1.0,
+      "cash_per_old_share": 0.0,
+      "provider_event_id": "P4947cf8a0de38d18c248870eba72b95c03ac83af9444bbd96a711f3d54d354c8",
+      "provider_continuity_factor": 1.046,
+      "distributed_securities": [
+        {"provider_ticker": "KD", "shares_per_old_share": 0.2}
+      ],
+      "source_url": "https://www.ibm.com/investor/services/faqs-about-the-kyndryl-holdings-inc-distribution",
+      "source_note": "IBM holders retained each IBM share and received one Kyndryl share for every five IBM shares."
+    },
+    {
+      "action_id": "GE_2023_GEHC_SPINOFF",
+      "event_type": "spin_off",
+      "research_ticker": "GE",
+      "effective_date": "2023-01-04",
+      "primary_provider_ticker": "GE",
+      "primary_shares_per_old_share": 1.0,
+      "cash_per_old_share": 0.0,
+      "provider_event_id": "P2ae501c6c2f786bd6bc7505f6aeb7837d643c9564cb259554fde79dba217f077",
+      "provider_continuity_factor": 1.281,
+      "distributed_securities": [
+        {"provider_ticker": "GEHC", "shares_per_old_share": 0.3333333333333333}
+      ],
+      "source_url": "https://www.ge.com/news/press-releases/ge-board-of-directors-approves-separation-of-ge-healthcare",
+      "source_note": "GE holders retained each GE share and received one GE HealthCare share for every three GE shares."
+    },
+    {
+      "action_id": "MMM_2024_SOLVENTUM_SPINOFF",
+      "event_type": "spin_off",
+      "research_ticker": "MMM",
+      "effective_date": "2024-04-01",
+      "primary_provider_ticker": "MMM",
+      "primary_shares_per_old_share": 1.0,
+      "cash_per_old_share": 0.0,
+      "provider_event_id": "P6b5e2bbad8a40713121bf8d530fb4d2e63dd90b55a762fc5d5ae6c50b537263d",
+      "provider_continuity_factor": 1.196,
+      "distributed_securities": [
+        {"provider_ticker": "SOLV", "shares_per_old_share": 0.25}
+      ],
+      "source_url": "https://investors.3m.com/news-events/press-releases/detail/1835/3m-completes-spin-off-of-solventum",
+      "source_note": "3M holders retained each 3M share and received one Solventum share for every four 3M shares."
+    },
+    {
+      "action_id": "GE_2024_GEV_SPINOFF",
+      "event_type": "spin_off",
+      "research_ticker": "GE",
+      "effective_date": "2024-04-02",
+      "primary_provider_ticker": "GE",
+      "primary_shares_per_old_share": 1.0,
+      "cash_per_old_share": 0.0,
+      "provider_event_id": "P114cf76fa9b0f164f2d4632243fc990f5cb7dece1b125f8178e15241ace607d5",
+      "provider_continuity_factor": 1.253,
+      "distributed_securities": [
+        {"provider_ticker": "GEV", "shares_per_old_share": 0.25}
+      ],
+      "source_url": "https://www.ge.com/sites/default/files/gev-faq-040224.pdf",
+      "source_note": "GE holders retained each GE Aerospace share and received one GE Vernova share for every four GE shares."
+    },
+    {
+      "action_id": "WBA_2025_SYCAMORE_CASH_DAP_ACQUISITION",
+      "event_type": "cash_acquisition",
+      "research_ticker": "WBA",
+      "effective_date": "2025-08-28",
+      "primary_provider_ticker": "WBA",
+      "primary_shares_per_old_share": 0.0,
+      "cash_per_old_share": 11.45,
+      "contingent_value_per_old_share": 0.53,
+      "contingent_value_sensitivity": {"low": 0.0, "primary": 0.53, "high": 3.0},
+      "synthetic_primary_observation": {
+        "close": 11.98,
+        "valuation_formula": "cash_plus_contingent"
+      },
+      "distributed_securities": [],
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1618921/000119312525190603/d87240dex991.htm",
+      "source_note": "Primary treatment books $11.45 cash plus a market-implied $0.53 value for the non-transferable DAP right. Sensitivities value the DAP at $0 and its $3 cap."
+    },
+    {
+      "action_id": "HON_2025_SOLSTICE_SPINOFF",
+      "event_type": "spin_off",
+      "research_ticker": "HON",
+      "effective_date": "2025-10-30",
+      "primary_provider_ticker": "HON",
+      "primary_shares_per_old_share": 1.0,
+      "cash_per_old_share": 0.0,
+      "provider_event_id": "Padbaea00469097d9434039934affb5a3f7694a2774160b65d42aabb913d00804",
+      "provider_continuity_factor": 1.061,
+      "distributed_securities": [
+        {"provider_ticker": "SOLS", "shares_per_old_share": 0.25}
+      ],
+      "source_url": "https://investor.honeywell.com/news-releases/news-release-details/honeywell-board-directors-sets-record-date-and-announces",
+      "source_note": "Honeywell holders retained each HON share and received one Solstice share for every four HON shares."
+    },
+    {
+      "action_id": "DD_2025_QNITY_SPINOFF",
+      "event_type": "spin_off",
+      "research_ticker": "DD",
+      "effective_date": "2025-11-03",
+      "primary_provider_ticker": "DD",
+      "primary_shares_per_old_share": 1.0,
+      "cash_per_old_share": 0.0,
+      "provider_event_id": "Pbae07508055debbd7a2697fe8252981b7cc827f82383f8c47aef1d24fae8a25d",
+      "provider_continuity_factor": 2.39,
+      "distributed_securities": [
+        {"provider_ticker": "Q", "shares_per_old_share": 0.5}
+      ],
+      "source_url": "https://www.sec.gov/Archives/edgar/data/1666700/000166670025000054/exhibit991boardapprovalofq.htm",
+      "source_note": "DuPont holders retained each DD share and received one Qnity share for every two DD shares."
+    }
+  ]
+}
