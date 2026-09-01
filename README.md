@@ -103,6 +103,18 @@ Without licensed data, omit the three `--licensed-*` options. The command
 reproduces the current secondary-source candidate and records a blocked
 provenance gate rather than marking the candidate approved.
 
+Yahoo Finance may be used only as an explicitly provisional metadata and price
+cross-check. It cannot satisfy the point-in-time licensed-universe/GICS gate:
+
+```zsh
+uv run python scripts/build_yahoo_universe_reference.py
+```
+
+This writes an ignored comparison table to
+`data/interim/provisional/yahoo_universe_reference.csv`, caches the raw Yahoo
+responses under `data/raw/yahoo/`, and writes a local manifest. It does not
+populate or replace `data/raw/licensed/universe_sp100_2020-01-02.csv`.
+
 Load credentials, download immutable provider data, and independently verify
 every input against an XNYS session calendar:
 
