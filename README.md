@@ -59,6 +59,28 @@ the licence or entitlement reference outside Git. The reference passed below is
 hashed before it enters the public manifest; use a non-confidential local label,
 not a credential. Then prepare and reconcile the universe:
 
+To populate the normalized file safely, first create the ignored working sheet:
+
+```zsh
+uv run python scripts/populate_licensed_universe.py create
+```
+
+Open `data/interim/licensed/universe_population_worksheet.csv`. The five
+`reference_*` columns are lookup/reconciliation aids from the archived public
+snapshot. Populate every `licensed_*` column exclusively from the authorized
+point-in-time extract; in particular, use the provider's security, issuer, and
+source-record identifiers and the provider's actual membership date. Do not copy
+the synthetic `SP100-20200102:*`, `ISSUER:*`, or `wikipedia:*` identifiers.
+After entry, validate and generate the exact gate input:
+
+```zsh
+uv run python scripts/populate_licensed_universe.py finalize
+```
+
+Finalization refuses incomplete rows, candidate identifiers, invalid dates,
+duplicate identifiers, unsupported sectors, or any ticker/GICS/as-of mismatch.
+The working sheet and final licensed CSV both remain ignored by Git.
+
 ```zsh
 uv run python scripts/prepare_universe.py \
   --sp100-json data/raw/universe_sources/sp100_oldid_929329274.json \
