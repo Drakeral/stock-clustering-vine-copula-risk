@@ -84,9 +84,9 @@
     "run_scope": "provisional_research_results",
     "status": "provisional_pass"
   },
-  "generated_at_utc": "2026-09-02T13:49:48.102642+00:00",
+  "generated_at_utc": "2026-09-02T14:10:07.711199+00:00",
   "git": {
-    "commit": "ed2f9480b7da8e9d479fbf55091066e6aeeb9c71",
+    "commit": "58b42e5031ac84e128839a9ac9f4b9becd86b356",
     "commit_present": true,
     "repository_initialized": true,
     "worktree_clean": true
@@ -125,15 +125,15 @@
       "status": "present"
     },
     {
-      "bytes": 311,
+      "bytes": 478,
       "path": "pyproject.toml",
-      "sha256": "6c04a053540732e71704751fbb63ea3b7d6297abf554c5dc590106d421df4673",
+      "sha256": "9e7c6e05eac8de150d67e4495c19ff90cc002123ceacb3ffde6ce6c409b0e99d",
       "status": "present"
     },
     {
-      "bytes": 28383,
+      "bytes": 34639,
       "path": "uv.lock",
-      "sha256": "7d3a50f69d7b68bcacdfc3f36f68319c526535a5a0cd6782ef816e37708b7ab3",
+      "sha256": "7ad552257b32bf8412ba0f8a5b55fc5143958216e2b0afc39b45856e177309eb",
       "status": "present"
     }
   ],
