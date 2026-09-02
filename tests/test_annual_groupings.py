@@ -14,7 +14,6 @@ from scripts.research_methods import (
     normalized_mutual_information,
 )
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -132,22 +131,14 @@ class AnnualGroupingPipelineTests(unittest.TestCase):
         self.assertLessEqual(errors["hierarchical_cluster"], 1e-12)
         issuer = diagnostics["years"][0]["issuer_deduplicated_robustness"]
         self.assertEqual(issuer["position_count"], 3)
-        self.assertLessEqual(
-            max(issuer["maximum_portfolio_identity_error"].values()), 1e-12
-        )
-        self.assertEqual(
-            diagnostics["years"][0]["gics_dependence_gap"]["within_pair_count"], 2
-        )
-        self.assertEqual(
-            diagnostics["years"][0]["gics_dependence_gap"]["between_pair_count"], 4
-        )
+        self.assertLessEqual(max(issuer["maximum_portfolio_identity_error"].values()), 1e-12)
+        self.assertEqual(diagnostics["years"][0]["gics_dependence_gap"]["within_pair_count"], 2)
+        self.assertEqual(diagnostics["years"][0]["gics_dependence_gap"]["between_pair_count"], 4)
 
 
 class CurrentClusteringArtifactTests(unittest.TestCase):
     def test_current_clustering_audit_and_outputs_are_bound(self):
-        audit = json.loads(
-            (ROOT / "data/audit/clustering_diagnostics.json").read_text()
-        )
+        audit = json.loads((ROOT / "data/audit/clustering_diagnostics.json").read_text())
         self.assertEqual(audit["status"], "pass")
         self.assertEqual(audit["reporting_scope"], "provisional_research_results")
         self.assertEqual([row["year"] for row in audit["years"]], list(range(2020, 2026)))
@@ -156,22 +147,16 @@ class CurrentClusteringArtifactTests(unittest.TestCase):
         self.assertEqual(first["gics_dependence_gap"]["between_pair_count"], 4_399)
         for row in audit["years"]:
             self.assertEqual(row["group_count"], 11)
-            self.assertLessEqual(
-                max(row["maximum_portfolio_identity_error"].values()), 1e-12
-            )
+            self.assertLessEqual(max(row["maximum_portfolio_identity_error"].values()), 1e-12)
             expected_positions = 99 if row["year"] == 2020 else 97
             issuer = row["issuer_deduplicated_robustness"]
             self.assertEqual(issuer["position_count"], expected_positions)
-            self.assertLessEqual(
-                max(issuer["maximum_portfolio_identity_error"].values()), 1e-12
-            )
+            self.assertLessEqual(max(issuer["maximum_portfolio_identity_error"].values()), 1e-12)
         for record in audit["outputs"].values():
             path = ROOT / record["path"]
             self.assertTrue(path.is_file())
             self.assertEqual(record["sha256"], sha256(path))
-        group_returns = pd.read_parquet(
-            ROOT / audit["outputs"]["annual_group_returns"]["path"]
-        )
+        group_returns = pd.read_parquet(ROOT / audit["outputs"]["annual_group_returns"]["path"])
         keys = [
             "date",
             "year",
@@ -182,9 +167,7 @@ class CurrentClusteringArtifactTests(unittest.TestCase):
         ]
         self.assertFalse(group_returns.duplicated(keys).any())
         self.assertEqual(set(group_returns["sample_role"]), {"training", "evaluation"})
-        self.assertTrue(
-            np.isfinite(group_returns[["simple_return", "log_return"]]).all().all()
-        )
+        self.assertTrue(np.isfinite(group_returns[["simple_return", "log_return"]]).all().all())
         first_year = audit["years"][0]
         self.assertEqual(first_year["training_observations"], 754)
         self.assertEqual(first_year["training_group_return_observations"], 753)

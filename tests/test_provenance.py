@@ -10,6 +10,13 @@ import urllib.error
 from pathlib import Path
 from unittest import mock
 
+from scripts.download_market_data import authenticated_json
+from scripts.generate_run_manifest import (
+    build_run_manifest,
+    default_config_paths,
+    default_output_paths,
+    git_state,
+)
 from scripts.prepare_universe import (
     EXPECTED_SP100_REVISION,
     EXPECTED_SP500_REVISION,
@@ -18,22 +25,14 @@ from scripts.prepare_universe import (
     reconcile_licensed_universe,
     revision_record,
 )
-from scripts.generate_run_manifest import (
-    build_run_manifest,
-    default_config_paths,
-    default_output_paths,
-    git_state,
-)
-from scripts.download_market_data import authenticated_json
 from scripts.verify_foundation_inputs import (
-    FrozenInputSpec,
     SPECIAL_CLOSURES,
+    FrozenInputSpec,
     canonical_json_bytes,
     sha256_file,
     verify_foundation_inputs,
     xnys_sessions,
 )
-
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -255,10 +254,16 @@ class MarketInputIntegrityTests(unittest.TestCase):
                 root, missing_attestation, universe, master, reference_root, frozen
             )
             self.assertTrue(
-                any("missing required fields: row_count" in row["reason"] for row in missing_audit["errors"])
+                any(
+                    "missing required fields: row_count" in row["reason"]
+                    for row in missing_audit["errors"]
+                )
             )
             self.assertTrue(
-                any("missing required fields: sha256" in row["reason"] for row in missing_audit["errors"])
+                any(
+                    "missing required fields: sha256" in row["reason"]
+                    for row in missing_audit["errors"]
+                )
             )
 
             duplicate_reference = copy.deepcopy(manifest)
@@ -270,10 +275,15 @@ class MarketInputIntegrityTests(unittest.TestCase):
                 root, duplicate_reference, universe, master, reference_root, frozen
             )
             self.assertTrue(
-                any("duplicate_identity:ABC:splits" in row["reason"] for row in duplicate_audit["errors"])
+                any(
+                    "duplicate_identity:ABC:splits" in row["reason"]
+                    for row in duplicate_audit["errors"]
+                )
             )
             self.assertTrue(
-                any(row["reason"] == "reference_count_mismatch" for row in duplicate_audit["errors"])
+                any(
+                    row["reason"] == "reference_count_mismatch" for row in duplicate_audit["errors"]
+                )
             )
 
             wrong_identity = copy.deepcopy(manifest)
@@ -299,7 +309,10 @@ class MarketInputIntegrityTests(unittest.TestCase):
                 root, wrong_content_date, universe, master, reference_root, frozen
             )
             self.assertTrue(
-                any("content date 2020-01-03 differs" in row["reason"] for row in content_audit["errors"])
+                any(
+                    "content date 2020-01-03 differs" in row["reason"]
+                    for row in content_audit["errors"]
+                )
             )
 
     def test_current_full_input_audit_passes(self):
@@ -361,9 +374,7 @@ class CredentialSafetyTests(unittest.TestCase):
             hdrs=None,
             fp=None,
         )
-        with mock.patch(
-            "scripts.download_market_data.urllib.request.urlopen", side_effect=error
-        ):
+        with mock.patch("scripts.download_market_data.urllib.request.urlopen", side_effect=error):
             with self.assertRaises(RuntimeError) as raised:
                 authenticated_json(
                     f"https://api.massive.com/v3/reference/splits?apiKey={secret}",

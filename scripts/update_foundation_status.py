@@ -73,7 +73,10 @@ def validate_provisional_amendment(
         issues.append("generic_failed_provenance_waiver_forbidden")
 
     allowed_original_blockers = {"authorized_point_in_time_universe_extract_absent"}
-    if universe.get("status") != "blocked" or set(universe.get("blockers", [])) != allowed_original_blockers:
+    if (
+        universe.get("status") != "blocked"
+        or set(universe.get("blockers", [])) != allowed_original_blockers
+    ):
         issues.append("universe_has_nonwaivable_provenance_issue")
     if amendment.get("expected_public_universe_sha256") != universe.get("public_universe_sha256"):
         issues.append("provisional_amendment_universe_hash_mismatch")
@@ -94,18 +97,16 @@ def validate_provisional_amendment(
         "minimum_yahoo_price_matches", 101
     ):
         issues.append("yahoo_price_coverage_below_amendment_minimum")
-    failure_tickers = {
-        item.get("ticker") for item in yahoo_manifest.get("request_failures", [])
-    }
+    failure_tickers = {item.get("ticker") for item in yahoo_manifest.get("request_failures", [])}
     if failure_tickers != set(amendment.get("accepted_yahoo_missing_tickers", [])):
         issues.append("yahoo_missing_tickers_differ_from_amendment")
     if (yahoo_manifest.get("gate_eligibility") or {}).get(
         "foundation_v2_universe_provenance"
     ) is not False:
         issues.append("yahoo_manifest_must_remain_nonlicensed")
-    if current_file_hashes is not None and yahoo_manifest.get("output_sha256") != current_file_hashes.get(
-        "yahoo_reference_sha256"
-    ):
+    if current_file_hashes is not None and yahoo_manifest.get(
+        "output_sha256"
+    ) != current_file_hashes.get("yahoo_reference_sha256"):
         issues.append("yahoo_reference_file_hash_mismatch")
     return not issues, issues
 
@@ -135,9 +136,7 @@ def aggregate_foundation_status(
     market_pass = market.get("status") == "pass"
     construction_pass = construction.get("gate_status") == "pass"
     arithmetic_pass = arithmetic.get("status") == "pass"
-    method_pass = (
-        model_config.get("protocol_status") == "frozen_before_out_of_sample_modelling"
-    )
+    method_pass = model_config.get("protocol_status") == "frozen_before_out_of_sample_modelling"
     construction_inputs = construction.get("input_hashes", {})
     construction_provenance_bound = bool(
         construction.get("universe_provenance_status") == "pass"
@@ -186,20 +185,17 @@ def aggregate_foundation_status(
     )
     market_file_current = bool(
         files is None
-        or market.get("public_manifest_sha256")
-        == files.get("market_input_manifest_sha256")
+        or market.get("public_manifest_sha256") == files.get("market_input_manifest_sha256")
     )
     construction_files_current = bool(
         files is None
         or (
-            construction_inputs.get("universe_json_sha256")
-            == files.get("universe_json_sha256")
+            construction_inputs.get("universe_json_sha256") == files.get("universe_json_sha256")
             and construction_inputs.get("universe_source_manifest_sha256")
             == files.get("universe_source_manifest_sha256")
             and construction_inputs.get("market_input_manifest_sha256")
             == files.get("market_input_manifest_sha256")
-            and construction_inputs.get("data_config_sha256")
-            == files.get("data_config_sha256")
+            and construction_inputs.get("data_config_sha256") == files.get("data_config_sha256")
             and construction_inputs.get("security_master_sha256")
             == files.get("security_master_sha256")
             and construction_inputs.get("manual_corporate_actions_sha256")
@@ -323,9 +319,7 @@ def aggregate_foundation_status(
                 "status": "pass" if provisional_universe_pass else "not_applied",
                 "source": "config/provenance_amendment.json",
                 "amendment_id": (
-                    provenance_amendment.get("amendment_id")
-                    if provenance_amendment
-                    else None
+                    provenance_amendment.get("amendment_id") if provenance_amendment else None
                 ),
                 "issues": amendment_issues,
             },
@@ -424,28 +418,19 @@ def main() -> int:
                 PROJECT_ROOT / "data/manifests/market_input_manifest.json"
             ),
             "data_config_sha256": _sha256(PROJECT_ROOT / "config/data_config.toml"),
-            "security_master_sha256": _sha256(
-                PROJECT_ROOT / "config/security_master.json"
-            ),
+            "security_master_sha256": _sha256(PROJECT_ROOT / "config/security_master.json"),
             "manual_corporate_actions_sha256": _sha256(
                 PROJECT_ROOT / "config/manual_corporate_actions.json"
             ),
-            "lifecycle_events_sha256": _sha256(
-                PROJECT_ROOT / "config/lifecycle_events.json"
-            ),
-            "observation_reviews_sha256": _sha256(
-                PROJECT_ROOT / "config/observation_reviews.json"
-            ),
+            "lifecycle_events_sha256": _sha256(PROJECT_ROOT / "config/lifecycle_events.json"),
+            "observation_reviews_sha256": _sha256(PROJECT_ROOT / "config/observation_reviews.json"),
             "portfolio_simple_return_panel_sha256": _sha256(
-                PROJECT_ROOT
-                / "data/processed/portfolio_constituent_simple_returns.parquet"
+                PROJECT_ROOT / "data/processed/portfolio_constituent_simple_returns.parquet"
             ),
             "active_universe_sha256": _sha256(
                 PROJECT_ROOT / "data/processed/active_universe_by_year.json"
             ),
-            "final_universe_sha256": _sha256(
-                PROJECT_ROOT / "data/processed/final_universe.json"
-            ),
+            "final_universe_sha256": _sha256(PROJECT_ROOT / "data/processed/final_universe.json"),
             "yahoo_reference_sha256": _sha256(yahoo_reference_path),
         },
         amendment,
@@ -457,9 +442,10 @@ def main() -> int:
         print("blockers=" + ",".join(status["foundation_v2"]["blockers"]))
     if args.require_pass and status["foundation_v2"]["status"] != "pass":
         return 2
-    if args.require_modelling_ready and status["gates"]["modelling_readiness"][
-        "status"
-    ] not in {"pass", "pass_provisional"}:
+    if args.require_modelling_ready and status["gates"]["modelling_readiness"]["status"] not in {
+        "pass",
+        "pass_provisional",
+    }:
         return 2
     return 0
 

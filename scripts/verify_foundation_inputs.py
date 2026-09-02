@@ -296,7 +296,9 @@ def inspect_reference(
     }
 
 
-def expected_reference_keys(universe_path: Path, security_master_path: Path) -> set[tuple[str, str]]:
+def expected_reference_keys(
+    universe_path: Path, security_master_path: Path
+) -> set[tuple[str, str]]:
     universe = json.loads(universe_path.read_text(encoding="utf-8"))
     master = json.loads(security_master_path.read_text(encoding="utf-8"))
     tickers = {row["ticker"] for row in universe["constituents"]}
@@ -457,9 +459,13 @@ def verify_foundation_inputs(
     if len(reference_records) != len(expected_references):
         errors.append({"scope": "reference_manifest", "reason": "reference_count_mismatch"})
     for key in sorted(expected_references - recorded_reference_keys):
-        errors.append({"scope": "reference_manifest", "reason": f"missing_record:{key[0]}:{key[1]}"})
+        errors.append(
+            {"scope": "reference_manifest", "reason": f"missing_record:{key[0]}:{key[1]}"}
+        )
     for key in sorted(recorded_reference_keys - expected_references):
-        errors.append({"scope": "reference_manifest", "reason": f"unexpected_record:{key[0]}:{key[1]}"})
+        errors.append(
+            {"scope": "reference_manifest", "reason": f"unexpected_record:{key[0]}:{key[1]}"}
+        )
 
     verified_references: list[dict[str, Any]] = []
     for record in reference_records:
@@ -551,7 +557,9 @@ def verify_foundation_inputs(
         "daily_compressed_bytes": sum(row["size"] for row in verified_daily),
         "daily_files": verified_daily,
         "reference_file_count": len(verified_references),
-        "reference_status": "complete" if len(verified_references) == len(expected_references) else "incomplete",
+        "reference_status": "complete"
+        if len(verified_references) == len(expected_references)
+        else "incomplete",
         "reference_files": verified_references,
     }
     audit = {
@@ -623,7 +631,9 @@ def main() -> None:
         if args.public_manifest_output.is_absolute()
         else project_root / args.public_manifest_output
     )
-    audit_path = args.audit_output if args.audit_output.is_absolute() else project_root / args.audit_output
+    audit_path = (
+        args.audit_output if args.audit_output.is_absolute() else project_root / args.audit_output
+    )
     write_json_atomic(public_path, public)
     write_json_atomic(audit_path, audit)
     print(f"market_input_integrity={audit['status']}")

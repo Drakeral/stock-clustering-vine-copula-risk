@@ -146,7 +146,9 @@ def reconstruct_primary_portfolio(
 def group_log_returns(group_returns: GroupReturns | pd.DataFrame) -> pd.DataFrame:
     """Transform group simple returns for marginal-model estimation."""
 
-    simple = group_returns.simple_returns if isinstance(group_returns, GroupReturns) else group_returns
+    simple = (
+        group_returns.simple_returns if isinstance(group_returns, GroupReturns) else group_returns
+    )
     if bool((simple <= -1.0).any().any()):
         raise ValueError("simple returns must be greater than -1 before log1p")
     result = np.log1p(simple)
@@ -174,8 +176,10 @@ def annual_buy_and_hold_returns(
     if not np.isfinite(values).all() or bool((values <= -1.0).any()):
         raise ValueError("buy-and-hold inputs must be finite simple returns greater than -1")
     weights = np.asarray([initial_weights[column] for column in columns], dtype=float)
-    if not np.isfinite(weights).all() or bool((weights < 0).any()) or not math.isclose(
-        float(weights.sum()), 1.0, rel_tol=0.0, abs_tol=1e-12
+    if (
+        not np.isfinite(weights).all()
+        or bool((weights < 0).any())
+        or not math.isclose(float(weights.sum()), 1.0, rel_tol=0.0, abs_tol=1e-12)
     ):
         raise ValueError("initial weights must be nonnegative and sum to one")
     portfolio = np.empty(len(stock_simple_returns), dtype=float)
@@ -383,9 +387,7 @@ def average_linkage_clusters(
     return labels, merges
 
 
-def adjusted_rand_index(
-    left_labels: Mapping[str, str], right_labels: Mapping[str, str]
-) -> float:
+def adjusted_rand_index(left_labels: Mapping[str, str], right_labels: Mapping[str, str]) -> float:
     """Adjusted Rand Index on the exact common key set supplied by the caller."""
 
     if set(left_labels) != set(right_labels) or not left_labels:
@@ -401,7 +403,9 @@ def adjusted_rand_index(
         left_counts[left] = left_counts.get(left, 0) + 1
         right_counts[right] = right_counts.get(right, 0) + 1
 
-    choose_two = lambda value: value * (value - 1) / 2.0
+    def choose_two(value: int) -> float:
+        return value * (value - 1) / 2.0
+
     total_pairs = choose_two(len(keys))
     if total_pairs == 0:
         return 1.0
@@ -440,9 +444,7 @@ def normalized_mutual_information(
         mutual_information += joint_probability * math.log(
             joint_count * count / (left_counts[left] * right_counts[right])
         )
-    left_entropy = -sum(
-        (value / count) * math.log(value / count) for value in left_counts.values()
-    )
+    left_entropy = -sum((value / count) * math.log(value / count) for value in left_counts.values())
     right_entropy = -sum(
         (value / count) * math.log(value / count) for value in right_counts.values()
     )
@@ -760,7 +762,9 @@ def margin_fit_is_acceptable(
     )
 
 
-def fallback_fraction_passes(fallback_count: int, total_count: int, *, maximum: float = 0.01) -> bool:
+def fallback_fraction_passes(
+    fallback_count: int, total_count: int, *, maximum: float = 0.01
+) -> bool:
     """Evaluate a modelling fallback-rate quality gate without rounding."""
 
     if total_count <= 0 or fallback_count < 0 or fallback_count > total_count:

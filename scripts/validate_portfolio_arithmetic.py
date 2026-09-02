@@ -131,9 +131,13 @@ def validate_annual_reconstruction(
         missing_columns = sorted(set(active) - set(panel.columns))
         missing_labels = sorted(set(active) - set(labels))
         if missing_columns:
-            issues.append(_issue("active_security_missing_from_panel", year=year, tickers=missing_columns))
+            issues.append(
+                _issue("active_security_missing_from_panel", year=year, tickers=missing_columns)
+            )
         if missing_labels:
-            issues.append(_issue("active_security_missing_group_label", year=year, tickers=missing_labels))
+            issues.append(
+                _issue("active_security_missing_group_label", year=year, tickers=missing_labels)
+            )
         if missing_columns or missing_labels:
             continue
 

@@ -22,7 +22,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 import boto3
 from botocore.config import Config
@@ -195,9 +195,7 @@ def authenticated_json(url: str, api_key: str, attempts: int = 7) -> dict[str, A
     authenticated_url = urllib.parse.urlunsplit(
         (parsed.scheme, parsed.netloc, parsed.path, urllib.parse.urlencode(query), parsed.fragment)
     )
-    safe_endpoint = urllib.parse.urlunsplit(
-        (parsed.scheme, parsed.netloc, parsed.path, "", "")
-    )
+    safe_endpoint = urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, parsed.path, "", ""))
     request = urllib.request.Request(
         authenticated_url,
         headers={"Accept": "application/json", "User-Agent": "fe5110-research-pipeline/0.1"},
@@ -230,7 +228,9 @@ def inspect_reference_file(path: Path, event_type: str, ticker: str) -> dict[str
     if not isinstance(results, list):
         raise RuntimeError(f"Reference results must be a list in {path}")
     required_date = "execution_date" if event_type == "splits" else "ex_dividend_date"
-    missing_date_rows = sum(not isinstance(row, dict) or not row.get(required_date) for row in results)
+    missing_date_rows = sum(
+        not isinstance(row, dict) or not row.get(required_date) for row in results
+    )
     if missing_date_rows:
         raise RuntimeError(f"{path} has {missing_date_rows} rows without {required_date}")
     return {
@@ -331,8 +331,15 @@ def download_references(
         for event_type in ("splits", "dividends"):
             records.append(
                 download_reference_type(
-                    massive["rest_base_url"], api_key, project_root, reference_dir, event_type,
-                    ticker, start, end, overwrite,
+                    massive["rest_base_url"],
+                    api_key,
+                    project_root,
+                    reference_dir,
+                    event_type,
+                    ticker,
+                    start,
+                    end,
+                    overwrite,
                 )
             )
             completed += 1
@@ -407,7 +414,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--overwrite", action="store_true")
     parser.add_argument("--list-only", action="store_true")
     parser.add_argument("--skip-reference", action="store_true")
-    parser.add_argument("--max-files", type=int, help="Testing only: restrict chronological daily files")
+    parser.add_argument(
+        "--max-files", type=int, help="Testing only: restrict chronological daily files"
+    )
     parser.add_argument(
         "--public-manifest",
         type=Path,
@@ -492,7 +501,9 @@ def main() -> None:
         manifest["generated_at_utc"] = dt.datetime.now(dt.timezone.utc).isoformat()
         write_json_atomic(manifest_path, manifest)
     public_manifest_path = (
-        args.public_manifest if args.public_manifest.is_absolute() else project_root / args.public_manifest
+        args.public_manifest
+        if args.public_manifest.is_absolute()
+        else project_root / args.public_manifest
     )
     write_json_atomic(public_manifest_path, public_input_manifest(manifest))
     print(f"Manifest written: {manifest_path}", flush=True)

@@ -87,7 +87,9 @@ def build_segments(
                 }
             )
     frame = pd.DataFrame(rows).sort_values(["provider_ticker", "research_ticker", "start"])
-    for (provider_ticker, research_ticker), group in frame.groupby(["provider_ticker", "research_ticker"]):
+    for (provider_ticker, research_ticker), group in frame.groupby(
+        ["provider_ticker", "research_ticker"]
+    ):
         ordered = group.sort_values("start")
         prior_end: pd.Timestamp | None = None
         for row in ordered.itertuples(index=False):
@@ -102,7 +104,9 @@ def build_segments(
 
 def map_provider_rows(frame: pd.DataFrame, segments: pd.DataFrame) -> pd.DataFrame:
     if frame.empty:
-        return frame.assign(research_ticker=pd.Series(dtype="string"), continuity_event=pd.Series(dtype="string"))
+        return frame.assign(
+            research_ticker=pd.Series(dtype="string"), continuity_event=pd.Series(dtype="string")
+        )
     mapped = []
     for provider_ticker, rows in frame.groupby("ticker", sort=False):
         options = segments.loc[segments["provider_ticker"] == provider_ticker]
@@ -118,7 +122,9 @@ def map_provider_rows(frame: pd.DataFrame, segments: pd.DataFrame) -> pd.DataFra
     result = pd.concat(mapped, ignore_index=True)
     duplicates = result.duplicated(["date", "research_ticker"], keep=False)
     if duplicates.any():
-        sample = result.loc[duplicates, ["date", "ticker", "research_ticker"]].head().to_dict("records")
+        sample = (
+            result.loc[duplicates, ["date", "ticker", "research_ticker"]].head().to_dict("records")
+        )
         raise ValueError(f"Security master maps multiple rows to one security-date: {sample}")
     return result
 
@@ -214,9 +220,7 @@ def read_daily_files(
         raise RuntimeError("No candidate-universe price rows were found")
     raw = pd.concat(frames, ignore_index=True)
     mapped = map_provider_rows(raw.loc[raw["ticker"].isin(provider_tickers)].copy(), segments)
-    ancillary = raw.loc[
-        raw["ticker"].isin(additional_tickers), ["date", "ticker", "close"]
-    ].copy()
+    ancillary = raw.loc[raw["ticker"].isin(additional_tickers), ["date", "ticker", "close"]].copy()
     ancillary["close"] = pd.to_numeric(ancillary["close"], errors="coerce")
     if ancillary.duplicated(["date", "ticker"]).any():
         raise ValueError("Duplicate ancillary-security close detected")
@@ -279,7 +283,9 @@ def map_event_ticker(
     segments: pd.DataFrame,
 ) -> pd.DataFrame:
     if events.empty:
-        return events.assign(research_ticker=pd.Series(dtype="string"), date=pd.Series(dtype="datetime64[ns]"))
+        return events.assign(
+            research_ticker=pd.Series(dtype="string"), date=pd.Series(dtype="datetime64[ns]")
+        )
     events = events.copy()
     events["date"] = pd.to_datetime(events[date_field])
     events = events.rename(columns={"ticker": "provider_event_ticker"})
@@ -316,8 +322,12 @@ def aggregate_actions_v2(
     excluded from arithmetic. Their original values remain in reconciliation
     records, preventing a spin-off from being applied twice.
     """
-    splits = map_event_ticker(read_reference_events(reference_dir, "splits"), "execution_date", segments)
-    dividends = map_event_ticker(read_reference_events(reference_dir, "dividends"), "ex_dividend_date", segments)
+    splits = map_event_ticker(
+        read_reference_events(reference_dir, "splits"), "execution_date", segments
+    )
+    dividends = map_event_ticker(
+        read_reference_events(reference_dir, "dividends"), "ex_dividend_date", segments
+    )
 
     manual_by_provider_event = {
         str(action["provider_event_id"]): action
@@ -328,7 +338,9 @@ def aggregate_actions_v2(
     if splits.empty:
         split_daily = pd.DataFrame(columns=["research_ticker", "date", "split_factor"])
     else:
-        splits["split_factor"] = pd.to_numeric(splits["split_to"]) / pd.to_numeric(splits["split_from"])
+        splits["split_factor"] = pd.to_numeric(splits["split_to"]) / pd.to_numeric(
+            splits["split_from"]
+        )
         splits["manual_action_id"] = splits["_event_uid"].map(
             lambda event_id: manual_by_provider_event.get(str(event_id), {}).get("action_id")
         )
@@ -376,7 +388,9 @@ def aggregate_actions_v2(
                         "provider_ticker": raw_row.get("ticker"),
                         "research_ticker": None,
                         "date": raw_row.get("execution_date") or raw_row.get("ex_dividend_date"),
-                        "typed_event": "literal_split" if event_type == "split" else "cash_dividend",
+                        "typed_event": "literal_split"
+                        if event_type == "split"
+                        else "cash_dividend",
                         "application_method": "not_applicable",
                         "aggregation_count": 0,
                         "mapping_status": "out_of_segment",
@@ -421,7 +435,9 @@ def reconcile_reference_events(
     """Assign the four frozen reconciliation dispositions to every provider event."""
     valid_keys = {
         (str(row.research_ticker), pd.Timestamp(row.date))
-        for row in prices.loc[prices["close"].notna(), ["research_ticker", "date"]].itertuples(index=False)
+        for row in prices.loc[prices["close"].notna(), ["research_ticker", "date"]].itertuples(
+            index=False
+        )
     }
     reconciled = []
     for source in records:
@@ -484,10 +500,16 @@ def manual_action_table(
                 "manual_contingent_value_per_old_share": float(
                     action.get("contingent_value_per_old_share", 0.0)
                 ),
-                "manual_contingent_value_low": action.get("contingent_value_sensitivity", {}).get("low"),
-                "manual_contingent_value_high": action.get("contingent_value_sensitivity", {}).get("high"),
+                "manual_contingent_value_low": action.get("contingent_value_sensitivity", {}).get(
+                    "low"
+                ),
+                "manual_contingent_value_high": action.get("contingent_value_sensitivity", {}).get(
+                    "high"
+                ),
                 "stock_distribution_value": distribution_value,
-                "stock_distribution_components": json.dumps(distribution_components, sort_keys=True),
+                "stock_distribution_components": json.dumps(
+                    distribution_components, sort_keys=True
+                ),
                 "provider_event_id": action.get("provider_event_id"),
                 "provider_continuity_factor": action.get("provider_continuity_factor"),
                 "manual_action_source_url": action["source_url"],
@@ -571,7 +593,9 @@ def complete_lifecycle_grid(
             if cash_start_date is not None and date >= cash_start_date:
                 classification_counts["terminal_cash"] += 1
                 if date in actual:
-                    issues.append(f"{ticker} {date.date()}: market row overlaps terminal-cash period")
+                    issues.append(
+                        f"{ticker} {date.date()}: market row overlaps terminal-cash period"
+                    )
                 continue
             if date > terminal_date:
                 classification_counts["unexplained_missing"] += 1
@@ -644,7 +668,9 @@ def complete_lifecycle_grid(
                 reason = "verified halt overlaps a corporate action and cannot be stale-filled"
             elif len(segment_rows) != 1:
                 reason = "no unique provider segment covers active session"
-            provider_ticker = segment_rows.iloc[0]["provider_ticker"] if len(segment_rows) == 1 else pd.NA
+            provider_ticker = (
+                segment_rows.iloc[0]["provider_ticker"] if len(segment_rows) == 1 else pd.NA
+            )
             continuity = segment_rows.iloc[0]["event"] if len(segment_rows) == 1 else "segment_gap"
             output_rows.append(
                 {
@@ -720,13 +746,21 @@ def construct_returns(
     if manual_actions is None or manual_actions.empty:
         manual_actions = pd.DataFrame(
             columns=[
-                "research_ticker", "date", "manual_action_id", "manual_action_type",
+                "research_ticker",
+                "date",
+                "manual_action_id",
+                "manual_action_type",
                 "manual_primary_provider_ticker",
-                "manual_primary_share_multiplier", "manual_cash_per_old_share",
-                "manual_contingent_value_per_old_share", "manual_contingent_value_low",
-                "manual_contingent_value_high", "stock_distribution_value",
-                "stock_distribution_components", "provider_event_id",
-                "provider_continuity_factor", "manual_action_source_url",
+                "manual_primary_share_multiplier",
+                "manual_cash_per_old_share",
+                "manual_contingent_value_per_old_share",
+                "manual_contingent_value_low",
+                "manual_contingent_value_high",
+                "stock_distribution_value",
+                "stock_distribution_components",
+                "provider_event_id",
+                "provider_continuity_factor",
+                "manual_action_source_url",
             ]
         )
     else:
@@ -743,14 +777,19 @@ def construct_returns(
             if column not in manual_actions:
                 manual_actions[column] = default
     frame = frame.merge(manual_actions, how="left", on=["research_ticker", "date"])
-    wrong_primary = (
-        frame["manual_action_id"].notna()
-        & frame["ticker"].ne(frame["manual_primary_provider_ticker"])
+    wrong_primary = frame["manual_action_id"].notna() & frame["ticker"].ne(
+        frame["manual_primary_provider_ticker"]
     )
     if wrong_primary.any():
         sample = frame.loc[
             wrong_primary,
-            ["date", "research_ticker", "ticker", "manual_primary_provider_ticker", "manual_action_id"],
+            [
+                "date",
+                "research_ticker",
+                "ticker",
+                "manual_primary_provider_ticker",
+                "manual_action_id",
+            ],
         ].to_dict("records")
         raise ValueError(f"Manual action primary ticker mismatch: {sample}")
     for column in (
@@ -780,10 +819,9 @@ def construct_returns(
     frame["previous_observation_status"] = frame.groupby("research_ticker")[
         "observation_status"
     ].shift(1)
-    frame["ticker_segment_transition"] = (
-        frame["previous_provider_ticker"].notna()
-        & frame["ticker"].ne(frame["previous_provider_ticker"])
-    )
+    frame["ticker_segment_transition"] = frame["previous_provider_ticker"].notna() & frame[
+        "ticker"
+    ].ne(frame["previous_provider_ticker"])
     frame["price_gross_return"] = frame["close"] / frame["previous_close"]
     frame["total_consideration_per_old_share"] = (
         frame["effective_share_multiplier"] * frame["close"]
@@ -792,7 +830,9 @@ def construct_returns(
         + frame["manual_contingent_value_per_old_share"]
         + frame["stock_distribution_value"]
     )
-    frame["total_gross_return"] = frame["total_consideration_per_old_share"] / frame["previous_close"]
+    frame["total_gross_return"] = (
+        frame["total_consideration_per_old_share"] / frame["previous_close"]
+    )
     invalid = (
         frame["previous_close"].isna()
         | frame["close"].le(0)
@@ -806,7 +846,9 @@ def construct_returns(
     frame.loc[frame["close"].le(0), "quality_flag"] += "nonpositive_close;"
     frame.loc[frame["ticker_segment_transition"], "quality_flag"] += "ticker_segment_transition;"
     frame.loc[frame["manual_action_id"].notna(), "quality_flag"] += "manual_corporate_action;"
-    frame.loc[frame["observation_status"].eq("verified_halt"), "quality_flag"] += "verified_halt_zero_return;"
+    frame.loc[frame["observation_status"].eq("verified_halt"), "quality_flag"] += (
+        "verified_halt_zero_return;"
+    )
     frame.loc[
         frame["previous_observation_status"].eq("verified_halt")
         & frame["observation_status"].eq("observed"),
@@ -815,9 +857,9 @@ def construct_returns(
     frame.loc[
         frame["observation_status"].eq("synthetic_terminal_consideration"), "quality_flag"
     ] += "synthetic_terminal_consideration;"
-    frame.loc[
-        frame["observation_status"].eq("unexplained_missing"), "quality_flag"
-    ] += "unexplained_missing_active_day;"
+    frame.loc[frame["observation_status"].eq("unexplained_missing"), "quality_flag"] += (
+        "unexplained_missing_active_day;"
+    )
     frame.loc[frame["total_return"].abs().gt(0.40), "quality_flag"] += "extreme_total_return;"
     frame.loc[
         frame["price_gross_return"].sub(1).abs().gt(0.40)
@@ -826,17 +868,43 @@ def construct_returns(
         "quality_flag",
     ] += "extreme_unadjusted_return_without_split;"
     columns = [
-        "date", "research_ticker", "ticker", "continuity_event", "observation_status",
-        "lifecycle_classification", "is_synthetic", "open", "high", "low", "close",
-        "volume", "transactions", "window_start", "previous_close", "split_factor", "cash_dividend",
-        "effective_share_multiplier", "manual_cash_per_old_share",
-        "manual_contingent_value_per_old_share", "manual_contingent_value_low",
-        "manual_contingent_value_high", "stock_distribution_value",
-        "stock_distribution_components", "manual_action_id", "manual_action_type",
-        "provider_event_id", "provider_continuity_factor", "manual_action_source_url",
+        "date",
+        "research_ticker",
+        "ticker",
+        "continuity_event",
+        "observation_status",
+        "lifecycle_classification",
+        "is_synthetic",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+        "transactions",
+        "window_start",
+        "previous_close",
+        "split_factor",
+        "cash_dividend",
+        "effective_share_multiplier",
+        "manual_cash_per_old_share",
+        "manual_contingent_value_per_old_share",
+        "manual_contingent_value_low",
+        "manual_contingent_value_high",
+        "stock_distribution_value",
+        "stock_distribution_components",
+        "manual_action_id",
+        "manual_action_type",
+        "provider_event_id",
+        "provider_continuity_factor",
+        "manual_action_source_url",
         "total_consideration_per_old_share",
-        "price_gross_return", "total_gross_return", "total_return", "log_total_return",
-        "ticker_segment_transition", "previous_observation_status", "quality_flag",
+        "price_gross_return",
+        "total_gross_return",
+        "total_return",
+        "log_total_return",
+        "ticker_segment_transition",
+        "previous_observation_status",
+        "quality_flag",
     ]
     return frame[columns].sort_values(["date", "research_ticker"]).reset_index(drop=True)
 
@@ -849,7 +917,9 @@ def coverage_table(
     training_end: pd.Timestamp,
     minimum_coverage: float,
 ) -> pd.DataFrame:
-    expected_dates = trading_dates[(trading_dates >= training_start) & (trading_dates <= training_end)]
+    expected_dates = trading_dates[
+        (trading_dates >= training_start) & (trading_dates <= training_end)
+    ]
     expected_prices = len(expected_dates)
     expected_returns = max(0, expected_prices - 1)
     rows = []
@@ -863,10 +933,7 @@ def coverage_table(
         return_count = int(sample["log_total_return"].notna().sum())
         price_coverage = price_count / expected_prices if expected_prices else math.nan
         return_coverage = return_count / expected_returns if expected_returns else math.nan
-        include = bool(
-            price_coverage >= minimum_coverage
-            and return_coverage >= minimum_coverage
-        )
+        include = bool(price_coverage >= minimum_coverage and return_coverage >= minimum_coverage)
         rows.append(
             {
                 "ticker": ticker,
@@ -914,7 +981,9 @@ def audit_exit_treatments(
                 f"{ticker}: observed last return {observed_date} differs from configured {configured_date}"
             )
     for ticker in sorted(set(exit_treatments) - set(early_endings)):
-        issues.append(f"{ticker}: exit treatment exists but the series does not end before sample end")
+        issues.append(
+            f"{ticker}: exit treatment exists but the series does not end before sample end"
+        )
     return {
         "early_endings": early_endings,
         "documented_exit_tickers": sorted(exit_treatments),
@@ -956,7 +1025,9 @@ def active_universe_schedule(
         active = []
         for ticker in included:
             treatment = exit_treatments.get(ticker)
-            if treatment is None or rebalance_date < pd.Timestamp(treatment["remove_effective_date"]):
+            if treatment is None or rebalance_date < pd.Timestamp(
+                treatment["remove_effective_date"]
+            ):
                 active.append(ticker)
         schedule.append(
             {
@@ -1020,7 +1091,10 @@ def audit_extreme_observations(
         f"{ticker} {date.strftime('%Y-%m-%d')}"
         for ticker, date in set(review_lookup) - observed_keys
     )
-    issues.extend(f"Configured extreme review does not match an extreme row: {value}" for value in unused_reviews)
+    issues.extend(
+        f"Configured extreme review does not match an extreme row: {value}"
+        for value in unused_reviews
+    )
     return {
         "schema_version": int(review_config.get("schema_version", 0)),
         "absolute_simple_return_threshold": threshold,
@@ -1310,7 +1384,10 @@ def main() -> None:
     manifest = load_json(market_manifest_path)
     if manifest.get("verification_status") != "pass":
         raise ValueError("Independent market-input manifest has not passed verification")
-    if manifest["sample_start"] != study["sample_start"] or manifest["sample_end"] != study["sample_end"]:
+    if (
+        manifest["sample_start"] != study["sample_start"]
+        or manifest["sample_end"] != study["sample_end"]
+    ):
         raise ValueError("Download manifest and configured sample dates differ")
 
     segments = build_segments(
@@ -1444,7 +1521,9 @@ def main() -> None:
         "included_tickers": included,
         "constituents": frozen_constituents,
     }
-    final_universe_path.write_text(json.dumps(final_universe, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    final_universe_path.write_text(
+        json.dumps(final_universe, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     active_universe_path.write_text(
         json.dumps(active_schedule, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
@@ -1482,9 +1561,7 @@ def main() -> None:
             "security_master_sha256": sha256_file(
                 project_path(project_root, paths["security_master_json"])
             ),
-            "universe_json_sha256": sha256_file(
-                project_path(project_root, paths["universe_json"])
-            ),
+            "universe_json_sha256": sha256_file(project_path(project_root, paths["universe_json"])),
             "universe_source_manifest_sha256": sha256_file(
                 project_path(project_root, paths["universe_source_manifest_json"])
             ),

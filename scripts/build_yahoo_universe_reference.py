@@ -22,7 +22,6 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-
 SEARCH_ENDPOINT = "https://query2.finance.yahoo.com/v1/finance/search"
 CHART_ENDPOINT = "https://query2.finance.yahoo.com/v8/finance/chart/{symbol}"
 YAHOO_TERMS_URL = "https://legal.yahoo.com/us/en/yahoo/terms/otos/index.html"
@@ -121,13 +120,13 @@ def select_quote(payload: dict[str, Any], symbol: str) -> dict[str, Any] | None:
 
 
 def chart_observation(payload: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any] | None]:
-    results = ((payload.get("chart") or {}).get("result") or [])
+    results = (payload.get("chart") or {}).get("result") or []
     if not results:
         return {}, None
     result = results[0]
     timestamps = result.get("timestamp") or []
-    quote = (((result.get("indicators") or {}).get("quote") or [{}])[0])
-    adjusted = (((result.get("indicators") or {}).get("adjclose") or [{}])[0])
+    quote = ((result.get("indicators") or {}).get("quote") or [{}])[0]
+    adjusted = ((result.get("indicators") or {}).get("adjclose") or [{}])[0]
     closes = quote.get("close") or []
     adjusted_closes = adjusted.get("adjclose") or []
     for index, timestamp in enumerate(timestamps):
@@ -153,9 +152,7 @@ def write_raw(path: Path, payload: dict[str, Any]) -> None:
     path.write_text(canonical_json(payload), encoding="utf-8")
 
 
-def cached_or_fetched(
-    path: Path, url: str, refresh: bool
-) -> tuple[dict[str, Any], bool]:
+def cached_or_fetched(path: Path, url: str, refresh: bool) -> tuple[dict[str, Any], bool]:
     if path.exists() and not refresh:
         return json.loads(path.read_text(encoding="utf-8")), False
     payload = fetch_json(url)
@@ -251,19 +248,31 @@ def build_reference(
                 "reference_as_of_date": candidate["as_of_date"],
                 "yahoo_query_symbol": yahoo_symbol,
                 "yahoo_symbol": (quote or {}).get("symbol") or chart_meta.get("symbol") or "",
-                "yahoo_short_name_current": (quote or {}).get("shortname") or chart_meta.get("shortName") or "",
-                "yahoo_long_name_current": (quote or {}).get("longname") or chart_meta.get("longName") or "",
-                "yahoo_exchange_current": (quote or {}).get("exchDisp") or (quote or {}).get("exchange") or "",
-                "yahoo_quote_type_current": (quote or {}).get("quoteType") or chart_meta.get("instrumentType") or "",
+                "yahoo_short_name_current": (quote or {}).get("shortname")
+                or chart_meta.get("shortName")
+                or "",
+                "yahoo_long_name_current": (quote or {}).get("longname")
+                or chart_meta.get("longName")
+                or "",
+                "yahoo_exchange_current": (quote or {}).get("exchDisp")
+                or (quote or {}).get("exchange")
+                or "",
+                "yahoo_quote_type_current": (quote or {}).get("quoteType")
+                or chart_meta.get("instrumentType")
+                or "",
                 "yahoo_sector_current": (quote or {}).get("sector") or "",
                 "yahoo_industry_current": (quote or {}).get("industry") or "",
                 "yahoo_price_date": (observation or {}).get("date") or "",
                 "yahoo_close_2020_01_02": (observation or {}).get("close"),
                 "yahoo_adjusted_close_2020_01_02": (observation or {}).get("adjusted_close"),
                 "yahoo_currency": chart_meta.get("currency") or "",
-                "yahoo_chart_exchange": chart_meta.get("fullExchangeName") or chart_meta.get("exchangeName") or "",
+                "yahoo_chart_exchange": chart_meta.get("fullExchangeName")
+                or chart_meta.get("exchangeName")
+                or "",
                 "yahoo_first_trade_date": (
-                    dt.datetime.fromtimestamp(chart_meta["firstTradeDate"], tz=dt.UTC).date().isoformat()
+                    dt.datetime.fromtimestamp(chart_meta["firstTradeDate"], tz=dt.UTC)
+                    .date()
+                    .isoformat()
                     if chart_meta.get("firstTradeDate")
                     else ""
                 ),
@@ -341,13 +350,9 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=Path("data/manifests/yahoo_universe_reference_manifest.json"),
     )
-    parser.add_argument(
-        "--raw-root", type=Path, default=Path("data/raw/yahoo/universe_reference")
-    )
+    parser.add_argument("--raw-root", type=Path, default=Path("data/raw/yahoo/universe_reference"))
     parser.add_argument("--delay-seconds", type=float, default=0.20)
-    parser.add_argument(
-        "--refresh", action="store_true", help="Ignore cached raw Yahoo responses"
-    )
+    parser.add_argument("--refresh", action="store_true", help="Ignore cached raw Yahoo responses")
     return parser.parse_args()
 
 

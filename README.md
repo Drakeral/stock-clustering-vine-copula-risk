@@ -25,6 +25,8 @@ supersede the amendment and obtain the strict provenance pass later.
 ## Rebuild from a clean clone
 
 Python 3.12 and [uv](https://docs.astral.sh/uv/) are required.
+The repeatable lint, test and repository-hygiene checkpoint is documented in
+`docs/code_quality.md`.
 
 ```zsh
 uv sync --frozen
@@ -134,6 +136,8 @@ uv run python scripts/build_return_panel.py
 uv run python scripts/validate_portfolio_arithmetic.py
 uv run python scripts/update_foundation_status.py --require-modelling-ready
 uv run python scripts/build_annual_groupings.py
+uv run ruff check scripts tests
+uv run ruff format --check scripts tests
 uv run python -m unittest discover -s tests -v
 ```
 

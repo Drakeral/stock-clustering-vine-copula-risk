@@ -96,9 +96,7 @@ def licensed_rows_from_worksheet(rows: list[dict[str, str]]) -> list[dict[str, s
     licensed_rows: list[dict[str, str]] = []
     for worksheet_row in rows:
         ticker = worksheet_row["reference_ticker"] or "<unknown>"
-        licensed_row = {
-            column: worksheet_row[f"licensed_{column}"] for column in LICENSED_COLUMNS
-        }
+        licensed_row = {column: worksheet_row[f"licensed_{column}"] for column in LICENSED_COLUMNS}
         missing = [column for column, value in licensed_row.items() if not value]
         if missing:
             pending.append(f"{ticker}: {', '.join(missing)}")

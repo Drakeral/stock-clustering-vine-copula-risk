@@ -155,9 +155,7 @@ def build_run_manifest(
     inputs = file_records(project_root, input_paths)
     outputs = file_records(project_root, output_paths)
     git = git_state(project_root)
-    configuration_complete = bool(configs) and all(
-        item["status"] == "present" for item in configs
-    )
+    configuration_complete = bool(configs) and all(item["status"] == "present" for item in configs)
     inputs_complete = bool(inputs) and all(item["status"] == "present" for item in inputs)
     outputs_complete = bool(outputs) and all(item["status"] == "present" for item in outputs)
     git_complete = bool(git.get("commit_present") and git.get("worktree_clean"))

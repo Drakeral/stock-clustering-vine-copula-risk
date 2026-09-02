@@ -160,9 +160,7 @@ class FoundationStatusTests(unittest.TestCase):
             result["gates"]["universe_provenance"]["status"],
             "provisional_authorized_yahoo",
         )
-        self.assertEqual(
-            result["gates"]["modelling_readiness"]["status"], "pass_provisional"
-        )
+        self.assertEqual(result["gates"]["modelling_readiness"]["status"], "pass_provisional")
 
     def test_amendment_cannot_waive_an_additional_provenance_problem(self):
         amendment, yahoo, current = self.provisional_inputs()
@@ -180,9 +178,7 @@ class FoundationStatusTests(unittest.TestCase):
         stale["yahoo_reference_sha256"] = "changed"
         result = self.aggregate(stale, amendment, yahoo)
         self.assertEqual(result["foundation_v2"]["status"], "blocked")
-        self.assertIn(
-            "yahoo_reference_file_hash_mismatch", result["foundation_v2"]["blockers"]
-        )
+        self.assertIn("yahoo_reference_file_hash_mismatch", result["foundation_v2"]["blockers"])
 
     def test_failed_arithmetic_is_an_independent_blocker(self):
         self.arithmetic = {"status": "fail", "inputs": {}}

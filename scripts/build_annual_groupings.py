@@ -72,9 +72,7 @@ def _project_path(path: Path) -> str:
 def _write_json_atomic(path: Path, payload: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".part")
-    temporary.write_text(
-        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     os.replace(temporary, path)
 
 
@@ -170,14 +168,11 @@ def _validate_arithmetic_binding(
     }
     recorded = audit.get("inputs", {})
     mismatches = [
-        name
-        for name, digest in expected.items()
-        if recorded.get(name, {}).get("sha256") != digest
+        name for name, digest in expected.items() if recorded.get(name, {}).get("sha256") != digest
     ]
     if mismatches:
         raise RuntimeError(
-            "clustering inputs differ from the portfolio-arithmetic audit: "
-            + ",".join(mismatches)
+            "clustering inputs differ from the portfolio-arithmetic audit: " + ",".join(mismatches)
         )
 
 
@@ -288,9 +283,7 @@ def build_annual_groupings(
         training_complete = training.loc[training_finite]
         if training_complete.empty:
             raise ValueError(f"training window has no complete return rows for {year}")
-        training_correlation = pairwise_spearman(
-            training, minimum_paired_fraction=paired_fraction
-        )
+        training_correlation = pairwise_spearman(training, minimum_paired_fraction=paired_fraction)
         cluster_labels, merges = average_linkage_clusters(
             correlation_distance(training_correlation), group_count
         )
@@ -305,9 +298,7 @@ def build_annual_groupings(
             correlation_distance(issuer_training_correlation), group_count
         )
 
-        annual = panel.loc[
-            (panel.index >= rebalance_date) & (panel.index.year == year), active
-        ]
+        annual = panel.loc[(panel.index >= rebalance_date) & (panel.index.year == year), active]
         if annual.empty:
             raise ValueError(f"empty evaluation window for {year}")
         if not np.isfinite(annual.to_numpy(dtype=float)).all():
@@ -316,12 +307,8 @@ def build_annual_groupings(
                 f"non-finite active returns in {year}: "
                 + ",".join(date.date().isoformat() for date in bad_dates[:10])
             )
-        evaluation_correlation = pairwise_spearman(
-            annual, minimum_paired_fraction=paired_fraction
-        )
-        issuer_annual, issuer_evaluation_gics = alphabet_issuer_composite(
-            annual, annual_gics
-        )
+        evaluation_correlation = pairwise_spearman(annual, minimum_paired_fraction=paired_fraction)
+        issuer_annual, issuer_evaluation_gics = alphabet_issuer_composite(annual, annual_gics)
         if issuer_evaluation_gics != issuer_gics:
             raise AssertionError("issuer-deduplicated GICS labels changed across windows")
         issuer_evaluation_correlation = pairwise_spearman(
@@ -329,12 +316,8 @@ def build_annual_groupings(
         )
         gics_gap = dependence_gap(evaluation_correlation, annual_gics)
         cluster_gap = dependence_gap(evaluation_correlation, cluster_labels)
-        issuer_gics_gap = dependence_gap(
-            issuer_evaluation_correlation, issuer_evaluation_gics
-        )
-        issuer_cluster_gap = dependence_gap(
-            issuer_evaluation_correlation, issuer_cluster_labels
-        )
+        issuer_gics_gap = dependence_gap(issuer_evaluation_correlation, issuer_evaluation_gics)
+        issuer_cluster_gap = dependence_gap(issuer_evaluation_correlation, issuer_cluster_labels)
 
         gics_returns = group_simple_returns(annual, annual_gics)
         cluster_returns = group_simple_returns(annual, cluster_labels)
@@ -357,15 +340,16 @@ def build_annual_groupings(
             issuer_cluster_returns.group_sizes / len(issuer_evaluation_gics), axis="columns"
         ).sum(axis=1)
         issuer_gics_error = float((issuer_direct - issuer_gics_reconstructed).abs().max())
-        issuer_cluster_error = float(
-            (issuer_direct - issuer_cluster_reconstructed).abs().max()
-        )
-        if max(
-            gics_error,
-            cluster_error,
-            issuer_gics_error,
-            issuer_cluster_error,
-        ) > 1e-12:
+        issuer_cluster_error = float((issuer_direct - issuer_cluster_reconstructed).abs().max())
+        if (
+            max(
+                gics_error,
+                cluster_error,
+                issuer_gics_error,
+                issuer_cluster_error,
+            )
+            > 1e-12
+        ):
             raise AssertionError(f"annual portfolio identity failed in {year}")
 
         intersection_count = None
@@ -380,21 +364,14 @@ def build_annual_groupings(
         issuer_intersection_count = None
         issuer_consecutive_ari = None
         if previous_issuer_clusters is not None:
-            issuer_common = sorted(
-                set(previous_issuer_clusters) & set(issuer_cluster_labels)
-            )
+            issuer_common = sorted(set(previous_issuer_clusters) & set(issuer_cluster_labels))
             issuer_intersection_count = len(issuer_common)
             issuer_consecutive_ari = adjusted_rand_index(
-                {
-                    ticker: previous_issuer_clusters[ticker]
-                    for ticker in issuer_common
-                },
+                {ticker: previous_issuer_clusters[ticker] for ticker in issuer_common},
                 {ticker: issuer_cluster_labels[ticker] for ticker in issuer_common},
             )
         nmi = normalized_mutual_information(cluster_labels, annual_gics)
-        issuer_nmi = normalized_mutual_information(
-            issuer_cluster_labels, issuer_evaluation_gics
-        )
+        issuer_nmi = normalized_mutual_information(issuer_cluster_labels, issuer_evaluation_gics)
         cluster_sizes = {
             key: int(value)
             for key, value in pd.Series(cluster_labels).value_counts().sort_index().items()
@@ -571,13 +548,9 @@ def build_annual_groupings(
         ],
         "years": assignment_years,
     }
-    differences = [
-        row["cluster_minus_gics_pair_weighted_gap"] for row in diagnostic_years
-    ]
+    differences = [row["cluster_minus_gics_pair_weighted_gap"] for row in diagnostic_years]
     issuer_differences = [
-        row["issuer_deduplicated_robustness"][
-            "cluster_minus_gics_pair_weighted_gap"
-        ]
+        row["issuer_deduplicated_robustness"]["cluster_minus_gics_pair_weighted_gap"]
         for row in diagnostic_years
     ]
     diagnostics = {
@@ -617,8 +590,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--returns",
         type=Path,
-        default=PROJECT_ROOT
-        / "data/processed/portfolio_constituent_simple_returns.parquet",
+        default=PROJECT_ROOT / "data/processed/portfolio_constituent_simple_returns.parquet",
     )
     parser.add_argument(
         "--active-universe",
@@ -668,9 +640,7 @@ def main() -> int:
     clustering_config = _validate_protocol(model_config)
     gate = json.loads(args.foundation_status.read_text(encoding="utf-8"))
     scope = _reporting_scope(gate)
-    arithmetic_audit = json.loads(
-        args.portfolio_arithmetic_audit.read_text(encoding="utf-8")
-    )
+    arithmetic_audit = json.loads(args.portfolio_arithmetic_audit.read_text(encoding="utf-8"))
     _validate_arithmetic_binding(
         arithmetic_audit, args.returns, args.active_universe, args.universe
     )

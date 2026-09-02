@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pandas as pd
 
-
 MODULE_PATH = Path(__file__).resolve().parents[1] / "scripts" / "build_return_panel.py"
 SPEC = importlib.util.spec_from_file_location("build_return_panel", MODULE_PATH)
 MODULE = importlib.util.module_from_spec(SPEC)
@@ -34,10 +33,18 @@ class ReturnConstructionTests(unittest.TestCase):
 
     def test_split_and_dividend_total_returns(self):
         splits = pd.DataFrame(
-            {"research_ticker": ["TEST"], "date": pd.to_datetime(["2020-01-03"]), "split_factor": [2.0]}
+            {
+                "research_ticker": ["TEST"],
+                "date": pd.to_datetime(["2020-01-03"]),
+                "split_factor": [2.0],
+            }
         )
         dividends = pd.DataFrame(
-            {"research_ticker": ["TEST"], "date": pd.to_datetime(["2020-01-06"]), "cash_dividend": [2.0]}
+            {
+                "research_ticker": ["TEST"],
+                "date": pd.to_datetime(["2020-01-06"]),
+                "cash_dividend": [2.0],
+            }
         )
         result = MODULE.construct_returns(self.base_prices(), splits, dividends)
         self.assertAlmostEqual(result.loc[1, "total_return"], 0.02)
@@ -88,7 +95,9 @@ class ReturnConstructionTests(unittest.TestCase):
 
     def test_terminal_position_is_cash_until_rebalance(self):
         index = pd.to_datetime(["2020-05-08", "2020-05-11", "2020-12-31", "2021-01-04"])
-        stock = pd.DataFrame({"TEST": [0.01, float("nan"), float("nan"), float("nan")]}, index=index)
+        stock = pd.DataFrame(
+            {"TEST": [0.01, float("nan"), float("nan"), float("nan")]}, index=index
+        )
         result = MODULE.build_portfolio_panel(
             stock,
             {
@@ -297,11 +306,12 @@ class ReturnConstructionTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            splits, _, records = MODULE.aggregate_actions_v2(
-                reference_root, segments, config
-            )
+            splits, _, records = MODULE.aggregate_actions_v2(reference_root, segments, config)
         self.assertFalse(
-            ((splits["research_ticker"] == "IBM") & (splits["date"] == pd.Timestamp("2021-11-04"))).any()
+            (
+                (splits["research_ticker"] == "IBM")
+                & (splits["date"] == pd.Timestamp("2021-11-04"))
+            ).any()
         )
         ibm = next(record for record in records if record["event_id"].startswith("P4947"))
         self.assertEqual(ibm["typed_event"], "spin_off")

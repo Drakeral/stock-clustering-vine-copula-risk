@@ -1,5 +1,5 @@
-import math
 import json
+import math
 import tomllib
 import unittest
 from pathlib import Path
@@ -33,7 +33,6 @@ from scripts.research_methods import (
     var_exceptions,
 )
 
-
 ROOT = Path(__file__).resolve().parents[1]
 
 
@@ -56,7 +55,9 @@ class PortfolioArithmeticTests(unittest.TestCase):
         pd.testing.assert_frame_equal(converted, self.simple)
         grouped = group_simple_returns(converted, self.labels)
         result = reconstruct_primary_portfolio(converted, self.labels)
-        np.testing.assert_allclose(result.direct_simple_return, result.grouped_simple_return, atol=1e-12)
+        np.testing.assert_allclose(
+            result.direct_simple_return, result.grouped_simple_return, atol=1e-12
+        )
         pd.testing.assert_frame_equal(group_log_returns(grouped), np.log1p(grouped.simple_returns))
 
     def test_buy_and_hold_weights_drift(self):
@@ -108,9 +109,7 @@ class DependenceTests(unittest.TestCase):
         with (ROOT / "data/raw/universe_sp100_2020-01-02.json").open() as handle:
             universe = json.load(handle)
         # DOW is the sole initial-coverage exclusion after its lineage is corrected.
-        sectors = [
-            row["gics_sector"] for row in universe["constituents"] if row["ticker"] != "DOW"
-        ]
+        sectors = [row["gics_sector"] for row in universe["constituents"] if row["ticker"] != "DOW"]
         counts = pd.Series(sectors).value_counts()
         within = int(sum(count * (count - 1) // 2 for count in counts))
         between = math.comb(len(sectors), 2) - within
@@ -220,9 +219,7 @@ class RiskAndInferenceTests(unittest.TestCase):
         self.assertEqual(config["inference"]["dm_hac_lag"], 7)
         self.assertEqual(config["forecast"]["var_confidence_levels"], [0.95, 0.975, 0.99])
         self.assertEqual(config["clustering"]["training_window_calendar_years"], 3)
-        self.assertEqual(
-            config["clustering"]["nmi_normalization"], "arithmetic_mean_entropy"
-        )
+        self.assertEqual(config["clustering"]["nmi_normalization"], "arithmetic_mean_entropy")
         with (ROOT / "config/schemas/forecast_record.schema.json").open() as handle:
             schema = json.load(handle)
         required = set(schema["required"])

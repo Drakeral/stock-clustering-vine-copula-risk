@@ -19,7 +19,6 @@ import re
 from pathlib import Path
 from typing import Any
 
-
 GICS_SECTORS = (
     "Communication Services",
     "Consumer Discretionary",
@@ -85,9 +84,7 @@ def canonical_json(payload: Any) -> str:
     return json.dumps(payload, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
 
 
-def revision_record(
-    path: Path, project_root: Path | None = None
-) -> tuple[dict[str, Any], str]:
+def revision_record(path: Path, project_root: Path | None = None) -> tuple[dict[str, Any], str]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     try:
         page = payload["query"]["pages"][0]
@@ -100,7 +97,9 @@ def revision_record(
         try:
             payload_path = resolved.relative_to(project_root.resolve()).as_posix()
         except ValueError as exc:
-            raise ValueError(f"Revision payload must be archived inside the project: {path}") from exc
+            raise ValueError(
+                f"Revision payload must be archived inside the project: {path}"
+            ) from exc
     else:
         payload_path = path.as_posix()
     return {
@@ -229,9 +228,7 @@ def read_licensed_universe(path: Path) -> list[dict[str, str]]:
     for unique_field in ("security_id", "ticker", "source_record_id"):
         values = [row[unique_field] for row in rows]
         if len(values) != len(set(values)):
-            raise ValueError(
-                f"Licensed-universe extract contains duplicate {unique_field} values"
-            )
+            raise ValueError(f"Licensed-universe extract contains duplicate {unique_field} values")
     required_nonempty = set(LICENSED_COLUMNS)
     for index, row in enumerate(rows, start=2):
         empty = sorted(field for field in required_nonempty if not row[field])
@@ -245,13 +242,10 @@ def read_licensed_universe(path: Path) -> list[dict[str, str]]:
                 f"Licensed-universe row {index} has a non-ISO membership/as-of date"
             ) from exc
         if membership_date > as_of_date:
-            raise ValueError(
-                f"Licensed-universe row {index} has membership_date after as_of_date"
-            )
+            raise ValueError(f"Licensed-universe row {index} has membership_date after as_of_date")
         if row["gics_sector"] not in GICS_SECTORS:
             raise ValueError(
-                f"Licensed-universe row {index} has unsupported GICS sector: "
-                f"{row['gics_sector']!r}"
+                f"Licensed-universe row {index} has unsupported GICS sector: {row['gics_sector']!r}"
             )
     return sorted(rows, key=lambda row: row["ticker"])
 
@@ -277,7 +271,12 @@ def reconcile_licensed_universe(
         for field in ("gics_sector", "gics_sub_industry"):
             if left[field] != right[field]:
                 differences.append(
-                    {"ticker": ticker, "field": field, "secondary": left[field], "licensed": right[field]}
+                    {
+                        "ticker": ticker,
+                        "field": field,
+                        "secondary": left[field],
+                        "licensed": right[field],
+                    }
                 )
         if right["as_of_date"] != as_of_date:
             differences.append(
@@ -288,7 +287,11 @@ def reconcile_licensed_universe(
                     "licensed": right["as_of_date"],
                 }
             )
-    status = "pass" if not missing and not extra and not differences else "blocked_unresolved_differences"
+    status = (
+        "pass"
+        if not missing and not extra and not differences
+        else "blocked_unresolved_differences"
+    )
     return {
         "status": status,
         "missing_from_licensed": missing,
@@ -463,9 +466,13 @@ def main() -> None:
     if len(records) != args.expected_securities:
         raise ValueError(f"Expected {args.expected_securities} securities, found {len(records)}")
     if len(sectors) != args.expected_sectors:
-        raise ValueError(f"Expected {args.expected_sectors} sectors, found {len(sectors)}: {sectors}")
+        raise ValueError(
+            f"Expected {args.expected_sectors} sectors, found {len(sectors)}: {sectors}"
+        )
 
-    licensed = read_licensed_universe(args.licensed_universe_csv) if args.licensed_universe_csv else None
+    licensed = (
+        read_licensed_universe(args.licensed_universe_csv) if args.licensed_universe_csv else None
+    )
     reconciliation = reconcile_licensed_universe(records, licensed, args.as_of_date)
     license_metadata_complete = bool(args.licensed_source_name and args.licensed_license_reference)
     provenance_pass = reconciliation["status"] == "pass" and license_metadata_complete
@@ -550,7 +557,9 @@ def main() -> None:
         "gate": "universe_provenance",
         "status": provenance_status,
         "blockers": blockers,
-        "source_manifest_sha256": hashlib.sha256(canonical_json(source_manifest).encode()).hexdigest(),
+        "source_manifest_sha256": hashlib.sha256(
+            canonical_json(source_manifest).encode()
+        ).hexdigest(),
         "public_universe_sha256": hashlib.sha256(canonical_json(universe).encode()).hexdigest(),
         "reconciliation": public_reconciliation_summary(reconciliation),
     }
