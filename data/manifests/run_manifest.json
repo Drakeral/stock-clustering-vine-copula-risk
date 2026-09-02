@@ -38,9 +38,9 @@
       "status": "present"
     },
     {
-      "bytes": 3488,
+      "bytes": 3882,
       "path": "config/model_config.toml",
-      "sha256": "b3e3d4e85b16c07ca567fab7d55b86c971b02df603553e9d547b8a80b8bdc8b0",
+      "sha256": "dda38e2a9c91bbac07fae6310e4b6500d0eb87b01c64d565e7b526183e2a91fc",
       "status": "present"
     },
     {
@@ -84,9 +84,9 @@
     "run_scope": "provisional_research_results",
     "status": "provisional_pass"
   },
-  "generated_at_utc": "2026-09-01T16:25:17.246863+00:00",
+  "generated_at_utc": "2026-09-02T13:48:41.656921+00:00",
   "git": {
-    "commit": "1c97b03f104666979f5f0fb75276c20be0df5623",
+    "commit": "7eca0c1908b6b45cce2a972c6870a9c51bafce44",
     "commit_present": true,
     "repository_initialized": true,
     "worktree_clean": true
@@ -140,6 +140,12 @@
   "manifest_type": "research_run_manifest",
   "outputs": [
     {
+      "bytes": 25556,
+      "path": "data/audit/clustering_diagnostics.json",
+      "sha256": "c44d3a82f4cb99d8c0e4e1ae1bc6027259a790166599904e15f054dfb186e91f",
+      "status": "present"
+    },
+    {
       "bytes": 2038,
       "path": "data/audit/current_gate_status.json",
       "sha256": "66df582e2ba6255c8f2e975c0739480562203fd85de06fa24dea0e58b3dd98b9",
@@ -173,6 +179,18 @@
       "bytes": 14741,
       "path": "data/processed/active_universe_by_year.json",
       "sha256": "ed3ef62c7f253fcf1af987a589987a63f74d9130e533dcb4c283a661849ba626",
+      "status": "present"
+    },
+    {
+      "bytes": 516573,
+      "path": "data/processed/annual_group_assignments.json",
+      "sha256": "0992a0ddfe38eca1aaf9b2e3b80aedd87acedd57240696c5e48f091eef0be34e",
+      "status": "present"
+    },
+    {
+      "bytes": 2662489,
+      "path": "data/processed/annual_group_returns.parquet",
+      "sha256": "21b467e74da5e585f098a96dec0ed14e4745ae3ba04dc25461f7a1b6dee08cb9",
       "status": "present"
     },
     {
