@@ -38,9 +38,9 @@
       "status": "present"
     },
     {
-      "bytes": 3882,
+      "bytes": 4328,
       "path": "config/model_config.toml",
-      "sha256": "dda38e2a9c91bbac07fae6310e4b6500d0eb87b01c64d565e7b526183e2a91fc",
+      "sha256": "b154a15cc5bf329a29cfeea7072a7183db2312c34b680a9f7c67c91b45c6ec2b",
       "status": "present"
     },
     {
@@ -62,6 +62,18 @@
       "status": "present"
     },
     {
+      "bytes": 1975,
+      "path": "config/schemas/marginal_daily_record.schema.json",
+      "sha256": "faa3dcf8434317e87450cd76c5df9f426e1ebdcfe20bfc04b3c6d5d15ed7250a",
+      "status": "present"
+    },
+    {
+      "bytes": 2818,
+      "path": "config/schemas/marginal_refit_record.schema.json",
+      "sha256": "a566264c881a9a703eeb82e9b2c253170e3ade73b00aec4879bea024c3ca94f7",
+      "status": "present"
+    },
+    {
       "bytes": 3983,
       "path": "config/security_master.json",
       "sha256": "cec884570c4367699a10a7e68aa9451c6a515a11b84f5af1313aa70e55f6307b",
@@ -70,6 +82,7 @@
   ],
   "environment": {
     "direct_dependency_versions": {
+      "arch": "7.2.0",
       "boto3": "1.43.72",
       "numpy": "2.5.2",
       "pandas": "2.3.3",
@@ -84,9 +97,9 @@
     "run_scope": "provisional_research_results",
     "status": "provisional_pass"
   },
-  "generated_at_utc": "2026-09-02T14:10:07.711199+00:00",
+  "generated_at_utc": "2026-09-02T15:05:17.203352+00:00",
   "git": {
-    "commit": "58b42e5031ac84e128839a9ac9f4b9becd86b356",
+    "commit": "77463e647291545600da4955f8fd70556d884be1",
     "commit_present": true,
     "repository_initialized": true,
     "worktree_clean": true
@@ -125,15 +138,15 @@
       "status": "present"
     },
     {
-      "bytes": 478,
+      "bytes": 496,
       "path": "pyproject.toml",
-      "sha256": "9e7c6e05eac8de150d67e4495c19ff90cc002123ceacb3ffde6ce6c409b0e99d",
+      "sha256": "4d2b773644a60273bddd17eeb476cfb5de10a029e7e308b7a4110283ce565ab8",
       "status": "present"
     },
     {
-      "bytes": 34639,
+      "bytes": 63198,
       "path": "uv.lock",
-      "sha256": "7ad552257b32bf8412ba0f8a5b55fc5143958216e2b0afc39b45856e177309eb",
+      "sha256": "9a2ea00d54d6155f18db80321364e46a75763cc7ab300d45711786bda49145ca",
       "status": "present"
     }
   ],
@@ -155,6 +168,12 @@
       "bytes": 45983,
       "path": "data/audit/data_quality_report.json",
       "sha256": "17031bfb7ff67b0a5540b47bac567d73ee9c01109cbd04a1c4cfde1a71741812",
+      "status": "present"
+    },
+    {
+      "bytes": 2048,
+      "path": "data/audit/marginal_model_quality.json",
+      "sha256": "6f82e572e00134d4240cecf5096580eb6451ea299f702d6fe6377a4401c17916",
       "status": "present"
     },
     {
@@ -209,6 +228,18 @@
       "bytes": 69294,
       "path": "data/processed/final_universe.json",
       "sha256": "9409bbfbc4fc567ad4da0841c46266818af129e9e0ef9431af29e2740c352943",
+      "status": "present"
+    },
+    {
+      "bytes": 1956214,
+      "path": "data/processed/marginal_daily_forecasts.parquet",
+      "sha256": "f2f4d0c529960c4f263f29b3b72dc4e3789f71427f434e4f7c3a7b7dd698abe0",
+      "status": "present"
+    },
+    {
+      "bytes": 453685,
+      "path": "data/processed/marginal_refits.parquet",
+      "sha256": "3ab07d0c6f6acccf702122d858a352ae81112a6a6da34279e60022a23638117e",
       "status": "present"
     },
     {
