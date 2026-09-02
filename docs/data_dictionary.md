@@ -107,7 +107,7 @@ Long-form daily group-return panel used by the later marginal and copula models.
 
 | Field | Type | Definition |
 |---|---|---|
-| `date` | date | Out-of-sample trading date. |
+| `date` | date | Trading date within the row's training or evaluation window. |
 | `year` | integer | Grouping/model year whose annual labels apply; dates can precede this year for training rows. |
 | `universe_variant` | categorical string | `security_primary` or the 50/50 Alphabet `issuer_deduplicated_robustness`. |
 | `sample_role` | categorical string | `training` for the preceding three-year window or `evaluation` for the grouping year. |
