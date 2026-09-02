@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Reproducible data and modelling pipeline for the FE5110 project"
 requires-python = ">=3.12,<3.14"
 dependencies = [
+  "arch>=7.2,<8",
   "boto3>=1.34,<2",
   "numpy>=1.26,<3",
   "pandas>=2.2,<3",

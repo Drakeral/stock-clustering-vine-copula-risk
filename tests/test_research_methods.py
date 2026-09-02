@@ -25,6 +25,7 @@ from scripts.research_methods import (
     holm_adjust,
     kupiec_unconditional_coverage,
     margin_fit_is_acceptable,
+    margin_fit_rejection_reasons,
     pairwise_spearman,
     quantile_loss,
     reconstruct_primary_portfolio,
@@ -179,6 +180,24 @@ class RiskAndInferenceTests(unittest.TestCase):
                 student_t_df=6,
                 forecast_variance=0.02,
             )
+        )
+        self.assertEqual(
+            margin_fit_rejection_reasons(
+                phi=0.99,
+                omega=-0.01,
+                alpha=-0.1,
+                beta=1.1,
+                student_t_df=2.0,
+                forecast_variance=0.0,
+            ),
+            [
+                "ar_absolute_limit",
+                "nonpositive_omega",
+                "negative_alpha",
+                "garch_persistence_limit",
+                "student_t_df_minimum",
+                "nonpositive_forecast_variance",
+            ],
         )
         self.assertTrue(fallback_fraction_passes(1, 100))
         self.assertFalse(fallback_fraction_passes(2, 100))

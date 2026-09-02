@@ -136,6 +136,7 @@ uv run python scripts/build_return_panel.py
 uv run python scripts/validate_portfolio_arithmetic.py
 uv run python scripts/update_foundation_status.py --require-modelling-ready
 uv run python scripts/build_annual_groupings.py
+uv run python scripts/build_marginal_models.py
 uv run ruff check scripts tests
 uv run ruff format --check scripts tests
 uv run python -m unittest discover -s tests -v
@@ -202,8 +203,16 @@ uv run python scripts/generate_run_manifest.py
 - `data/processed/annual_group_returns.parquet`: simple and log group returns,
   group sizes, and portfolio weights across both training and evaluation windows
   for the security-level primary universe and GOOG/GOOGL issuer-deduplicated
-  robustness variant; and
+  robustness variant;
+- `data/processed/marginal_refits.parquet`: one record per primary-universe
+  group-month, including its leakage-free training bounds, selected marginal
+  specification, parameters, convergence diagnostics, and complete fallback log;
+- `data/processed/marginal_daily_forecasts.parquet`: daily one-step conditional
+  group means, variances, standardized residuals, and clipped probability integral
+  transforms for copula estimation; and
 - `data/audit/clustering_diagnostics.json`: dependence gaps, ARI, NMI, pair
   counts, portfolio-identity errors, and hashes of the grouping artifacts;
+- `data/audit/marginal_model_quality.json`: marginal coverage, fallback incidence,
+  PIT bounds, output hashes, and the frozen 1% EWMA quality gate;
 - `data/audit/`: separate provenance, input-integrity, construction, and current
   readiness reports.

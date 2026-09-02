@@ -112,6 +112,25 @@ attempt, constant-mean GARCH-t, then EWMA (`lambda=0.94`) with empirical
 standardised innovations. An EWMA share over 1% of group-month fits fails the
 modelling-quality gate.
 
+For numerical estimation, group log returns are multiplied by 100 and converted
+back to decimal units in stored daily forecasts. The initial optimizer receives
+at most 1,000 iterations. The deterministic AR-GARCH-t retry receives at most
+3,000 iterations and starts from an OLS AR(1) estimate clipped to `[-0.95,0.95]`,
+`alpha=0.05`, `beta=0.90`, Student-t degrees of freedom 8, and
+`omega=0.05` times the residual variance. The constant-mean GARCH-t fallback uses
+the analogous sample-mean start. The frozen `alpha + beta < 0.999` admissible
+region is imposed as an optimizer constraint on every GARCH attempt and is
+checked again on the returned parameters and first forecast variance. Parameters
+are fixed within each month while
+the conditional mean and variance states update daily from returns observed up
+to the preceding date.
+
+The EWMA fallback uses the training-sample mean, variance with `ddof=1`, and
+`lambda=0.94`. Its innovation distribution is the frozen training-sample
+empirical distribution; PITs use a midrank empirical CDF and are clipped to
+`[1e-6,1-1e-6]`. Student-t PITs use the standardized, unit-variance Student-t
+distribution fitted by the marginal model and the same clipping bounds.
+
 The primary 11-dimensional R-vine is truncated after tree 3; a full ten-tree vine
 is a robustness model. Structure selection uses the Dißmann sequential
 maximum-spanning-tree procedure on absolute empirical Kendall tau. Pair families

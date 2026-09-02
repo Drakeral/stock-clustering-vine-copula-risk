@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/fe5110/marginal_daily_record.schema.json",
+  "title": "FE5110 daily filtered marginal record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "date",
+    "year",
+    "month",
+    "universe_variant",
+    "grouping_id",
+    "group_id",
+    "group_size",
+    "portfolio_weight",
+    "refit_id",
+    "selected_method",
+    "fallback_level",
+    "conditional_mean_log_return",
+    "conditional_volatility_log_return",
+    "conditional_variance_log_return",
+    "realised_log_return",
+    "standardized_residual",
+    "pit",
+    "pit_was_clipped",
+    "forecast_status"
+  ],
+  "properties": {
+    "date": {"type": "string", "format": "date"},
+    "year": {"type": "integer", "minimum": 2020, "maximum": 2025},
+    "month": {"type": "integer", "minimum": 1, "maximum": 12},
+    "universe_variant": {"enum": ["security_primary", "issuer_deduplicated_robustness"]},
+    "grouping_id": {"enum": ["gics_sector", "hierarchical_cluster"]},
+    "group_id": {"type": "string", "minLength": 1},
+    "group_size": {"type": "integer", "minimum": 1},
+    "portfolio_weight": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+    "refit_id": {"type": "string", "minLength": 1},
+    "selected_method": {
+      "enum": ["ar_garch_t", "ar_garch_t_retry", "constant_mean_garch_t", "ewma_empirical"]
+    },
+    "fallback_level": {"type": "integer", "minimum": 0, "maximum": 3},
+    "conditional_mean_log_return": {"type": "number"},
+    "conditional_volatility_log_return": {"type": "number", "exclusiveMinimum": 0},
+    "conditional_variance_log_return": {"type": "number", "exclusiveMinimum": 0},
+    "realised_log_return": {"type": "number"},
+    "standardized_residual": {"type": "number"},
+    "pit": {"type": "number", "minimum": 0.000001, "maximum": 0.999999},
+    "pit_was_clipped": {"type": "boolean"},
+    "forecast_status": {"enum": ["ok", "fallback"]}
+  }
+}

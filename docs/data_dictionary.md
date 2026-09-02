@@ -122,6 +122,28 @@ Long-form daily group-return panel used by the later marginal and copula models.
 and reports annual dependence gaps, pair counts, ARI, NMI, and the direct-versus-
 grouped primary-portfolio arithmetic error.
 
+### `data/processed/marginal_refits.parquet`
+
+One row per year, month, grouping system, and group in the primary security
+universe. Each record contains the exact three-calendar-year training bounds,
+training/evaluation counts, fitted parameters in the documented 100-times return
+scale, convergence information, the selected method, fallback level, and a JSON
+log of every attempted fit. The schema is
+`config/schemas/marginal_refit_record.schema.json`.
+
+### `data/processed/marginal_daily_forecasts.parquet`
+
+One row per evaluation date and group. Conditional means, volatilities, and
+variances are stored in decimal log-return units. The realized group log return,
+standardized residual, clipped PIT, monthly `refit_id`, method, and fallback status
+are retained so the next copula stage can reproduce its inputs without refitting
+the margins. The schema is `config/schemas/marginal_daily_record.schema.json`.
+
+`data/audit/marginal_model_quality.json` binds both outputs to the annual grouping
+panel, grouping audit, foundation status, and frozen model configuration. It fails
+for duplicate or incomplete forecasts, a missing monthly refit, non-finite output,
+an out-of-bound PIT, or an EWMA share above 1% of group-month fits.
+
 ## Lifecycle policy
 
 Every XNYS session between a security's explicit listing and removal dates is classified as `active_price`, `verified_halt`, `terminal_cash`, `removed`, or `unexplained_missing`; pre-listing dates are counted as `pre_inception`. A verified halt with no corporate action receives a stale synthetic price and zero return, while the cumulative price move remains on resumption as a `gap_bridge_return`. A corporate action on a missing price date requires review and cannot be stale-filled automatically.

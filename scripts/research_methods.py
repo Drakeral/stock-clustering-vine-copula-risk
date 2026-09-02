@@ -749,17 +749,49 @@ def margin_fit_is_acceptable(
 ) -> bool:
     """Apply the preregistered numerical/stability constraints to a margin fit."""
 
-    values = np.asarray([phi, omega, alpha, beta, student_t_df, forecast_variance], dtype=float)
-    return bool(
-        np.isfinite(values).all()
-        and abs(phi) < 0.98
-        and omega > 0
-        and alpha >= 0
-        and beta >= 0
-        and alpha + beta < 0.999
-        and student_t_df > 2.1
-        and forecast_variance > 0
+    return not margin_fit_rejection_reasons(
+        phi=phi,
+        omega=omega,
+        alpha=alpha,
+        beta=beta,
+        student_t_df=student_t_df,
+        forecast_variance=forecast_variance,
     )
+
+
+def margin_fit_rejection_reasons(
+    *,
+    phi: float,
+    omega: float,
+    alpha: float,
+    beta: float,
+    student_t_df: float,
+    forecast_variance: float,
+    ar_absolute_limit: float = 0.98,
+    persistence_limit: float = 0.999,
+    student_t_df_minimum: float = 2.1,
+) -> list[str]:
+    """Return explicit reasons a GARCH-t fit violates the frozen gate."""
+
+    values = np.asarray([phi, omega, alpha, beta, student_t_df, forecast_variance], dtype=float)
+    if not np.isfinite(values).all():
+        return ["nonfinite_parameter_or_forecast"]
+    reasons: list[str] = []
+    if abs(phi) >= ar_absolute_limit:
+        reasons.append("ar_absolute_limit")
+    if omega <= 0:
+        reasons.append("nonpositive_omega")
+    if alpha < 0:
+        reasons.append("negative_alpha")
+    if beta < 0:
+        reasons.append("negative_beta")
+    if alpha + beta >= persistence_limit:
+        reasons.append("garch_persistence_limit")
+    if student_t_df <= student_t_df_minimum:
+        reasons.append("student_t_df_minimum")
+    if forecast_variance <= 0:
+        reasons.append("nonpositive_forecast_variance")
+    return reasons
 
 
 def fallback_fraction_passes(

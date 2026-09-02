@@ -1,0 +1,65 @@
+{
+  "daily_forecast_count": 33176,
+  "ewma_fit_count": 4,
+  "ewma_fit_fraction": 0.0025252525252525255,
+  "fallback_fit_count": 15,
+  "gate_name": "marginal_model_quality_v1",
+  "inputs": {
+    "annual_group_returns": {
+      "path": "data/processed/annual_group_returns.parquet",
+      "sha256": "21b467e74da5e585f098a96dec0ed14e4745ae3ba04dc25461f7a1b6dee08cb9"
+    },
+    "clustering_audit": {
+      "path": "data/audit/clustering_diagnostics.json",
+      "sha256": "c44d3a82f4cb99d8c0e4e1ae1bc6027259a790166599904e15f054dfb186e91f"
+    },
+    "foundation_status": {
+      "path": "data/audit/current_gate_status.json",
+      "sha256": "66df582e2ba6255c8f2e975c0739480562203fd85de06fa24dea0e58b3dd98b9"
+    },
+    "model_config": {
+      "path": "config/model_config.toml",
+      "sha256": "b154a15cc5bf329a29cfeea7072a7183db2312c34b680a9f7c67c91b45c6ec2b"
+    }
+  },
+  "issues": [],
+  "maximum_ewma_fit_fraction": 0.01,
+  "method": {
+    "estimation_return_scale": 100.0,
+    "ewma_lambda": 0.94,
+    "fallback_order": [
+      "retry_ar_garch_t",
+      "constant_mean_garch_t",
+      "ewma_empirical"
+    ],
+    "pit_clip_lower": 1e-06,
+    "pit_clip_upper": 0.999999,
+    "primary": "AR(1)-GARCH(1,1)-Student-t"
+  },
+  "outputs": {
+    "marginal_daily_forecasts": {
+      "path": "data/processed/marginal_daily_forecasts.parquet",
+      "rows": 33176,
+      "sha256": "f2f4d0c529960c4f263f29b3b72dc4e3789f71427f434e4f7c3a7b7dd698abe0"
+    },
+    "marginal_refits": {
+      "path": "data/processed/marginal_refits.parquet",
+      "rows": 1584,
+      "sha256": "3ab07d0c6f6acccf702122d858a352ae81112a6a6da34279e60022a23638117e"
+    }
+  },
+  "pit_clipped_count": 0,
+  "pit_maximum": 0.9999959872265248,
+  "pit_minimum": 2.10978912193416e-06,
+  "refit_count": 1584,
+  "reporting_scope": "provisional_research_results",
+  "schema_version": 1,
+  "selected_method_counts": {
+    "ar_garch_t": 1569,
+    "ar_garch_t_retry": 8,
+    "constant_mean_garch_t": 3,
+    "ewma_empirical": 4
+  },
+  "status": "pass",
+  "universe_variant": "security_primary"
+}

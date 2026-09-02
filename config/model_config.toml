@@ -37,10 +37,23 @@ es_boundary_method = "fractional_order_statistic"
 [marginal]
 primary = "AR(1)-GARCH(1,1)-Student-t"
 fallback_order = ["retry_ar_garch_t", "constant_mean_garch_t", "ewma_empirical"]
+estimation_return_scale = 100.0
+initial_optimizer_max_iterations = 1000
+retry_optimizer_max_iterations = 3000
+optimizer_tolerance = 1e-8
+retry_start_phi_clip = 0.95
+retry_start_alpha = 0.05
+retry_start_beta = 0.90
+retry_start_student_t_df = 8.0
 ar_absolute_limit = 0.98
 garch_persistence_limit = 0.999
 student_t_df_minimum = 2.1
 ewma_lambda = 0.94
+ewma_mean = "constant_training_mean"
+ewma_initial_variance = "sample_variance_ddof_1"
+ewma_innovation_distribution = "frozen_training_empirical_midrank"
+pit_clip_lower = 1e-6
+pit_clip_upper = 0.999999
 maximum_ewma_fit_fraction = 0.01
 drop_ar_for_insignificant_p_value = false
 
