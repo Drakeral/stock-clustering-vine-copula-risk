@@ -72,11 +72,20 @@ common_random_numbers = true
 [clustering]
 primary_method = "average_linkage_spearman_distance"
 distance = "sqrt((1-rho)/2)"
+training_window_calendar_years = 3
+evaluation_start_year = 2020
+evaluation_end_year = 2025
 group_count_rule = "nonempty_gics_sector_count"
 minimum_paired_fraction = 0.80
+linkage_update = "unweighted_pair_group_average"
+linkage_tie_break = "lexicographic_sorted_member_tuples"
+cluster_label_order = "lexicographic_sorted_member_tuples"
 dependence_gap_weighting = "equal_unordered_security_pair"
 singleton_within_treatment = "exclude_not_zero"
 singleton_between_treatment = "include"
+ari_scope = "consecutive_year_active_set_intersection"
+nmi_scope = "annual_active_universe"
+nmi_normalization = "arithmetic_mean_entropy"
 issuer_robustness = "equal_weight_GOOG_GOOGL_simple_returns"
 
 [inference]

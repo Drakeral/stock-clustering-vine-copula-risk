@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Mapping, Sequence
+from typing import Any, Mapping, Sequence
 
 import numpy as np
 import pandas as pd
@@ -261,6 +261,195 @@ def dependence_gap(correlation: pd.DataFrame, labels: Mapping[str, str]) -> Depe
         group_balanced_between_mean=balanced_between,
         group_balanced_gap=balanced_within - balanced_between,
     )
+
+
+def correlation_distance(correlation: pd.DataFrame) -> pd.DataFrame:
+    """Apply the frozen ``sqrt((1-rho)/2)`` stock-correlation distance."""
+
+    columns = list(correlation.columns)
+    if list(correlation.index) != columns:
+        raise ValueError("correlation matrix must be square with identically ordered labels")
+    values = correlation.to_numpy(dtype=float)
+    if not np.isfinite(values).all() or not np.allclose(values, values.T, atol=1e-12):
+        raise ValueError("correlation matrix must be finite and symmetric")
+    if bool((values < -1.0 - 1e-12).any()) or bool((values > 1.0 + 1e-12).any()):
+        raise ValueError("correlations must lie in [-1, 1]")
+    distances = np.sqrt(np.maximum(0.0, (1.0 - np.clip(values, -1.0, 1.0)) / 2.0))
+    np.fill_diagonal(distances, 0.0)
+    return pd.DataFrame(distances, index=columns, columns=columns)
+
+
+def average_linkage_clusters(
+    distance: pd.DataFrame,
+    cluster_count: int,
+) -> tuple[dict[str, str], list[dict[str, Any]]]:
+    """Deterministic UPGMA clustering with lexicographic tie-breaking.
+
+    The Lance-Williams update is weighted by the numbers of securities in the
+    two merged clusters, so each original unordered security pair has equal
+    weight. Final cluster IDs are ordered by their sorted member tuples and do
+    not depend on transient merge IDs.
+    """
+
+    names = list(distance.columns)
+    if list(distance.index) != names:
+        raise ValueError("distance matrix must be square with identically ordered labels")
+    if len(names) != len(set(names)):
+        raise ValueError("distance matrix labels must be unique")
+    if not 1 <= cluster_count <= len(names):
+        raise ValueError("cluster_count must lie between one and the number of securities")
+    values = distance.to_numpy(dtype=float)
+    if not np.isfinite(values).all() or not np.allclose(values, values.T, atol=1e-12):
+        raise ValueError("distance matrix must be finite and symmetric")
+    if bool((values < -1e-12).any()) or not np.allclose(np.diag(values), 0.0, atol=1e-12):
+        raise ValueError("distance matrix must be nonnegative with a zero diagonal")
+
+    ordered_names = sorted(names)
+    source = distance.loc[ordered_names, ordered_names]
+    clusters: dict[int, tuple[str, ...]] = {
+        index: (name,) for index, name in enumerate(ordered_names)
+    }
+    sizes = {index: 1 for index in clusters}
+    pair_distances: dict[tuple[int, int], float] = {}
+    for left in range(len(ordered_names)):
+        for right in range(left + 1, len(ordered_names)):
+            pair_distances[(left, right)] = float(source.iloc[left, right])
+
+    def key(left: int, right: int) -> tuple[int, int]:
+        return (left, right) if left < right else (right, left)
+
+    merges: list[dict[str, Any]] = []
+    next_id = len(ordered_names)
+    while len(clusters) > cluster_count:
+        candidates = []
+        cluster_ids = list(clusters)
+        for offset, left in enumerate(cluster_ids):
+            for right in cluster_ids[offset + 1 :]:
+                first_members, second_members = sorted((clusters[left], clusters[right]))
+                candidates.append(
+                    (
+                        pair_distances[key(left, right)],
+                        first_members,
+                        second_members,
+                        left,
+                        right,
+                    )
+                )
+        (
+            merge_distance,
+            canonical_left_members,
+            canonical_right_members,
+            left,
+            right,
+        ) = min(candidates)
+        left_members = clusters[left]
+        right_members = clusters[right]
+        left_size = sizes[left]
+        right_size = sizes[right]
+        other_ids = [identifier for identifier in clusters if identifier not in {left, right}]
+        new_distances = {
+            other: (
+                left_size * pair_distances[key(left, other)]
+                + right_size * pair_distances[key(right, other)]
+            )
+            / (left_size + right_size)
+            for other in other_ids
+        }
+        merged_members = tuple(sorted((*left_members, *right_members)))
+        merges.append(
+            {
+                "left_members": list(canonical_left_members),
+                "right_members": list(canonical_right_members),
+                "distance": float(merge_distance),
+                "merged_size": left_size + right_size,
+            }
+        )
+        for pair in [pair for pair in pair_distances if left in pair or right in pair]:
+            del pair_distances[pair]
+        del clusters[left], clusters[right]
+        del sizes[left], sizes[right]
+        clusters[next_id] = merged_members
+        sizes[next_id] = left_size + right_size
+        for other, value in new_distances.items():
+            pair_distances[key(other, next_id)] = value
+        next_id += 1
+
+    final_clusters = sorted(clusters.values())
+    labels = {
+        member: f"cluster_{index:02d}"
+        for index, members in enumerate(final_clusters, start=1)
+        for member in members
+    }
+    return labels, merges
+
+
+def adjusted_rand_index(
+    left_labels: Mapping[str, str], right_labels: Mapping[str, str]
+) -> float:
+    """Adjusted Rand Index on the exact common key set supplied by the caller."""
+
+    if set(left_labels) != set(right_labels) or not left_labels:
+        raise ValueError("ARI label mappings must have the same non-empty key set")
+    keys = sorted(left_labels)
+    contingency: dict[tuple[str, str], int] = {}
+    left_counts: dict[str, int] = {}
+    right_counts: dict[str, int] = {}
+    for item in keys:
+        left = str(left_labels[item])
+        right = str(right_labels[item])
+        contingency[(left, right)] = contingency.get((left, right), 0) + 1
+        left_counts[left] = left_counts.get(left, 0) + 1
+        right_counts[right] = right_counts.get(right, 0) + 1
+
+    choose_two = lambda value: value * (value - 1) / 2.0
+    total_pairs = choose_two(len(keys))
+    if total_pairs == 0:
+        return 1.0
+    same_both = sum(choose_two(value) for value in contingency.values())
+    same_left = sum(choose_two(value) for value in left_counts.values())
+    same_right = sum(choose_two(value) for value in right_counts.values())
+    expected = same_left * same_right / total_pairs
+    maximum = 0.5 * (same_left + same_right)
+    denominator = maximum - expected
+    if math.isclose(denominator, 0.0, abs_tol=1e-15):
+        return 1.0 if math.isclose(same_both, maximum, abs_tol=1e-15) else 0.0
+    return float((same_both - expected) / denominator)
+
+
+def normalized_mutual_information(
+    left_labels: Mapping[str, str], right_labels: Mapping[str, str]
+) -> float:
+    """NMI using mutual information divided by arithmetic-mean entropy."""
+
+    if set(left_labels) != set(right_labels) or not left_labels:
+        raise ValueError("NMI label mappings must have the same non-empty key set")
+    keys = sorted(left_labels)
+    count = len(keys)
+    contingency: dict[tuple[str, str], int] = {}
+    left_counts: dict[str, int] = {}
+    right_counts: dict[str, int] = {}
+    for item in keys:
+        left = str(left_labels[item])
+        right = str(right_labels[item])
+        contingency[(left, right)] = contingency.get((left, right), 0) + 1
+        left_counts[left] = left_counts.get(left, 0) + 1
+        right_counts[right] = right_counts.get(right, 0) + 1
+    mutual_information = 0.0
+    for (left, right), joint_count in contingency.items():
+        joint_probability = joint_count / count
+        mutual_information += joint_probability * math.log(
+            joint_count * count / (left_counts[left] * right_counts[right])
+        )
+    left_entropy = -sum(
+        (value / count) * math.log(value / count) for value in left_counts.values()
+    )
+    right_entropy = -sum(
+        (value / count) * math.log(value / count) for value in right_counts.values()
+    )
+    denominator = 0.5 * (left_entropy + right_entropy)
+    if math.isclose(denominator, 0.0, abs_tol=1e-15):
+        return 1.0
+    return float(mutual_information / denominator)
 
 
 def alphabet_issuer_composite(

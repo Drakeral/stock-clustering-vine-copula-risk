@@ -129,6 +129,7 @@ def default_output_paths() -> list[Path]:
         Path("data/audit/data_quality_report.json"),
         Path("data/audit/portfolio_arithmetic.json"),
         Path("data/audit/current_gate_status.json"),
+        Path("data/audit/clustering_diagnostics.json"),
         Path("data/processed/security_daily.parquet"),
         Path("data/processed/daily_total_returns.parquet"),
         Path("data/processed/daily_simple_total_returns.parquet"),
@@ -136,6 +137,8 @@ def default_output_paths() -> list[Path]:
         Path("data/processed/portfolio_constituent_simple_returns.parquet"),
         Path("data/processed/final_universe.json"),
         Path("data/processed/active_universe_by_year.json"),
+        Path("data/processed/annual_group_assignments.json"),
+        Path("data/processed/annual_group_returns.parquet"),
     ]
 
 

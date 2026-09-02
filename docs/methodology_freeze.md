@@ -51,6 +51,15 @@ the next annual rebalance.
 
 ## Clustering statistics
 
+For each 2020–2025 annual rebalance, Spearman correlations use the left-closed,
+right-open interval from three calendar years before the rebalance date up to,
+but excluding, that date. Correlations are converted to
+`sqrt((1-rho)/2)` distances. Average linkage uses the UPGMA/Lance-Williams
+size-weighted update, which gives every original cross-cluster security pair
+equal weight. Exact distance ties and final cluster IDs are resolved by
+lexicographically ordered sorted member tuples. The annual cluster count equals
+the number of non-empty GICS sectors.
+
 The primary within-minus-between dependence gap gives equal weight to every
 unordered security pair. A singleton group supplies no within pair and is not
 entered as a zero; all of its cross-group pairs remain in the between mean. Each
@@ -60,7 +69,8 @@ between pair counts and the number of groups contributing within pairs.
 The descriptive group-balanced robustness statistic averages non-singleton group
 within-means equally and averages the cross-correlation mean of every unordered
 group pair equally. ARI is calculated on the intersection of consecutive annual
-active sets, and NMI uses the active set for that year.
+active sets. NMI uses the active set for that year and mutual information divided
+by the arithmetic mean of the two partition entropies.
 
 The main security-level analysis retains GOOG and GOOGL. The issuer robustness
 analysis replaces them with one position whose simple return is their 50/50 mean;

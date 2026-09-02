@@ -1,0 +1,683 @@
+{
+  "gate_name": "annual_grouping_v1",
+  "inputs": {
+    "active_universe": {
+      "path": "data/processed/active_universe_by_year.json",
+      "sha256": "ed3ef62c7f253fcf1af987a589987a63f74d9130e533dcb4c283a661849ba626"
+    },
+    "final_universe": {
+      "path": "data/processed/final_universe.json",
+      "sha256": "9409bbfbc4fc567ad4da0841c46266818af129e9e0ef9431af29e2740c352943"
+    },
+    "foundation_status": {
+      "path": "data/audit/current_gate_status.json",
+      "sha256": "66df582e2ba6255c8f2e975c0739480562203fd85de06fa24dea0e58b3dd98b9"
+    },
+    "model_config": {
+      "path": "config/model_config.toml",
+      "sha256": "dda38e2a9c91bbac07fae6310e4b6500d0eb87b01c64d565e7b526183e2a91fc"
+    },
+    "portfolio_arithmetic_audit": {
+      "path": "data/audit/portfolio_arithmetic.json",
+      "sha256": "96e11c6b59ff140dc4655ef35b0c20d00c53f0196a3438f76425b496214bcd20"
+    },
+    "simple_return_panel": {
+      "path": "data/processed/portfolio_constituent_simple_returns.parquet",
+      "sha256": "e37b805bd8c290ace18a9aab120b3272ed10e8d64b3eab70c892b03c72caf3e9"
+    }
+  },
+  "issues": [],
+  "method": {
+    "correlation": "spearman_average_ranks",
+    "distance": "sqrt((1-rho)/2)",
+    "group_count_rule": "annual_nonempty_gics_sector_count",
+    "issuer_robustness": "equal_weight_GOOG_GOOGL_simple_returns",
+    "linkage": "unweighted_pair_group_average",
+    "linkage_tie_break": "lexicographic_sorted_member_tuples",
+    "minimum_paired_fraction": 0.8,
+    "nmi_normalization": "arithmetic_mean_entropy",
+    "training_window_calendar_years": 3
+  },
+  "outputs": {
+    "annual_group_assignments": {
+      "path": "data/processed/annual_group_assignments.json",
+      "sha256": "0992a0ddfe38eca1aaf9b2e3b80aedd87acedd57240696c5e48f091eef0be34e"
+    },
+    "annual_group_returns": {
+      "path": "data/processed/annual_group_returns.parquet",
+      "rows": 265408,
+      "sha256": "21b467e74da5e585f098a96dec0ed14e4745ae3ba04dc25461f7a1b6dee08cb9"
+    }
+  },
+  "reporting_scope": "provisional_research_results",
+  "schema_version": 1,
+  "status": "pass",
+  "summary": {
+    "evaluation_year_count": 6,
+    "h1_inference_status": "not_run_bootstrap_is_later_evaluation_step",
+    "maximum_cluster_minus_gics_pair_weighted_gap": 0.043372781454983717,
+    "mean_cluster_minus_gics_pair_weighted_gap": -0.00558967152684528,
+    "mean_issuer_deduplicated_cluster_minus_gics_pair_weighted_gap": -0.00697604587100611,
+    "minimum_cluster_minus_gics_pair_weighted_gap": -0.05354218299471791
+  },
+  "years": [
+    {
+      "active_security_count": 100,
+      "ari_active_intersection_count": null,
+      "ari_previous_year": null,
+      "ari_vs_previous_year": null,
+      "cluster_minus_gics_pair_weighted_gap": -0.05354218299471791,
+      "evaluation_observations": 253,
+      "gics_dependence_gap": {
+        "between_pair_count": 4399,
+        "between_pair_mean": 0.4563648064496014,
+        "contributing_within_groups": 9,
+        "gap": 0.14140542155961988,
+        "group_balanced_between_mean": 0.4630863936833466,
+        "group_balanced_gap": 0.15553226037161993,
+        "group_balanced_within_mean": 0.6186186540549665,
+        "within_pair_count": 551,
+        "within_pair_mean": 0.5977702280092213
+      },
+      "gics_group_sizes": {
+        "Communication Services": 9,
+        "Consumer Discretionary": 10,
+        "Consumer Staples": 11,
+        "Energy": 6,
+        "Financials": 15,
+        "Health Care": 16,
+        "Industrials": 13,
+        "Information Technology": 14,
+        "Materials": 1,
+        "Real Estate": 1,
+        "Utilities": 4
+      },
+      "group_count": 11,
+      "hierarchical_cluster_sizes": {
+        "cluster_01": 53,
+        "cluster_02": 17,
+        "cluster_03": 3,
+        "cluster_04": 8,
+        "cluster_05": 6,
+        "cluster_06": 3,
+        "cluster_07": 4,
+        "cluster_08": 1,
+        "cluster_09": 2,
+        "cluster_10": 1,
+        "cluster_11": 2
+      },
+      "hierarchical_dependence_gap": {
+        "between_pair_count": 3379,
+        "between_pair_mean": 0.4442196023069528,
+        "contributing_within_groups": 9,
+        "gap": 0.08786323856490197,
+        "group_balanced_between_mean": 0.4403515153186254,
+        "group_balanced_gap": 0.1839615084950661,
+        "group_balanced_within_mean": 0.6243130238136915,
+        "within_pair_count": 1571,
+        "within_pair_mean": 0.5320828408718548
+      },
+      "issuer_deduplicated_robustness": {
+        "ari_active_intersection_count": null,
+        "ari_previous_year": null,
+        "ari_vs_previous_year": null,
+        "cluster_minus_gics_pair_weighted_gap": -0.053146972699674444,
+        "gics_dependence_gap": {
+          "between_pair_count": 4308,
+          "between_pair_mean": 0.45622490474156624,
+          "contributing_within_groups": 9,
+          "gap": 0.14187295092952695,
+          "group_balanced_between_mean": 0.46282099336513693,
+          "group_balanced_gap": 0.15268314363922164,
+          "group_balanced_within_mean": 0.6155041370043586,
+          "within_pair_count": 543,
+          "within_pair_mean": 0.5980978556710932
+        },
+        "hierarchical_dependence_gap": {
+          "between_pair_count": 3332,
+          "between_pair_mean": 0.4443226683827922,
+          "contributing_within_groups": 9,
+          "gap": 0.08872597822985251,
+          "group_balanced_between_mean": 0.44054284561112,
+          "group_balanced_gap": 0.18389039003812568,
+          "group_balanced_within_mean": 0.6244332356492457,
+          "within_pair_count": 1519,
+          "within_pair_mean": 0.5330486466126447
+        },
+        "maximum_portfolio_identity_error": {
+          "gics_sector": 4.163336342344337e-17,
+          "hierarchical_cluster": 3.469446951953614e-17
+        },
+        "nmi_hierarchical_vs_gics": 0.6932513520810559,
+        "position_count": 99
+      },
+      "maximum_portfolio_identity_error": {
+        "gics_sector": 5.551115123125783e-17,
+        "hierarchical_cluster": 4.163336342344337e-17
+      },
+      "nmi_hierarchical_vs_gics": 0.686264880338663,
+      "rebalance_date": "2020-01-02",
+      "training_end_exclusive": "2020-01-02",
+      "training_group_return_observations": 753,
+      "training_incomplete_date_count": 1,
+      "training_observations": 754,
+      "training_start_inclusive": "2017-01-02",
+      "year": 2020
+    },
+    {
+      "active_security_count": 98,
+      "ari_active_intersection_count": 98,
+      "ari_previous_year": 2020,
+      "ari_vs_previous_year": 0.3688997111830576,
+      "cluster_minus_gics_pair_weighted_gap": 0.043372781454983717,
+      "evaluation_observations": 252,
+      "gics_dependence_gap": {
+        "between_pair_count": 4229,
+        "between_pair_mean": 0.2451510288403457,
+        "contributing_within_groups": 9,
+        "gap": 0.2067068608294804,
+        "group_balanced_between_mean": 0.2625489807419217,
+        "group_balanced_gap": 0.21969348879206807,
+        "group_balanced_within_mean": 0.48224246953398975,
+        "within_pair_count": 524,
+        "within_pair_mean": 0.4518578896698261
+      },
+      "gics_group_sizes": {
+        "Communication Services": 9,
+        "Consumer Discretionary": 10,
+        "Consumer Staples": 11,
+        "Energy": 6,
+        "Financials": 15,
+        "Health Care": 15,
+        "Industrials": 12,
+        "Information Technology": 14,
+        "Materials": 1,
+        "Real Estate": 1,
+        "Utilities": 4
+      },
+      "group_count": 11,
+      "hierarchical_cluster_sizes": {
+        "cluster_01": 26,
+        "cluster_02": 9,
+        "cluster_03": 39,
+        "cluster_04": 5,
+        "cluster_05": 1,
+        "cluster_06": 9,
+        "cluster_07": 3,
+        "cluster_08": 1,
+        "cluster_09": 2,
+        "cluster_10": 1,
+        "cluster_11": 2
+      },
+      "hierarchical_dependence_gap": {
+        "between_pair_count": 3600,
+        "between_pair_mean": 0.20727443879630209,
+        "contributing_within_groups": 8,
+        "gap": 0.2500796422844641,
+        "group_balanced_between_mean": 0.2476959605043126,
+        "group_balanced_gap": 0.24542771348795614,
+        "group_balanced_within_mean": 0.49312367399226875,
+        "within_pair_count": 1153,
+        "within_pair_mean": 0.4573540810807662
+      },
+      "issuer_deduplicated_robustness": {
+        "ari_active_intersection_count": 97,
+        "ari_previous_year": 2020,
+        "ari_vs_previous_year": 0.35118841345016694,
+        "cluster_minus_gics_pair_weighted_gap": 0.04226058368717692,
+        "gics_dependence_gap": {
+          "between_pair_count": 4140,
+          "between_pair_mean": 0.24483071273080761,
+          "contributing_within_groups": 9,
+          "gap": 0.20838809969541813,
+          "group_balanced_between_mean": 0.2620342118579794,
+          "group_balanced_gap": 0.21769229442297822,
+          "group_balanced_within_mean": 0.47972650628095764,
+          "within_pair_count": 516,
+          "within_pair_mean": 0.45321881242622575
+        },
+        "hierarchical_dependence_gap": {
+          "between_pair_count": 3534,
+          "between_pair_mean": 0.20752410549016423,
+          "contributing_within_groups": 7,
+          "gap": 0.25064868338259505,
+          "group_balanced_between_mean": 0.21989959926819358,
+          "group_balanced_gap": 0.2446994975994099,
+          "group_balanced_within_mean": 0.4645990968676035,
+          "within_pair_count": 1122,
+          "within_pair_mean": 0.45817278887275925
+        },
+        "maximum_portfolio_identity_error": {
+          "gics_sector": 1.734723475976807e-17,
+          "hierarchical_cluster": 1.3877787807814457e-17
+        },
+        "nmi_hierarchical_vs_gics": 0.5853937338086301,
+        "position_count": 97
+      },
+      "maximum_portfolio_identity_error": {
+        "gics_sector": 1.3877787807814457e-17,
+        "hierarchical_cluster": 1.3877787807814457e-17
+      },
+      "nmi_hierarchical_vs_gics": 0.5956722039154034,
+      "rebalance_date": "2021-01-04",
+      "training_end_exclusive": "2021-01-04",
+      "training_group_return_observations": 754,
+      "training_incomplete_date_count": 0,
+      "training_observations": 754,
+      "training_start_inclusive": "2018-01-04",
+      "year": 2021
+    },
+    {
+      "active_security_count": 98,
+      "ari_active_intersection_count": 98,
+      "ari_previous_year": 2021,
+      "ari_vs_previous_year": 0.7657129947216004,
+      "cluster_minus_gics_pair_weighted_gap": -0.027502503447770332,
+      "evaluation_observations": 251,
+      "gics_dependence_gap": {
+        "between_pair_count": 4229,
+        "between_pair_mean": 0.427999014640819,
+        "contributing_within_groups": 9,
+        "gap": 0.17294515775133534,
+        "group_balanced_between_mean": 0.4337276533476376,
+        "group_balanced_gap": 0.183324557069025,
+        "group_balanced_within_mean": 0.6170522104166626,
+        "within_pair_count": 524,
+        "within_pair_mean": 0.6009441723921544
+      },
+      "gics_group_sizes": {
+        "Communication Services": 9,
+        "Consumer Discretionary": 10,
+        "Consumer Staples": 11,
+        "Energy": 6,
+        "Financials": 15,
+        "Health Care": 15,
+        "Industrials": 12,
+        "Information Technology": 14,
+        "Materials": 1,
+        "Real Estate": 1,
+        "Utilities": 4
+      },
+      "group_count": 11,
+      "hierarchical_cluster_sizes": {
+        "cluster_01": 22,
+        "cluster_02": 9,
+        "cluster_03": 3,
+        "cluster_04": 41,
+        "cluster_05": 2,
+        "cluster_06": 9,
+        "cluster_07": 5,
+        "cluster_08": 1,
+        "cluster_09": 4,
+        "cluster_10": 1,
+        "cluster_11": 1
+      },
+      "hierarchical_dependence_gap": {
+        "between_pair_count": 3610,
+        "between_pair_mean": 0.41208954878614307,
+        "contributing_within_groups": 8,
+        "gap": 0.145442654303565,
+        "group_balanced_between_mean": 0.40246848630668364,
+        "group_balanced_gap": 0.21768930417305565,
+        "group_balanced_within_mean": 0.6201577904797393,
+        "within_pair_count": 1143,
+        "within_pair_mean": 0.5575322030897081
+      },
+      "issuer_deduplicated_robustness": {
+        "ari_active_intersection_count": 97,
+        "ari_previous_year": 2021,
+        "ari_vs_previous_year": 0.7522372430991227,
+        "cluster_minus_gics_pair_weighted_gap": -0.030994213881738453,
+        "gics_dependence_gap": {
+          "between_pair_count": 4140,
+          "between_pair_mean": 0.4263640896021694,
+          "contributing_within_groups": 9,
+          "gap": 0.17438544500772335,
+          "group_balanced_between_mean": 0.4322741875014526,
+          "group_balanced_gap": 0.1821497568972293,
+          "group_balanced_within_mean": 0.6144239443986819,
+          "within_pair_count": 516,
+          "within_pair_mean": 0.6007495346098928
+        },
+        "hierarchical_dependence_gap": {
+          "between_pair_count": 3534,
+          "between_pair_mean": 0.4111359814193151,
+          "contributing_within_groups": 8,
+          "gap": 0.1433912311259849,
+          "group_balanced_between_mean": 0.4023690622356248,
+          "group_balanced_gap": 0.21691124567479064,
+          "group_balanced_within_mean": 0.6192803079104154,
+          "within_pair_count": 1122,
+          "within_pair_mean": 0.5545272125453
+        },
+        "maximum_portfolio_identity_error": {
+          "gics_sector": 2.7755575615628914e-17,
+          "hierarchical_cluster": 2.42861286636753e-17
+        },
+        "nmi_hierarchical_vs_gics": 0.5680794665886916,
+        "position_count": 97
+      },
+      "maximum_portfolio_identity_error": {
+        "gics_sector": 2.42861286636753e-17,
+        "hierarchical_cluster": 2.7755575615628914e-17
+      },
+      "nmi_hierarchical_vs_gics": 0.5667971468787105,
+      "rebalance_date": "2022-01-03",
+      "training_end_exclusive": "2022-01-03",
+      "training_group_return_observations": 756,
+      "training_incomplete_date_count": 0,
+      "training_observations": 756,
+      "training_start_inclusive": "2019-01-03",
+      "year": 2022
+    },
+    {
+      "active_security_count": 98,
+      "ari_active_intersection_count": 98,
+      "ari_previous_year": 2022,
+      "ari_vs_previous_year": 0.7636763238202984,
+      "cluster_minus_gics_pair_weighted_gap": -0.0009112502839895842,
+      "evaluation_observations": 250,
+      "gics_dependence_gap": {
+        "between_pair_count": 4229,
+        "between_pair_mean": 0.28409690637164087,
+        "contributing_within_groups": 9,
+        "gap": 0.15661599689421202,
+        "group_balanced_between_mean": 0.3092279906775772,
+        "group_balanced_gap": 0.17229934596590002,
+        "group_balanced_within_mean": 0.48152733664347724,
+        "within_pair_count": 524,
+        "within_pair_mean": 0.4407129032658529
+      },
+      "gics_group_sizes": {
+        "Communication Services": 9,
+        "Consumer Discretionary": 10,
+        "Consumer Staples": 11,
+        "Energy": 6,
+        "Financials": 15,
+        "Health Care": 15,
+        "Industrials": 12,
+        "Information Technology": 14,
+        "Materials": 1,
+        "Real Estate": 1,
+        "Utilities": 4
+      },
+      "group_count": 11,
+      "hierarchical_cluster_sizes": {
+        "cluster_01": 27,
+        "cluster_02": 7,
+        "cluster_03": 39,
+        "cluster_04": 1,
+        "cluster_05": 2,
+        "cluster_06": 10,
+        "cluster_07": 5,
+        "cluster_08": 2,
+        "cluster_09": 1,
+        "cluster_10": 3,
+        "cluster_11": 1
+      },
+      "hierarchical_dependence_gap": {
+        "between_pair_count": 3580,
+        "between_pair_mean": 0.2629366106844488,
+        "contributing_within_groups": 8,
+        "gap": 0.15570474661022243,
+        "group_balanced_between_mean": 0.2769544889100157,
+        "group_balanced_gap": 0.21907932906784827,
+        "group_balanced_within_mean": 0.49603381797786394,
+        "within_pair_count": 1173,
+        "within_pair_mean": 0.4186413572946712
+      },
+      "issuer_deduplicated_robustness": {
+        "ari_active_intersection_count": 97,
+        "ari_previous_year": 2022,
+        "ari_vs_previous_year": 0.7628472269152389,
+        "cluster_minus_gics_pair_weighted_gap": -0.002494136235102029,
+        "gics_dependence_gap": {
+          "between_pair_count": 4140,
+          "between_pair_mean": 0.2855919185214001,
+          "contributing_within_groups": 9,
+          "gap": 0.155932345206718,
+          "group_balanced_between_mean": 0.31075190697010857,
+          "group_balanced_gap": 0.16983718837076878,
+          "group_balanced_within_mean": 0.48058909534087735,
+          "within_pair_count": 516,
+          "within_pair_mean": 0.4415242637281181
+        },
+        "hierarchical_dependence_gap": {
+          "between_pair_count": 3509,
+          "between_pair_mean": 0.26507376225770224,
+          "contributing_within_groups": 8,
+          "gap": 0.15343820897161597,
+          "group_balanced_between_mean": 0.277564136739821,
+          "group_balanced_gap": 0.21822051813190718,
+          "group_balanced_within_mean": 0.4957846548717282,
+          "within_pair_count": 1147,
+          "within_pair_mean": 0.4185119712293182
+        },
+        "maximum_portfolio_identity_error": {
+          "gics_sector": 1.0408340855860843e-17,
+          "hierarchical_cluster": 1.3877787807814457e-17
+        },
+        "nmi_hierarchical_vs_gics": 0.5094688170095777,
+        "position_count": 97
+      },
+      "maximum_portfolio_identity_error": {
+        "gics_sector": 1.734723475976807e-17,
+        "hierarchical_cluster": 1.734723475976807e-17
+      },
+      "nmi_hierarchical_vs_gics": 0.5079619769554028,
+      "rebalance_date": "2023-01-03",
+      "training_end_exclusive": "2023-01-03",
+      "training_group_return_observations": 755,
+      "training_incomplete_date_count": 0,
+      "training_observations": 755,
+      "training_start_inclusive": "2020-01-03",
+      "year": 2023
+    },
+    {
+      "active_security_count": 98,
+      "ari_active_intersection_count": 98,
+      "ari_previous_year": 2023,
+      "ari_vs_previous_year": 0.7921276560112762,
+      "cluster_minus_gics_pair_weighted_gap": -0.014002425641096217,
+      "evaluation_observations": 252,
+      "gics_dependence_gap": {
+        "between_pair_count": 4229,
+        "between_pair_mean": 0.19316341671818266,
+        "contributing_within_groups": 9,
+        "gap": 0.15916900447189491,
+        "group_balanced_between_mean": 0.21390553489710623,
+        "group_balanced_gap": 0.17731202915586758,
+        "group_balanced_within_mean": 0.3912175640529738,
+        "within_pair_count": 524,
+        "within_pair_mean": 0.35233242119007757
+      },
+      "gics_group_sizes": {
+        "Communication Services": 9,
+        "Consumer Discretionary": 10,
+        "Consumer Staples": 11,
+        "Energy": 6,
+        "Financials": 15,
+        "Health Care": 15,
+        "Industrials": 12,
+        "Information Technology": 14,
+        "Materials": 1,
+        "Real Estate": 1,
+        "Utilities": 4
+      },
+      "group_count": 11,
+      "hierarchical_cluster_sizes": {
+        "cluster_01": 25,
+        "cluster_02": 7,
+        "cluster_03": 39,
+        "cluster_04": 1,
+        "cluster_05": 2,
+        "cluster_06": 11,
+        "cluster_07": 5,
+        "cluster_08": 2,
+        "cluster_09": 2,
+        "cluster_10": 2,
+        "cluster_11": 2
+      },
+      "hierarchical_dependence_gap": {
+        "between_pair_count": 3621,
+        "between_pair_mean": 0.17613753645451946,
+        "contributing_within_groups": 10,
+        "gap": 0.1451665788307987,
+        "group_balanced_between_mean": 0.18837772575003375,
+        "group_balanced_gap": 0.21302445653615143,
+        "group_balanced_within_mean": 0.4014021822861852,
+        "within_pair_count": 1132,
+        "within_pair_mean": 0.32130411528531816
+      },
+      "issuer_deduplicated_robustness": {
+        "ari_active_intersection_count": 97,
+        "ari_previous_year": 2023,
+        "ari_vs_previous_year": 0.7887766150492967,
+        "cluster_minus_gics_pair_weighted_gap": -0.015483090642594788,
+        "gics_dependence_gap": {
+          "between_pair_count": 4140,
+          "between_pair_mean": 0.19486370957404864,
+          "contributing_within_groups": 9,
+          "gap": 0.1588543219544653,
+          "group_balanced_between_mean": 0.21506426062323103,
+          "group_balanced_gap": 0.17404175516775006,
+          "group_balanced_within_mean": 0.3891060157909811,
+          "within_pair_count": 516,
+          "within_pair_mean": 0.35371803152851394
+        },
+        "hierarchical_dependence_gap": {
+          "between_pair_count": 3548,
+          "between_pair_mean": 0.178350287287741,
+          "contributing_within_groups": 10,
+          "gap": 0.14337123131187052,
+          "group_balanced_between_mean": 0.1890249094949365,
+          "group_balanced_gap": 0.2120786366346889,
+          "group_balanced_within_mean": 0.4011035461296254,
+          "within_pair_count": 1108,
+          "within_pair_mean": 0.3217215185996115
+        },
+        "maximum_portfolio_identity_error": {
+          "gics_sector": 6.938893903907228e-18,
+          "hierarchical_cluster": 1.0408340855860843e-17
+        },
+        "nmi_hierarchical_vs_gics": 0.5519993540110679,
+        "position_count": 97
+      },
+      "maximum_portfolio_identity_error": {
+        "gics_sector": 1.0408340855860843e-17,
+        "hierarchical_cluster": 1.0408340855860843e-17
+      },
+      "nmi_hierarchical_vs_gics": 0.5490851901737629,
+      "rebalance_date": "2024-01-02",
+      "training_end_exclusive": "2024-01-02",
+      "training_group_return_observations": 753,
+      "training_incomplete_date_count": 0,
+      "training_observations": 753,
+      "training_start_inclusive": "2021-01-02",
+      "year": 2024
+    },
+    {
+      "active_security_count": 98,
+      "ari_active_intersection_count": 98,
+      "ari_previous_year": 2024,
+      "ari_vs_previous_year": 0.34598513813464127,
+      "cluster_minus_gics_pair_weighted_gap": 0.01904755175151865,
+      "evaluation_observations": 250,
+      "gics_dependence_gap": {
+        "between_pair_count": 4229,
+        "between_pair_mean": 0.22090519744954357,
+        "contributing_within_groups": 9,
+        "gap": 0.17646669116149505,
+        "group_balanced_between_mean": 0.24040253695378966,
+        "group_balanced_gap": 0.179101356891203,
+        "group_balanced_within_mean": 0.41950389384499265,
+        "within_pair_count": 524,
+        "within_pair_mean": 0.3973718886110386
+      },
+      "gics_group_sizes": {
+        "Communication Services": 9,
+        "Consumer Discretionary": 10,
+        "Consumer Staples": 11,
+        "Energy": 6,
+        "Financials": 15,
+        "Health Care": 15,
+        "Industrials": 12,
+        "Information Technology": 14,
+        "Materials": 1,
+        "Real Estate": 1,
+        "Utilities": 4
+      },
+      "group_count": 11,
+      "hierarchical_cluster_sizes": {
+        "cluster_01": 58,
+        "cluster_02": 8,
+        "cluster_03": 4,
+        "cluster_04": 1,
+        "cluster_05": 13,
+        "cluster_06": 6,
+        "cluster_07": 2,
+        "cluster_08": 2,
+        "cluster_09": 1,
+        "cluster_10": 2,
+        "cluster_11": 1
+      },
+      "hierarchical_dependence_gap": {
+        "between_pair_count": 2970,
+        "between_pair_mean": 0.16701642216124565,
+        "contributing_within_groups": 8,
+        "gap": 0.1955142429130137,
+        "group_balanced_between_mean": 0.15952702762491044,
+        "group_balanced_gap": 0.35687560105545346,
+        "group_balanced_within_mean": 0.5164026286803639,
+        "within_pair_count": 1783,
+        "within_pair_mean": 0.36253066507425935
+      },
+      "issuer_deduplicated_robustness": {
+        "ari_active_intersection_count": 97,
+        "ari_previous_year": 2024,
+        "ari_vs_previous_year": 0.34509931818531087,
+        "cluster_minus_gics_pair_weighted_gap": 0.018001554545896137,
+        "gics_dependence_gap": {
+          "between_pair_count": 4140,
+          "between_pair_mean": 0.22220552303716118,
+          "contributing_within_groups": 9,
+          "gap": 0.177857479821039,
+          "group_balanced_between_mean": 0.24122755472808624,
+          "group_balanced_gap": 0.1780946500830842,
+          "group_balanced_within_mean": 0.41932220481117044,
+          "within_pair_count": 516,
+          "within_pair_mean": 0.4000630028582002
+        },
+        "hierarchical_dependence_gap": {
+          "between_pair_count": 2930,
+          "between_pair_mean": 0.16931071338731712,
+          "contributing_within_groups": 8,
+          "gap": 0.19585903436693514,
+          "group_balanced_between_mean": 0.15994630627495623,
+          "group_balanced_gap": 0.3567673486112317,
+          "group_balanced_within_mean": 0.5167136548861879,
+          "within_pair_count": 1726,
+          "within_pair_mean": 0.36516974775425226
+        },
+        "maximum_portfolio_identity_error": {
+          "gics_sector": 2.7755575615628914e-17,
+          "hierarchical_cluster": 2.0816681711721685e-17
+        },
+        "nmi_hierarchical_vs_gics": 0.539704890140859,
+        "position_count": 97
+      },
+      "maximum_portfolio_identity_error": {
+        "gics_sector": 1.734723475976807e-17,
+        "hierarchical_cluster": 2.7755575615628914e-17
+      },
+      "nmi_hierarchical_vs_gics": 0.5366893616411211,
+      "rebalance_date": "2025-01-02",
+      "training_end_exclusive": "2025-01-02",
+      "training_group_return_observations": 753,
+      "training_incomplete_date_count": 0,
+      "training_observations": 753,
+      "training_start_inclusive": "2022-01-02",
+      "year": 2025
+    }
+  ]
+}

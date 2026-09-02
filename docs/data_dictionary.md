@@ -19,7 +19,7 @@ File: `data/raw/universe_sp100_2020-01-02.json`
 | `known_ticker_event_review` | string | Flag for known symbol, merger, or terminal-return continuity work. |
 | `source_record_id` | string | Identifier of the source record used for reconciliation. |
 
-The universe contains securities, not unique issuers. Multiple listed share classes are retained because they are separate return series. The tracked Wikipedia revisions are reproducible secondary sources only. `provenance_status` remains blocked until an authorised extract with the normalized fields above reconciles without membership or GICS differences.
+The universe contains securities, not unique issuers. Multiple listed share classes are retained because they are separate return series. The tracked Wikipedia revisions and Yahoo cross-check are secondary sources only. Under protocol amendment PA-001 they support provisional modelling, but `licensed_universe_provenance` remains false until an authorised extract with the normalized fields above reconciles without membership or GICS differences.
 
 ## Massive daily aggregate input
 
@@ -93,6 +93,34 @@ The matching simple-return modelling matrix. The daily-rebalanced primary portfo
 ### `data/processed/final_universe.json`
 
 Coverage-screen result based only on 3 January 2017 through 31 December 2019. It preserves all candidates and records inclusion status, price coverage, return coverage, and exclusion reason. Its top-level status is `provisional_pending_universe_provenance` while the licensed-universe gate is blocked.
+
+### `data/processed/annual_group_assignments.json`
+
+Annual 2020–2025 GICS and hierarchical-cluster assignments. Each year records
+the active securities, rebalance date, left-closed/right-open three-calendar-year
+training window, deterministic average-linkage merge history, and final group
+labels. Hierarchical labels use only returns strictly before the rebalance date.
+
+### `data/processed/annual_group_returns.parquet`
+
+Long-form daily group-return panel used by the later marginal and copula models.
+
+| Field | Type | Definition |
+|---|---|---|
+| `date` | date | Out-of-sample trading date. |
+| `year` | integer | Grouping/model year whose annual labels apply; dates can precede this year for training rows. |
+| `universe_variant` | categorical string | `security_primary` or the 50/50 Alphabet `issuer_deduplicated_robustness`. |
+| `sample_role` | categorical string | `training` for the preceding three-year window or `evaluation` for the grouping year. |
+| `grouping_id` | categorical string | `gics_sector` or `hierarchical_cluster`. |
+| `group_id` | string | Frozen sector or annual deterministic cluster label. |
+| `group_size` | integer | Number of annual active securities in the group. |
+| `portfolio_weight` | number | `group_size / annual_active_security_count`. |
+| `simple_return` | number | Equal-weight mean of constituent simple returns. |
+| `log_return` | number | `log1p(simple_return)`, used for marginal fitting. |
+
+`data/audit/clustering_diagnostics.json` binds these artifacts to their inputs
+and reports annual dependence gaps, pair counts, ARI, NMI, and the direct-versus-
+grouped primary-portfolio arithmetic error.
 
 ## Lifecycle policy
 

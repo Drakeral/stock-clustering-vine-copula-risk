@@ -219,6 +219,10 @@ class RiskAndInferenceTests(unittest.TestCase):
         self.assertEqual(config["vine"]["primary_truncation_tree"], 3)
         self.assertEqual(config["inference"]["dm_hac_lag"], 7)
         self.assertEqual(config["forecast"]["var_confidence_levels"], [0.95, 0.975, 0.99])
+        self.assertEqual(config["clustering"]["training_window_calendar_years"], 3)
+        self.assertEqual(
+            config["clustering"]["nmi_normalization"], "arithmetic_mean_entropy"
+        )
         with (ROOT / "config/schemas/forecast_record.schema.json").open() as handle:
             schema = json.load(handle)
         required = set(schema["required"])

@@ -133,6 +133,7 @@ uv run python scripts/verify_foundation_inputs.py
 uv run python scripts/build_return_panel.py
 uv run python scripts/validate_portfolio_arithmetic.py
 uv run python scripts/update_foundation_status.py --require-modelling-ready
+uv run python scripts/build_annual_groupings.py
 uv run python -m unittest discover -s tests -v
 ```
 
@@ -192,6 +193,13 @@ uv run python scripts/generate_run_manifest.py
   `daily_total_returns.parquet`: simple- and log-return stock panels;
 - `data/processed/portfolio_constituent_simple_returns.parquet` and
   `portfolio_constituent_returns.parquet`: daily-rebalanced modelling inputs;
-  and
+- `data/processed/annual_group_assignments.json`: leakage-free annual GICS and
+  hierarchical-cluster membership for 2020–2025;
+- `data/processed/annual_group_returns.parquet`: simple and log group returns,
+  group sizes, and portfolio weights across both training and evaluation windows
+  for the security-level primary universe and GOOG/GOOGL issuer-deduplicated
+  robustness variant; and
+- `data/audit/clustering_diagnostics.json`: dependence gaps, ARI, NMI, pair
+  counts, portfolio-identity errors, and hashes of the grouping artifacts;
 - `data/audit/`: separate provenance, input-integrity, construction, and current
   readiness reports.
