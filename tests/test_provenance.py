@@ -377,13 +377,15 @@ class CredentialSafetyTests(unittest.TestCase):
             hdrs=None,
             fp=None,
         )
-        with mock.patch("scripts.download_market_data.urllib.request.urlopen", side_effect=error):
-            with self.assertRaises(RuntimeError) as raised:
-                authenticated_json(
-                    f"https://api.massive.com/v3/reference/splits?apiKey={secret}",
-                    secret,
-                    attempts=1,
-                )
+        with (
+            mock.patch("scripts.download_market_data.urllib.request.urlopen", side_effect=error),
+            self.assertRaises(RuntimeError) as raised,
+        ):
+            authenticated_json(
+                f"https://api.massive.com/v3/reference/splits?apiKey={secret}",
+                secret,
+                attempts=1,
+            )
         self.assertNotIn(secret, str(raised.exception))
         self.assertIn("HTTP 401", str(raised.exception))
 

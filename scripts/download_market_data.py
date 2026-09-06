@@ -479,7 +479,7 @@ def main() -> None:
         "provider": "Massive",
         "sample_start": start.isoformat(),
         "sample_end": end.isoformat(),
-        "generated_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "generated_at_utc": dt.datetime.now(dt.UTC).isoformat(),
         "daily_file_count": len(downloaded),
         "daily_compressed_bytes": sum(row["size"] for row in downloaded),
         "daily_files": downloaded,
@@ -498,7 +498,7 @@ def main() -> None:
         manifest["reference_downloads"] = reference_records
         manifest["reference_file_count"] = len(reference_records)
         manifest["reference_status"] = "complete"
-        manifest["generated_at_utc"] = dt.datetime.now(dt.timezone.utc).isoformat()
+        manifest["generated_at_utc"] = dt.datetime.now(dt.UTC).isoformat()
         write_json_atomic(manifest_path, manifest)
     public_manifest_path = (
         args.public_manifest

@@ -1,3 +1,4 @@
+import copy
 import hashlib
 import json
 import unittest
@@ -9,6 +10,9 @@ import pandas as pd
 from scripts.build_marginal_models import (
     MarginState,
     MonthlyTask,
+    PersistenceBoundedGARCH,
+    _task_protocol,
+    _validate_protocol,
     filter_month,
     prepare_monthly_tasks,
     select_margin_model,
@@ -67,7 +71,7 @@ class MonthlyTaskTests(unittest.TestCase):
                 "grouping_id": "gics_sector",
                 "group_id": "Technology",
                 "group_size": 10,
-                "portfolio_weight": 0.1,
+                "portfolio_weight": 1.0,
                 "log_return": np.sin(np.arange(len(dates))) / 100,
             }
         )
@@ -98,8 +102,51 @@ class MonthlyTaskTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "overlapping sample roles"):
             prepare_monthly_tasks(panel, config)
 
+    def test_invalid_group_weight_identity_is_rejected(self):
+        panel = self._panel()
+        panel["portfolio_weight"] = 0.25
+        config = {
+            "forecast": {"training_window_calendar_years": 3, "minimum_training_observations": 700},
+            "clustering": {"evaluation_start_year": 2020, "evaluation_end_year": 2020},
+        }
+        with self.assertRaisesRegex(ValueError, "normalized group sizes"):
+            prepare_monthly_tasks(panel, config)
+
+    def test_task_protocol_rejects_invalid_windows(self):
+        config = {
+            "forecast": {"training_window_calendar_years": 3, "minimum_training_observations": 2},
+            "clustering": {"evaluation_start_year": 2021, "evaluation_end_year": 2020},
+        }
+        with self.assertRaisesRegex(ValueError, "at least three"):
+            _task_protocol(config)
+
 
 class FallbackAndFilteringTests(unittest.TestCase):
+    def test_persistence_constraint_rejects_invalid_limit(self):
+        with self.assertRaisesRegex(ValueError, "must lie in"):
+            PersistenceBoundedGARCH(1.0)
+
+    def test_marginal_protocol_rejects_invalid_numeric_configuration(self):
+        valid = {"marginal": marginal_config()}
+        self.assertIs(_validate_protocol(valid), valid["marginal"])
+        cases = [
+            ("estimation_return_scale", 0.0, "must be positive"),
+            ("optimizer_tolerance", False, "missing or invalid"),
+            ("initial_optimizer_max_iterations", True, "positive integer"),
+            ("retry_start_phi_clip", 0.99, "retry_start_phi_clip"),
+            ("retry_start_beta", 0.95, "persistence limit"),
+            ("retry_start_student_t_df", 2.1, "student_t_df_minimum"),
+            ("ewma_lambda", 1.0, "ewma_lambda"),
+            ("pit_clip_lower", 0.999999, "PIT clipping bounds"),
+            ("maximum_ewma_fit_fraction", 1.1, "maximum_ewma_fit_fraction"),
+        ]
+        for key, value, message in cases:
+            with self.subTest(key=key):
+                invalid = copy.deepcopy(valid)
+                invalid["marginal"][key] = value
+                with self.assertRaisesRegex(ValueError, message):
+                    _validate_protocol(invalid)
+
     def test_fallback_order_reaches_ewma_deterministically(self):
         calls: list[tuple[str, str, int, bool]] = []
 

@@ -2,6 +2,9 @@
 
 This project uses a small, reproducible quality toolchain. Ruff is pinned in the
 development dependency group, and the exact environment is locked by `uv.lock`.
+The enforced profile covers syntax and Pyflakes errors, import ordering, common
+bug patterns, Python 3.12 upgrades, avoidable collection/control-flow patterns,
+and stale suppression comments.
 
 Run the checkpoint from the repository root:
 

@@ -13,8 +13,9 @@ import platform
 import re
 import subprocess
 import sys
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 try:
     import tomllib
@@ -193,7 +194,7 @@ def build_run_manifest(
     return {
         "schema_version": 1,
         "manifest_type": "research_run_manifest",
-        "generated_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "generated_at_utc": dt.datetime.now(dt.UTC).isoformat(),
         "git": git,
         "foundation_v2": foundation_status,
         "environment": {

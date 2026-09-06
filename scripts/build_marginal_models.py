@@ -12,11 +12,11 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 import warnings
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Mapping
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -61,7 +61,7 @@ class MonthlyTask:
         )
 
 
-@dataclass
+@dataclass(frozen=True)
 class MarginState:
     selected_method: str
     fallback_level: int
@@ -90,6 +90,8 @@ class PersistenceBoundedGARCH(GARCH):
     """GARCH(1,1) with the frozen strict persistence limit in estimation."""
 
     def __init__(self, persistence_limit: float) -> None:
+        if not np.isfinite(persistence_limit) or not 0 < persistence_limit < 1:
+            raise ValueError("persistence_limit must lie in (0, 1)")
         super().__init__(p=1, o=0, q=1)
         self._persistence_limit = float(np.nextafter(persistence_limit, 0.0))
 
@@ -118,14 +120,42 @@ def _write_json_atomic(path: Path, payload: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".part")
     temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    os.replace(temporary, path)
+    temporary.replace(path)
 
 
 def _write_parquet_atomic(path: Path, frame: pd.DataFrame) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(path.suffix + ".part")
     frame.to_parquet(temporary, index=False, engine="pyarrow")
-    os.replace(temporary, path)
+    temporary.replace(path)
+
+
+def _finite_config_float(
+    section: Mapping[str, Any], key: str, *, section_name: str = "marginal"
+) -> float:
+    """Read one required finite floating-point configuration value."""
+
+    try:
+        raw_value = section[key]
+        if isinstance(raw_value, bool):
+            raise TypeError
+        value = float(raw_value)
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError(f"missing or invalid {section_name} configuration value: {key}") from exc
+    if not np.isfinite(value):
+        raise ValueError(f"{section_name} configuration value must be finite: {key}")
+    return value
+
+
+def _positive_config_integer(
+    section: Mapping[str, Any], key: str, *, section_name: str = "marginal"
+) -> int:
+    """Read one required positive integer configuration value."""
+
+    value = section.get(key)
+    if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+        raise ValueError(f"{section_name} configuration value must be a positive integer: {key}")
+    return value
 
 
 def _reporting_scope(gate: Mapping[str, Any]) -> str:
@@ -146,7 +176,7 @@ def _reporting_scope(gate: Mapping[str, Any]) -> str:
 def _validate_protocol(model_config: Mapping[str, Any]) -> Mapping[str, Any]:
     marginal = model_config.get("marginal")
     if not isinstance(marginal, Mapping):
-        raise ValueError("model configuration has no marginal section")
+        raise TypeError("model configuration must contain a marginal table")
     expected = {
         "primary": "AR(1)-GARCH(1,1)-Student-t",
         "fallback_order": [
@@ -166,9 +196,73 @@ def _validate_protocol(model_config: Mapping[str, Any]) -> Mapping[str, Any]:
     }
     if mismatches:
         raise ValueError(f"unsupported marginal protocol: {mismatches}")
-    if float(marginal["pit_clip_lower"]) >= float(marginal["pit_clip_upper"]):
-        raise ValueError("invalid marginal PIT clipping bounds")
+    _positive_config_integer(marginal, "initial_optimizer_max_iterations")
+    _positive_config_integer(marginal, "retry_optimizer_max_iterations")
+    scale = _finite_config_float(marginal, "estimation_return_scale")
+    tolerance = _finite_config_float(marginal, "optimizer_tolerance")
+    phi_clip = _finite_config_float(marginal, "retry_start_phi_clip")
+    retry_alpha = _finite_config_float(marginal, "retry_start_alpha")
+    retry_beta = _finite_config_float(marginal, "retry_start_beta")
+    retry_df = _finite_config_float(marginal, "retry_start_student_t_df")
+    ar_limit = _finite_config_float(marginal, "ar_absolute_limit")
+    persistence_limit = _finite_config_float(marginal, "garch_persistence_limit")
+    df_minimum = _finite_config_float(marginal, "student_t_df_minimum")
+    ewma_lambda = _finite_config_float(marginal, "ewma_lambda")
+    lower = _finite_config_float(marginal, "pit_clip_lower")
+    upper = _finite_config_float(marginal, "pit_clip_upper")
+    maximum_ewma = _finite_config_float(marginal, "maximum_ewma_fit_fraction")
+    invalid: list[str] = []
+    if scale <= 0:
+        invalid.append("estimation_return_scale must be positive")
+    if tolerance <= 0:
+        invalid.append("optimizer_tolerance must be positive")
+    if not 0 < ar_limit < 1:
+        invalid.append("ar_absolute_limit must lie in (0, 1)")
+    if not 0 < phi_clip < ar_limit:
+        invalid.append("retry_start_phi_clip must lie in (0, ar_absolute_limit)")
+    if not 0 < persistence_limit < 1:
+        invalid.append("garch_persistence_limit must lie in (0, 1)")
+    if retry_alpha < 0 or retry_beta < 0 or retry_alpha + retry_beta >= persistence_limit:
+        invalid.append("retry GARCH starts must be nonnegative and below the persistence limit")
+    if df_minimum <= 2:
+        invalid.append("student_t_df_minimum must exceed 2")
+    if retry_df <= df_minimum:
+        invalid.append("retry_start_student_t_df must exceed student_t_df_minimum")
+    if not 0 < ewma_lambda < 1:
+        invalid.append("ewma_lambda must lie in (0, 1)")
+    if not 0 < lower < upper < 1:
+        invalid.append("PIT clipping bounds must satisfy 0 < lower < upper < 1")
+    if not 0 <= maximum_ewma <= 1:
+        invalid.append("maximum_ewma_fit_fraction must lie in [0, 1]")
+    if invalid:
+        raise ValueError("invalid marginal configuration: " + "; ".join(invalid))
     return marginal
+
+
+def _task_protocol(model_config: Mapping[str, Any]) -> tuple[int, int, int, int]:
+    """Validate and return the frozen task-window configuration."""
+
+    forecast = model_config.get("forecast")
+    clustering = model_config.get("clustering")
+    if not isinstance(forecast, Mapping) or not isinstance(clustering, Mapping):
+        raise TypeError("model configuration must contain forecast and clustering tables")
+    calendar_years = _positive_config_integer(
+        forecast, "training_window_calendar_years", section_name="forecast"
+    )
+    minimum = _positive_config_integer(
+        forecast, "minimum_training_observations", section_name="forecast"
+    )
+    start_year = _positive_config_integer(
+        clustering, "evaluation_start_year", section_name="clustering"
+    )
+    end_year = _positive_config_integer(
+        clustering, "evaluation_end_year", section_name="clustering"
+    )
+    if minimum < 3:
+        raise ValueError("minimum_training_observations must be at least three")
+    if start_year > end_year:
+        raise ValueError("evaluation_start_year must not exceed evaluation_end_year")
+    return calendar_years, minimum, start_year, end_year
 
 
 def _validate_grouping_binding(
@@ -179,6 +273,37 @@ def _validate_grouping_binding(
     recorded = clustering_audit.get("outputs", {}).get("annual_group_returns", {})
     if recorded.get("sha256") != _sha256(group_returns_path):
         raise RuntimeError("group-return panel differs from the passed clustering audit")
+
+
+def _validate_group_metadata(frame: pd.DataFrame) -> None:
+    """Validate annual group sizes and their portfolio-weight identity."""
+
+    group_key = ["year", "universe_variant", "grouping_id", "group_id"]
+    variation = frame.groupby(group_key, sort=False)[["group_size", "portfolio_weight"]].nunique(
+        dropna=False
+    )
+    if bool((variation > 1).any().any()):
+        raise ValueError("group size or portfolio weight changes within an annual group")
+    metadata = frame[group_key + ["group_size", "portfolio_weight"]].drop_duplicates()
+    sizes = metadata["group_size"].to_numpy(dtype=float)
+    weights = metadata["portfolio_weight"].to_numpy(dtype=float)
+    if bool((sizes <= 0).any()) or not np.equal(sizes, np.floor(sizes)).all():
+        raise ValueError("group sizes must be positive integers")
+    if bool(((weights <= 0) | (weights > 1)).any()):
+        raise ValueError("portfolio weights must lie in (0, 1]")
+    for identifiers, annual_groups in metadata.groupby(
+        ["year", "universe_variant", "grouping_id"], sort=False
+    ):
+        expected = annual_groups["group_size"] / annual_groups["group_size"].sum()
+        if not np.allclose(
+            annual_groups["portfolio_weight"].to_numpy(dtype=float),
+            expected.to_numpy(dtype=float),
+            rtol=0.0,
+            atol=1e-12,
+        ):
+            raise ValueError(
+                f"portfolio weights do not equal normalized group sizes: {identifiers}"
+            )
 
 
 def prepare_monthly_tasks(
@@ -208,7 +333,11 @@ def prepare_monthly_tasks(
     ].copy()
     if frame.empty:
         raise ValueError(f"group-return panel has no rows for {universe_variant}")
-    frame["date"] = pd.to_datetime(frame["date"])
+    frame["date"] = pd.to_datetime(frame["date"], errors="coerce")
+    if frame["date"].isna().any():
+        raise ValueError("group-return panel contains an invalid date")
+    if not set(frame["sample_role"]).issubset({"training", "evaluation"}):
+        raise ValueError("group-return panel contains an invalid sample_role")
     key = ["date", "year", "universe_variant", "sample_role", "grouping_id", "group_id"]
     if frame.duplicated(key).any():
         raise ValueError("group-return panel has duplicate logical rows")
@@ -216,13 +345,9 @@ def prepare_monthly_tasks(
         frame[["group_size", "portfolio_weight", "log_return"]].to_numpy(dtype=float)
     ).all():
         raise ValueError("group-return panel contains non-finite required values")
+    _validate_group_metadata(frame)
 
-    forecast = model_config["forecast"]
-    clustering = model_config["clustering"]
-    start_year = int(clustering["evaluation_start_year"])
-    end_year = int(clustering["evaluation_end_year"])
-    calendar_years = int(forecast["training_window_calendar_years"])
-    minimum = int(forecast["minimum_training_observations"])
+    calendar_years, minimum, start_year, end_year = _task_protocol(model_config)
     tasks: list[MonthlyTask] = []
     for (year, grouping_id, group_id), group in frame.groupby(
         ["year", "grouping_id", "group_id"], sort=True
@@ -239,10 +364,8 @@ def prepare_monthly_tasks(
             raise ValueError(
                 f"overlapping sample roles for {year}/{grouping_id}/{group_id}: {dates[:5]}"
             )
-        sizes = group["group_size"].unique()
-        weights = group["portfolio_weight"].unique()
-        if len(sizes) != 1 or len(weights) != 1:
-            raise ValueError(f"group size or weight changes within {year}/{grouping_id}/{group_id}")
+        group_size = int(group["group_size"].iloc[0])
+        portfolio_weight = float(group["portfolio_weight"].iloc[0])
         evaluation = group.loc[group["sample_role"] == "evaluation"]
         if evaluation.empty or not (evaluation["date"].dt.year == year).all():
             raise ValueError(f"invalid evaluation rows for {year}/{grouping_id}/{group_id}")
@@ -270,8 +393,8 @@ def prepare_monthly_tasks(
                     universe_variant=universe_variant,
                     grouping_id=str(grouping_id),
                     group_id=str(group_id),
-                    group_size=int(sizes[0]),
-                    portfolio_weight=float(weights[0]),
+                    group_size=group_size,
+                    portfolio_weight=portfolio_weight,
                     refit_date=refit_date,
                     requested_training_start=requested_start,
                     training=training_series,
@@ -786,6 +909,8 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
+    if args.progress_every < 0:
+        raise ValueError("--progress-every must be nonnegative")
     with args.model_config.open("rb") as handle:
         model_config = tomllib.load(handle)
     marginal = _validate_protocol(model_config)

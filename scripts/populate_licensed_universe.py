@@ -67,7 +67,7 @@ def create_worksheet(candidate_path: Path, output_path: Path) -> int:
                     "reference_gics_sector": row["gics_sector"],
                     "reference_gics_sub_industry": row["gics_sub_industry"],
                     "reference_as_of_date": row["as_of_date"],
-                    **{column: "" for column in ENTRY_COLUMNS},
+                    **dict.fromkeys(ENTRY_COLUMNS, ""),
                     "entry_status": "pending_authorized_source",
                     "review_notes": "",
                 }

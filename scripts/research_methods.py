@@ -8,8 +8,9 @@ must be fixed before those results are generated.
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any, Mapping, Sequence
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -313,7 +314,7 @@ def average_linkage_clusters(
     clusters: dict[int, tuple[str, ...]] = {
         index: (name,) for index, name in enumerate(ordered_names)
     }
-    sizes = {index: 1 for index in clusters}
+    sizes = dict.fromkeys(clusters, 1)
     pair_distances: dict[tuple[int, int], float] = {}
     for left in range(len(ordered_names)):
         for right in range(left + 1, len(ordered_names)):

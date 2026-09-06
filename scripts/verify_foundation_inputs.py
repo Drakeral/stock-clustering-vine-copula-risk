@@ -87,7 +87,7 @@ class FrozenInputSpec:
         *,
         provider: str = "Massive",
         manifest_schema_version: int = 2,
-    ) -> "FrozenInputSpec":
+    ) -> FrozenInputSpec:
         return cls(
             provider=provider,
             manifest_schema_version=manifest_schema_version,
@@ -222,7 +222,7 @@ def inspect_daily(
                 seconds, nanoseconds = divmod(timestamp_ns, 1_000_000_000)
                 if nanoseconds < 0:
                     raise ValueError
-                content_date = dt.datetime.fromtimestamp(seconds, tz=dt.timezone.utc).date()
+                content_date = dt.datetime.fromtimestamp(seconds, tz=dt.UTC).date()
             except (OverflowError, ValueError) as exc:
                 raise ValueError(f"daily row {line_number} has invalid window_start") from exc
             ticker = values[ticker_index]
