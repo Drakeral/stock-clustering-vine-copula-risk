@@ -15,6 +15,10 @@ from scripts.research_methods import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
+CLUSTERING_ARTIFACTS = (
+    ROOT / "data/processed/annual_group_assignments.json",
+    ROOT / "data/processed/annual_group_returns.parquet",
+)
 
 
 def sha256(path):
@@ -136,6 +140,10 @@ class AnnualGroupingPipelineTests(unittest.TestCase):
         self.assertEqual(diagnostics["years"][0]["gics_dependence_gap"]["between_pair_count"], 4)
 
 
+@unittest.skipUnless(
+    all(path.is_file() for path in CLUSTERING_ARTIFACTS),
+    "requires locally generated clustering artifacts",
+)
 class CurrentClusteringArtifactTests(unittest.TestCase):
     def test_current_clustering_audit_and_outputs_are_bound(self):
         audit = json.loads((ROOT / "data/audit/clustering_diagnostics.json").read_text())

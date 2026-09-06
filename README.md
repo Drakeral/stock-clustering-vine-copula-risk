@@ -1,5 +1,7 @@
 # FE5110 Stock-Clustering and Vine-Risk Project
 
+[![Quality checks](https://github.com/Drakeral/stock-clustering-vine-copula-risk/actions/workflows/quality.yml/badge.svg)](https://github.com/Drakeral/stock-clustering-vine-copula-risk/actions/workflows/quality.yml)
+
 This repository implements the reproducible research pipeline for the fixed,
 point-in-time S&P 100 universe described in `FE5110_Project_Plan.md`.
 
@@ -186,6 +188,12 @@ uv run python scripts/generate_run_manifest.py
   and a content hash, not licensed event rows.
 - Build a submission bundle with `git archive HEAD`, never by zipping the live
   working folder, which contains ignored licensed files and credentials.
+
+## License
+
+No open-source license is granted at this time. This repository is public for
+portfolio and review purposes; all rights remain reserved unless a license is
+added later.
 
 ## Main outputs
 

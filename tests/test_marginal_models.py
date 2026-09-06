@@ -21,6 +21,11 @@ from scripts.build_marginal_models import (
 )
 
 ROOT = Path(__file__).resolve().parents[1]
+MARGINAL_ARTIFACTS = (
+    ROOT / "data/processed/marginal_refits.parquet",
+    ROOT / "data/processed/marginal_daily_forecasts.parquet",
+    ROOT / "data/processed/monthly_copula_training_pits.parquet",
+)
 
 
 def sha256_file(path: Path) -> str:
@@ -272,6 +277,10 @@ class FallbackAndFilteringTests(unittest.TestCase):
             self.assertEqual(set(schema["required"]), set(schema["properties"]))
 
 
+@unittest.skipUnless(
+    all(path.is_file() for path in MARGINAL_ARTIFACTS),
+    "requires locally generated marginal-model artifacts",
+)
 class ProductionArtifactTests(unittest.TestCase):
     def test_current_primary_marginal_gate_and_artifacts_pass(self):
         audit_path = ROOT / "data/audit/marginal_model_quality.json"

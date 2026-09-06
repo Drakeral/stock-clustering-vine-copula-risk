@@ -28,6 +28,8 @@ Reference Material/*.pdf
 __pycache__/
 *.py[cod]
 .ipynb_checkpoints/
+.ruff_cache/
+.uv-cache/
 
 # Local environments and OS metadata
 .venv/
