@@ -74,6 +74,12 @@
       "status": "present"
     },
     {
+      "bytes": 1594,
+      "path": "config/schemas/marginal_training_pit_record.schema.json",
+      "sha256": "e9087b5d52000b5352e5fa129e396cfbc81541d5196543bab854f390299591f9",
+      "status": "present"
+    },
+    {
       "bytes": 3983,
       "path": "config/security_master.json",
       "sha256": "cec884570c4367699a10a7e68aa9451c6a515a11b84f5af1313aa70e55f6307b",
@@ -97,9 +103,9 @@
     "run_scope": "provisional_research_results",
     "status": "provisional_pass"
   },
-  "generated_at_utc": "2026-09-06T13:21:31.959373+00:00",
+  "generated_at_utc": "2026-09-06T13:32:52.312452+00:00",
   "git": {
-    "commit": "1f09c72f8712663f696991c89150672f5d62aa23",
+    "commit": "409f9892ae21925d9aa3c8f5280404683fe7811f",
     "commit_present": true,
     "repository_initialized": true,
     "worktree_clean": true
@@ -171,9 +177,9 @@
       "status": "present"
     },
     {
-      "bytes": 2048,
+      "bytes": 2701,
       "path": "data/audit/marginal_model_quality.json",
-      "sha256": "6f82e572e00134d4240cecf5096580eb6451ea299f702d6fe6377a4401c17916",
+      "sha256": "dba3e798774101446e93fd05629ee870422b9c031e807af721b6c12ad62d044c",
       "status": "present"
     },
     {
@@ -240,6 +246,12 @@
       "bytes": 453685,
       "path": "data/processed/marginal_refits.parquet",
       "sha256": "3ab07d0c6f6acccf702122d858a352ae81112a6a6da34279e60022a23638117e",
+      "status": "present"
+    },
+    {
+      "bytes": 23358209,
+      "path": "data/processed/monthly_copula_training_pits.parquet",
+      "sha256": "1ef39a00c88b5e300a21f302274a1aede80d00bb87069381e9faab95ea979e70",
       "status": "present"
     },
     {
