@@ -342,6 +342,7 @@ class RunManifestTests(unittest.TestCase):
         self.assertIn("data/processed/annual_group_returns.parquet", paths)
         self.assertIn("data/processed/marginal_refits.parquet", paths)
         self.assertIn("data/processed/marginal_daily_forecasts.parquet", paths)
+        self.assertIn("data/processed/monthly_copula_training_pits.parquet", paths)
 
     def test_git_state_counts_untracked_files_as_dirty(self):
         with tempfile.TemporaryDirectory() as temporary:

@@ -143,6 +143,7 @@ def default_output_paths() -> list[Path]:
         Path("data/processed/annual_group_returns.parquet"),
         Path("data/processed/marginal_refits.parquet"),
         Path("data/processed/marginal_daily_forecasts.parquet"),
+        Path("data/processed/monthly_copula_training_pits.parquet"),
     ]
 
 

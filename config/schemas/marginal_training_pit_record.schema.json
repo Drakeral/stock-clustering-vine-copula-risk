@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/fe5110/marginal_training_pit_record.schema.json",
+  "title": "FE5110 aligned monthly copula-training PIT record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "training_date",
+    "year",
+    "month",
+    "refit_date",
+    "universe_variant",
+    "grouping_id",
+    "group_id",
+    "copula_refit_id",
+    "margin_refit_id",
+    "selected_method",
+    "fallback_level",
+    "training_log_return",
+    "standardized_residual",
+    "pit",
+    "pit_was_clipped"
+  ],
+  "properties": {
+    "training_date": {"type": "string", "format": "date"},
+    "year": {"type": "integer", "minimum": 2020, "maximum": 2025},
+    "month": {"type": "integer", "minimum": 1, "maximum": 12},
+    "refit_date": {"type": "string", "format": "date"},
+    "universe_variant": {"enum": ["security_primary", "issuer_deduplicated_robustness"]},
+    "grouping_id": {"enum": ["gics_sector", "hierarchical_cluster"]},
+    "group_id": {"type": "string", "minLength": 1},
+    "copula_refit_id": {"type": "string", "minLength": 1},
+    "margin_refit_id": {"type": "string", "minLength": 1},
+    "selected_method": {
+      "enum": ["ar_garch_t", "ar_garch_t_retry", "constant_mean_garch_t", "ewma_empirical"]
+    },
+    "fallback_level": {"type": "integer", "minimum": 0, "maximum": 3},
+    "training_log_return": {"type": "number"},
+    "standardized_residual": {"type": "number"},
+    "pit": {"type": "number", "minimum": 0.000001, "maximum": 0.999999},
+    "pit_was_clipped": {"type": "boolean"}
+  }
+}

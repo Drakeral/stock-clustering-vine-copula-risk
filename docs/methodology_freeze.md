@@ -131,6 +131,14 @@ empirical distribution; PITs use a midrank empirical CDF and are clipped to
 `[1e-6,1-1e-6]`. Student-t PITs use the standardized, unit-variance Student-t
 distribution fitted by the marginal model and the same clipping bounds.
 
+For each monthly copula refit, in-sample standardized residuals are transformed
+with that group's selected Student-t or empirical marginal CDF. The copula
+training panel retains only dates present for all 11 groups in the matched annual
+representation. Every retained date is strictly before the refit date; the first
+training observation may be absent because an AR(1) fit requires one lag. These
+aligned training PITs are distinct from the daily out-of-sample PITs used for
+forecast diagnostics.
+
 The primary 11-dimensional R-vine is truncated after tree 3; a full ten-tree vine
 is a robustness model. Structure selection uses the Dißmann sequential
 maximum-spanning-tree procedure on absolute empirical Kendall tau. Pair families

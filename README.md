@@ -208,8 +208,10 @@ uv run python scripts/generate_run_manifest.py
   group-month, including its leakage-free training bounds, selected marginal
   specification, parameters, convergence diagnostics, and complete fallback log;
 - `data/processed/marginal_daily_forecasts.parquet`: daily one-step conditional
-  group means, variances, standardized residuals, and clipped probability integral
-  transforms for copula estimation; and
+  group means, variances, standardized residuals, and clipped out-of-sample
+  probability integral transforms for forecast diagnostics;
+- `data/processed/monthly_copula_training_pits.parquet`: aligned, leakage-free
+  in-sample PIT matrices for each monthly GICS and hierarchical copula refit; and
 - `data/audit/clustering_diagnostics.json`: dependence gaps, ARI, NMI, pair
   counts, portfolio-identity errors, and hashes of the grouping artifacts;
 - `data/audit/marginal_model_quality.json`: marginal coverage, fallback incidence,

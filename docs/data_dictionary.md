@@ -136,13 +136,25 @@ log of every attempted fit. The schema is
 One row per evaluation date and group. Conditional means, volatilities, and
 variances are stored in decimal log-return units. The realized group log return,
 standardized residual, clipped PIT, monthly `refit_id`, method, and fallback status
-are retained so the next copula stage can reproduce its inputs without refitting
-the margins. The schema is `config/schemas/marginal_daily_record.schema.json`.
+are retained for out-of-sample forecast diagnostics. The schema is
+`config/schemas/marginal_daily_record.schema.json`.
 
-`data/audit/marginal_model_quality.json` binds both outputs to the annual grouping
-panel, grouping audit, foundation status, and frozen model configuration. It fails
-for duplicate or incomplete forecasts, a missing monthly refit, non-finite output,
-an out-of-bound PIT, or an EWMA share above 1% of group-month fits.
+### `data/processed/monthly_copula_training_pits.parquet`
+
+Long-form, aligned in-sample PIT matrices used to estimate monthly copulas. Every
+`copula_refit_id` contains exactly 11 groups on each retained training date. A
+date is retained only when every group in the matched GICS or hierarchical
+representation has a finite standardized residual and clipped PIT. All dates are
+strictly earlier than the associated `refit_date`; AR(1) initialization can remove
+the first raw training observation. At least 700 aligned dates are required for
+every monthly block. The schema is
+`config/schemas/marginal_training_pit_record.schema.json`.
+
+`data/audit/marginal_model_quality.json` binds all three outputs to the annual
+grouping panel, grouping audit, foundation status, and frozen model configuration.
+It fails for duplicate or incomplete forecasts, a missing monthly refit, an
+incomplete or incorrectly dimensioned training PIT matrix, look-ahead, non-finite
+output, an out-of-bound PIT, or an EWMA share above 1% of group-month fits.
 
 ## Lifecycle policy
 

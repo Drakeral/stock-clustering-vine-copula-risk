@@ -73,6 +73,7 @@ class MarginState:
     student_t_df: float | None
     next_variance: float
     previous_return: float
+    training_standardized_residuals: pd.Series
     empirical_innovations: np.ndarray | None
     convergence_flag: int | None
     loglikelihood: float | None
@@ -506,8 +507,11 @@ def _fit_arch_attempt(
         student_t_df = _parameter_value(parameters, "nu")
         residuals = result.resid.dropna()
         volatilities = result.conditional_volatility.dropna()
-        if residuals.empty or volatilities.empty:
+        standardized_residuals = result.std_resid.dropna().astype(float)
+        if residuals.empty or volatilities.empty or standardized_residuals.empty:
             raise ValueError("fit produced no filtered residual or volatility state")
+        if not np.isfinite(standardized_residuals.to_numpy()).all():
+            raise ValueError("fit produced non-finite standardized residuals")
         last_residual = float(residuals.iloc[-1])
         last_variance = float(volatilities.iloc[-1] ** 2)
         forecast_variance = omega + alpha * last_residual**2 + beta * last_variance
@@ -558,6 +562,7 @@ def _fit_arch_attempt(
                 student_t_df=student_t_df,
                 next_variance=forecast_variance,
                 previous_return=float(sample.iloc[-1]),
+                training_standardized_residuals=standardized_residuals,
                 empirical_innovations=None,
                 convergence_flag=convergence_flag,
                 loglikelihood=float(result.loglikelihood),
@@ -598,6 +603,7 @@ def _ewma_state(sample: pd.Series, marginal: Mapping[str, Any]) -> MarginState:
         student_t_df=None,
         next_variance=float(variance),
         previous_return=float(values[-1]),
+        training_standardized_residuals=pd.Series(innovations, index=sample.index, dtype=float),
         empirical_innovations=np.asarray(innovations),
         convergence_flag=None,
         loglikelihood=None,
@@ -678,6 +684,96 @@ def _empirical_midrank_cdf(reference: np.ndarray, value: float) -> float:
     return (less + 0.5 * equal) / len(reference)
 
 
+def training_pit_frame(
+    task: MonthlyTask,
+    state: MarginState,
+    marginal: Mapping[str, Any],
+) -> pd.DataFrame:
+    """Transform a fitted margin's in-sample residuals into training PITs."""
+
+    standardized = state.training_standardized_residuals.sort_index()
+    if standardized.empty or standardized.index.has_duplicates:
+        raise ValueError(f"invalid training residual index for {task.refit_id}")
+    if not standardized.index.isin(task.training.index).all():
+        raise ValueError(f"training residual date falls outside {task.refit_id}")
+    if standardized.index.max() >= task.refit_date:
+        raise ValueError(f"training residual reaches the refit date for {task.refit_id}")
+    values = standardized.to_numpy(dtype=float)
+    if not np.isfinite(values).all():
+        raise ValueError(f"non-finite training residual for {task.refit_id}")
+    if state.student_t_df is not None:
+        raw_pits = np.asarray(StudentsT().cdf(values, [state.student_t_df]), dtype=float)
+    else:
+        if state.empirical_innovations is None:
+            raise AssertionError("EWMA state has no empirical innovation reference")
+        raw_pits = np.asarray(
+            [_empirical_midrank_cdf(state.empirical_innovations, value) for value in values],
+            dtype=float,
+        )
+    lower = float(marginal["pit_clip_lower"])
+    upper = float(marginal["pit_clip_upper"])
+    pits = np.clip(raw_pits, lower, upper)
+    training_returns = task.training.reindex(standardized.index)
+    if training_returns.isna().any():
+        raise AssertionError("training return alignment unexpectedly produced a missing value")
+    return pd.DataFrame(
+        {
+            "training_date": standardized.index,
+            "year": task.year,
+            "month": task.month,
+            "refit_date": task.refit_date,
+            "universe_variant": task.universe_variant,
+            "grouping_id": task.grouping_id,
+            "group_id": task.group_id,
+            "copula_refit_id": (
+                f"{task.year}-{task.month:02d}:{task.universe_variant}:{task.grouping_id}"
+            ),
+            "margin_refit_id": task.refit_id,
+            "selected_method": state.selected_method,
+            "fallback_level": state.fallback_level,
+            "training_log_return": training_returns.to_numpy(dtype=float),
+            "standardized_residual": values,
+            "pit": pits,
+            "pit_was_clipped": pits != raw_pits,
+        }
+    )
+
+
+def align_training_pits(
+    training_pits: pd.DataFrame,
+    refits: pd.DataFrame,
+    *,
+    expected_dimension: int,
+) -> tuple[pd.DataFrame, list[str]]:
+    """Keep only dates observed for every group in each monthly copula block."""
+
+    block_key = ["year", "month", "universe_variant", "grouping_id"]
+    date_key = block_key + ["training_date"]
+    issues: list[str] = []
+    refit_dimensions = refits.groupby(block_key, sort=False)["group_id"].nunique()
+    if bool((refit_dimensions != expected_dimension).any()):
+        issues.append("unexpected_monthly_copula_dimension")
+    observed_dimensions = training_pits.groupby(date_key, sort=False)["group_id"].transform(
+        "nunique"
+    )
+    expected_by_row = training_pits.groupby(block_key, sort=False)["group_id"].transform("nunique")
+    aligned = training_pits.loc[observed_dimensions == expected_by_row].copy()
+    if aligned.empty:
+        issues.append("no_complete_training_pit_dates")
+        return aligned, issues
+    aligned_dimensions = aligned.groupby(date_key, sort=False)["group_id"].nunique()
+    if bool((aligned_dimensions != expected_dimension).any()):
+        issues.append("incomplete_training_pit_matrix")
+    aligned_groups = aligned.groupby(block_key, sort=False)["group_id"].nunique()
+    if len(aligned_groups) != len(refit_dimensions):
+        issues.append("missing_monthly_training_pit_block")
+    if aligned.duplicated(date_key + ["group_id"]).any():
+        issues.append("duplicate_training_pit_record")
+    if bool((aligned["training_date"] >= aligned["refit_date"]).any()):
+        issues.append("training_pit_lookahead")
+    return aligned.sort_values(date_key + ["group_id"]).reset_index(drop=True), issues
+
+
 def filter_month(
     task: MonthlyTask,
     state: MarginState,
@@ -740,9 +836,10 @@ def run_monthly_task(
     marginal: Mapping[str, Any],
     *,
     arch_fitter: ArchFitFunction | None = None,
-) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+) -> tuple[dict[str, Any], list[dict[str, Any]], pd.DataFrame]:
     state, attempts = select_margin_model(task.training, marginal, arch_fitter=arch_fitter)
     daily = filter_month(task, state, marginal)
+    training_pits = training_pit_frame(task, state, marginal)
     record = {
         "refit_id": task.refit_id,
         "refit_date": task.refit_date,
@@ -777,7 +874,7 @@ def run_monthly_task(
         "attempt_log_json": json.dumps(attempts, sort_keys=True, separators=(",", ":")),
         "fit_status": "ok" if state.fallback_level == 0 else "fallback",
     }
-    return record, daily
+    return record, daily, training_pits
 
 
 def build_marginal_outputs(
@@ -786,22 +883,34 @@ def build_marginal_outputs(
     *,
     universe_variant: str = "security_primary",
     progress_every: int = 100,
-) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, dict[str, Any]]:
     marginal = _validate_protocol(model_config)
+    vine = model_config.get("vine")
+    if not isinstance(vine, Mapping):
+        raise TypeError("model configuration must contain a vine table")
+    expected_dimension = _positive_config_integer(vine, "dimension", section_name="vine")
     tasks = prepare_monthly_tasks(group_returns, model_config, universe_variant=universe_variant)
     refits: list[dict[str, Any]] = []
     daily_rows: list[dict[str, Any]] = []
+    training_frames: list[pd.DataFrame] = []
     for index, task in enumerate(tasks, start=1):
-        refit, daily = run_monthly_task(task, marginal)
+        refit, daily, training_pits = run_monthly_task(task, marginal)
         refits.append(refit)
         daily_rows.extend(daily)
+        training_frames.append(training_pits)
         if progress_every and index % progress_every == 0:
             print(f"marginal_progress={index}/{len(tasks)}")
     refit_frame = pd.DataFrame(refits).sort_values(["year", "month", "grouping_id", "group_id"])
     daily_frame = pd.DataFrame(daily_rows).sort_values(["date", "grouping_id", "group_id"])
+    raw_training_pits = pd.concat(training_frames, ignore_index=True)
+    training_pit_panel, training_pit_issues = align_training_pits(
+        raw_training_pits,
+        refit_frame,
+        expected_dimension=expected_dimension,
+    )
     refit_key = ["year", "month", "universe_variant", "grouping_id", "group_id"]
     daily_key = ["date", "universe_variant", "grouping_id", "group_id"]
-    issues: list[str] = []
+    issues: list[str] = list(training_pit_issues)
     if refit_frame.duplicated(refit_key).any():
         issues.append("duplicate_group_month_refit")
     if daily_frame.duplicated(daily_key).any():
@@ -840,6 +949,22 @@ def build_marginal_outputs(
     upper = float(marginal["pit_clip_upper"])
     if bool(((daily_frame["pit"] < lower) | (daily_frame["pit"] > upper)).any()):
         issues.append("pit_outside_frozen_bounds")
+    numeric_training = training_pit_panel[
+        ["training_log_return", "standardized_residual", "pit"]
+    ].to_numpy(dtype=float)
+    if not np.isfinite(numeric_training).all():
+        issues.append("nonfinite_training_pit_output")
+    if bool(((training_pit_panel["pit"] < lower) | (training_pit_panel["pit"] > upper)).any()):
+        issues.append("training_pit_outside_frozen_bounds")
+    block_key = ["year", "month", "universe_variant", "grouping_id"]
+    aligned_date_counts = training_pit_panel.groupby(block_key, sort=False)[
+        "training_date"
+    ].nunique()
+    minimum_aligned = int(aligned_date_counts.min()) if not aligned_date_counts.empty else 0
+    maximum_aligned = int(aligned_date_counts.max()) if not aligned_date_counts.empty else 0
+    minimum_required = int(model_config["forecast"]["minimum_training_observations"])
+    if minimum_aligned < minimum_required:
+        issues.append("insufficient_aligned_training_pit_dates")
     ewma_count = int(refit_frame["ewma_used"].sum())
     maximum_ewma = float(marginal["maximum_ewma_fit_fraction"])
     if not fallback_fraction_passes(ewma_count, len(refit_frame), maximum=maximum_ewma):
@@ -848,12 +973,20 @@ def build_marginal_outputs(
         str(key): int(value) for key, value in refit_frame["selected_method"].value_counts().items()
     }
     audit = {
-        "schema_version": 1,
-        "gate_name": "marginal_model_quality_v1",
+        "schema_version": 2,
+        "gate_name": "marginal_model_quality_v2",
         "status": "pass" if not issues else "fail",
         "universe_variant": universe_variant,
         "refit_count": len(refit_frame),
         "daily_forecast_count": len(daily_frame),
+        "raw_training_pit_record_count": len(raw_training_pits),
+        "training_pit_record_count": len(training_pit_panel),
+        "alignment_dropped_record_count": len(raw_training_pits) - len(training_pit_panel),
+        "copula_training_block_count": len(aligned_date_counts),
+        "copula_dimension": expected_dimension,
+        "minimum_aligned_training_dates": minimum_aligned,
+        "maximum_aligned_training_dates": maximum_aligned,
+        "minimum_required_aligned_training_dates": minimum_required,
         "selected_method_counts": selected_counts,
         "fallback_fit_count": int(refit_frame["fallback_used"].sum()),
         "ewma_fit_count": ewma_count,
@@ -862,9 +995,17 @@ def build_marginal_outputs(
         "pit_clipped_count": int(daily_frame["pit_was_clipped"].sum()),
         "pit_minimum": float(daily_frame["pit"].min()),
         "pit_maximum": float(daily_frame["pit"].max()),
+        "training_pit_clipped_count": int(training_pit_panel["pit_was_clipped"].sum()),
+        "training_pit_minimum": float(training_pit_panel["pit"].min()),
+        "training_pit_maximum": float(training_pit_panel["pit"].max()),
         "issues": issues,
     }
-    return refit_frame.reset_index(drop=True), daily_frame.reset_index(drop=True), audit
+    return (
+        refit_frame.reset_index(drop=True),
+        daily_frame.reset_index(drop=True),
+        training_pit_panel,
+        audit,
+    )
 
 
 def parse_args() -> argparse.Namespace:
@@ -899,6 +1040,11 @@ def parse_args() -> argparse.Namespace:
         default=PROJECT_ROOT / "data/processed/marginal_daily_forecasts.parquet",
     )
     parser.add_argument(
+        "--training-pits-output",
+        type=Path,
+        default=PROJECT_ROOT / "data/processed/monthly_copula_training_pits.parquet",
+    )
+    parser.add_argument(
         "--audit-output",
         type=Path,
         default=PROJECT_ROOT / "data/audit/marginal_model_quality.json",
@@ -919,7 +1065,7 @@ def main() -> int:
     clustering_audit = json.loads(args.clustering_audit.read_text(encoding="utf-8"))
     _validate_grouping_binding(clustering_audit, args.group_returns)
     group_returns = pd.read_parquet(args.group_returns)
-    refits, daily, audit = build_marginal_outputs(
+    refits, daily, training_pits, audit = build_marginal_outputs(
         group_returns,
         model_config,
         universe_variant=args.universe_variant,
@@ -927,6 +1073,7 @@ def main() -> int:
     )
     _write_parquet_atomic(args.refits_output, refits)
     _write_parquet_atomic(args.daily_output, daily)
+    _write_parquet_atomic(args.training_pits_output, training_pits)
     audit.update(
         {
             "reporting_scope": scope,
@@ -967,13 +1114,19 @@ def main() -> int:
                     "sha256": _sha256(args.daily_output),
                     "rows": len(daily),
                 },
+                "monthly_copula_training_pits": {
+                    "path": _project_path(args.training_pits_output),
+                    "sha256": _sha256(args.training_pits_output),
+                    "rows": len(training_pits),
+                },
             },
         }
     )
     _write_json_atomic(args.audit_output, audit)
     print(
         f"marginal_model_quality={audit['status']} refits={len(refits)} "
-        f"daily={len(daily)} ewma_fraction={audit['ewma_fit_fraction']:.6f}"
+        f"daily={len(daily)} training_pits={len(training_pits)} "
+        f"ewma_fraction={audit['ewma_fit_fraction']:.6f}"
     )
     print(f"Audit: {args.audit_output}")
     return 0 if audit["status"] == "pass" else 1

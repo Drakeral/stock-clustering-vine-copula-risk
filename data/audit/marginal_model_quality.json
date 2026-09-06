@@ -1,9 +1,12 @@
 {
+  "alignment_dropped_record_count": 7,
+  "copula_dimension": 11,
+  "copula_training_block_count": 144,
   "daily_forecast_count": 33176,
   "ewma_fit_count": 4,
   "ewma_fit_fraction": 0.0025252525252525255,
   "fallback_fit_count": 15,
-  "gate_name": "marginal_model_quality_v1",
+  "gate_name": "marginal_model_quality_v2",
   "inputs": {
     "annual_group_returns": {
       "path": "data/processed/annual_group_returns.parquet",
@@ -23,6 +26,7 @@
     }
   },
   "issues": [],
+  "maximum_aligned_training_dates": 757,
   "maximum_ewma_fit_fraction": 0.01,
   "method": {
     "estimation_return_scale": 100.0,
@@ -36,6 +40,8 @@
     "pit_clip_upper": 0.999999,
     "primary": "AR(1)-GARCH(1,1)-Student-t"
   },
+  "minimum_aligned_training_dates": 749,
+  "minimum_required_aligned_training_dates": 700,
   "outputs": {
     "marginal_daily_forecasts": {
       "path": "data/processed/marginal_daily_forecasts.parquet",
@@ -46,14 +52,20 @@
       "path": "data/processed/marginal_refits.parquet",
       "rows": 1584,
       "sha256": "3ab07d0c6f6acccf702122d858a352ae81112a6a6da34279e60022a23638117e"
+    },
+    "monthly_copula_training_pits": {
+      "path": "data/processed/monthly_copula_training_pits.parquet",
+      "rows": 1192730,
+      "sha256": "1ef39a00c88b5e300a21f302274a1aede80d00bb87069381e9faab95ea979e70"
     }
   },
   "pit_clipped_count": 0,
   "pit_maximum": 0.9999959872265248,
   "pit_minimum": 2.10978912193416e-06,
+  "raw_training_pit_record_count": 1192737,
   "refit_count": 1584,
   "reporting_scope": "provisional_research_results",
-  "schema_version": 1,
+  "schema_version": 2,
   "selected_method_counts": {
     "ar_garch_t": 1569,
     "ar_garch_t_retry": 8,
@@ -61,5 +73,9 @@
     "ewma_empirical": 4
   },
   "status": "pass",
+  "training_pit_clipped_count": 1,
+  "training_pit_maximum": 0.9999988572652487,
+  "training_pit_minimum": 1e-06,
+  "training_pit_record_count": 1192730,
   "universe_variant": "security_primary"
 }
