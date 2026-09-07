@@ -233,6 +233,7 @@ class RiskAndInferenceTests(unittest.TestCase):
     def test_model_config_is_frozen_and_complete(self):
         with (ROOT / "config/model_config.toml").open("rb") as handle:
             config = tomllib.load(handle)
+        self.assertEqual(config["schema_version"], 2)
         self.assertEqual(config["simulation"]["draws_per_month"], 100_000)
         self.assertEqual(config["vine"]["primary_truncation_tree"], 3)
         self.assertEqual(config["inference"]["dm_hac_lag"], 7)
