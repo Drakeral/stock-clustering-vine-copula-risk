@@ -20,7 +20,7 @@
     },
     "marginal_model_quality": {
       "path": "data/audit/marginal_model_quality.json",
-      "sha256": "3c230e3f5a191b4b3f126a1688712115340b327a199c9dcbba1fa6ef4dcd8cc5"
+      "sha256": "e5477b16f30a68a7701f1b5f0c04e7df8e3ebdc49a396fb3ba32f5692595952b"
     },
     "marginal_refits": {
       "path": "data/processed/marginal_refits.parquet",
@@ -28,7 +28,7 @@
     },
     "model_config": {
       "path": "config/model_config.toml",
-      "sha256": "eb7358f7abd5b19022f6a3dd19a344e8549f449617ab56cb7c1a979388f69b14"
+      "sha256": "d6d0cd9a53cce7bfaf0e19b2c973648ff10dcb20d48e67b53c0e5c8367a509fc"
     },
     "monthly_copula_training_pits": {
       "path": "data/processed/monthly_copula_training_pits.parquet",
