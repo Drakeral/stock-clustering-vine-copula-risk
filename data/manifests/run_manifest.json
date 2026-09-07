@@ -38,9 +38,9 @@
       "status": "present"
     },
     {
-      "bytes": 4328,
+      "bytes": 4725,
       "path": "config/model_config.toml",
-      "sha256": "b154a15cc5bf329a29cfeea7072a7183db2312c34b680a9f7c67c91b45c6ec2b",
+      "sha256": "eb7358f7abd5b19022f6a3dd19a344e8549f449617ab56cb7c1a979388f69b14",
       "status": "present"
     },
     {
@@ -56,9 +56,15 @@
       "status": "present"
     },
     {
-      "bytes": 1506,
+      "bytes": 1530,
       "path": "config/schemas/forecast_record.schema.json",
-      "sha256": "72527146483078f915cf354485fae545d438b4e8519047046cda542be3775658",
+      "sha256": "b2d33373167520a8cd96145598a2875d02f082d8a3d88c84db424c11714cf00f",
+      "status": "present"
+    },
+    {
+      "bytes": 2428,
+      "path": "config/schemas/gaussian_copula_refit_record.schema.json",
+      "sha256": "e7a969c0d54cd5bba4631e271053fd6c4c5c76f2b4d3df15053718ebceb066f7",
       "status": "present"
     },
     {
@@ -92,7 +98,8 @@
       "boto3": "1.43.72",
       "numpy": "2.5.2",
       "pandas": "2.3.3",
-      "pyarrow": "23.0.1"
+      "pyarrow": "23.0.1",
+      "scipy": "1.18.1"
     },
     "implementation": "CPython",
     "platform": "macOS-26.6.2-arm64-arm-64bit",
@@ -103,9 +110,9 @@
     "run_scope": "provisional_research_results",
     "status": "provisional_pass"
   },
-  "generated_at_utc": "2026-09-06T14:02:33.412907+00:00",
+  "generated_at_utc": "2026-09-07T14:43:19.854606+00:00",
   "git": {
-    "commit": "8dc19420d3c81beeffd0af0f66eeff1741ebef10",
+    "commit": "8d91be30868f969f77eb8ff217c190ef9a5a5c42",
     "commit_present": true,
     "repository_initialized": true,
     "worktree_clean": true
@@ -144,15 +151,15 @@
       "status": "present"
     },
     {
-      "bytes": 525,
+      "bytes": 545,
       "path": "pyproject.toml",
-      "sha256": "3372ec735ae14e6d3f966fdbd70810491d18fd2ddd7be534e896c577666fb7b4",
+      "sha256": "23f0a10704028c5fe0094aa456365209fcb8c58896e0cbe07531ea4dcd6f15d7",
       "status": "present"
     },
     {
-      "bytes": 63198,
+      "bytes": 63271,
       "path": "uv.lock",
-      "sha256": "9a2ea00d54d6155f18db80321364e46a75763cc7ab300d45711786bda49145ca",
+      "sha256": "793c92946122475865fec550bf9091bcd927673c9cd3aee4475202c481d14799",
       "status": "present"
     }
   ],
@@ -177,9 +184,15 @@
       "status": "present"
     },
     {
+      "bytes": 2979,
+      "path": "data/audit/gaussian_copula_quality.json",
+      "sha256": "90e337dce04ecd02b2c04ea6e91cd95bdf62d5a0de8c75e7aa79a2f4a0094ed8",
+      "status": "present"
+    },
+    {
       "bytes": 2701,
       "path": "data/audit/marginal_model_quality.json",
-      "sha256": "dba3e798774101446e93fd05629ee870422b9c031e807af721b6c12ad62d044c",
+      "sha256": "3c230e3f5a191b4b3f126a1688712115340b327a199c9dcbba1fa6ef4dcd8cc5",
       "status": "present"
     },
     {
@@ -198,6 +211,12 @@
       "bytes": 668,
       "path": "data/audit/universe_provenance.json",
       "sha256": "98809bdb195b82928b26a72985968891e0df935f35255ebef6a27d3626dc692b",
+      "status": "present"
+    },
+    {
+      "bytes": 19519,
+      "path": "data/manifests/simulation_seed_manifest.json",
+      "sha256": "f0763b5e868329ebf55f6973abd74e9ec3f86940bea8c316d5b9e289cca2956d",
       "status": "present"
     },
     {
@@ -234,6 +253,18 @@
       "bytes": 69294,
       "path": "data/processed/final_universe.json",
       "sha256": "9409bbfbc4fc567ad4da0841c46266818af129e9e0ef9431af29e2740c352943",
+      "status": "present"
+    },
+    {
+      "bytes": 197508,
+      "path": "data/processed/gaussian_copula_refits.parquet",
+      "sha256": "e62de6021e1832d18ee0aa6d3c6df9f3566e9a5806242b66c5fc65d56db6d71e",
+      "status": "present"
+    },
+    {
+      "bytes": 211137,
+      "path": "data/processed/gaussian_risk_forecasts.parquet",
+      "sha256": "0e9d83dafd8918ddcb5d9fad2b9189a4e683b87a76c6b151609a01e2df6eca36",
       "status": "present"
     },
     {
