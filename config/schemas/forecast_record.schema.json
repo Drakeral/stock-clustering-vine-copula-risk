@@ -18,6 +18,7 @@
     "seed_components",
     "margin_fallback_count",
     "whole_vine_fallback",
+    "copula_log_score",
     "forecast_status"
   ],
   "properties": {

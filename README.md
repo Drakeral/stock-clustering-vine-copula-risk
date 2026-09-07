@@ -139,6 +139,7 @@ uv run python scripts/validate_portfolio_arithmetic.py
 uv run python scripts/update_foundation_status.py --require-modelling-ready
 uv run python scripts/build_annual_groupings.py
 uv run python scripts/build_marginal_models.py
+uv run python scripts/build_gaussian_copula.py
 uv run ruff check scripts tests
 uv run ruff format --check scripts tests
 uv run python -m unittest discover -s tests -v
@@ -220,9 +221,17 @@ added later.
   probability integral transforms for forecast diagnostics;
 - `data/processed/monthly_copula_training_pits.parquet`: aligned, leakage-free
   in-sample PIT matrices for each monthly GICS and hierarchical copula refit; and
+- `data/processed/gaussian_copula_refits.parquet`: fitted monthly M1/M3 Gaussian
+  dependence matrices and numerical diagnostics;
+- `data/processed/gaussian_risk_forecasts.parquet`: daily M1/M3 portfolio VaR,
+  ES, realised loss, and matched copula log scores;
+- `data/manifests/simulation_seed_manifest.json`: reproducible monthly common-
+  random-number seeds and uniform-matrix hashes; and
 - `data/audit/clustering_diagnostics.json`: dependence gaps, ARI, NMI, pair
   counts, portfolio-identity errors, and hashes of the grouping artifacts;
 - `data/audit/marginal_model_quality.json`: marginal coverage, fallback incidence,
   PIT bounds, output hashes, and the frozen 1% EWMA quality gate;
+- `data/audit/gaussian_copula_quality.json`: M1/M3 fit, simulation, forecast-
+  coverage, portfolio-identity, and numerical-stability checks;
 - `data/audit/`: separate provenance, input-integrity, construction, and current
   readiness reports.

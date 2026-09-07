@@ -74,6 +74,15 @@ maximum_failed_pair_fraction = 0.10
 monthly_structure_failure_action = "matched_gaussian"
 maximum_whole_vine_fallback_date_fraction = 0.01
 
+[gaussian]
+estimator = "pearson_correlation_of_normal_scores"
+repair_method = "symmetric_eigenvalue_floor_then_unit_diagonal_rescale"
+factorization = "cholesky"
+log_score = "gaussian_copula_log_density"
+eigenvalue_floor = 1e-8
+repair_tolerance = 1e-12
+maximum_condition_number = 1e10
+
 [simulation]
 draws_per_month = 100000
 dimension = 11
@@ -81,6 +90,8 @@ bit_generator = "PCG64DXSM"
 base_seed = 5110
 seed_components = ["base_seed", "year", "month"]
 common_random_numbers = true
+student_t_standardization = "unit_variance_sqrt_df_minus_2_over_df"
+ewma_inverse_cdf = "inverted_empirical_cdf"
 
 [clustering]
 primary_method = "average_linkage_spearman_distance"

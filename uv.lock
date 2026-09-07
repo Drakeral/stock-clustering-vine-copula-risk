@@ -70,6 +70,7 @@ dependencies = [
     { name = "numpy" },
     { name = "pandas" },
     { name = "pyarrow" },
+    { name = "scipy" },
 ]
 
 [package.dev-dependencies]
@@ -84,6 +85,7 @@ requires-dist = [
     { name = "numpy", specifier = ">=1.26,<3" },
     { name = "pandas", specifier = ">=2.2,<3" },
     { name = "pyarrow", specifier = ">=16,<24" },
+    { name = "scipy", specifier = ">=1.13,<2" },
 ]
 
 [package.metadata.requires-dev]
