@@ -9,7 +9,7 @@ import json
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import pandas as pd
@@ -110,12 +110,12 @@ def _validate_protocol(
     sections = [gaussian, simulation, forecast, marginal, portfolio, vine]
     if not all(isinstance(section, Mapping) for section in sections):
         raise TypeError("model configuration is missing a required modelling table")
-    assert isinstance(gaussian, Mapping)
-    assert isinstance(simulation, Mapping)
-    assert isinstance(forecast, Mapping)
-    assert isinstance(marginal, Mapping)
-    assert isinstance(portfolio, Mapping)
-    assert isinstance(vine, Mapping)
+    gaussian = cast(Mapping[str, Any], gaussian)
+    simulation = cast(Mapping[str, Any], simulation)
+    forecast = cast(Mapping[str, Any], forecast)
+    marginal = cast(Mapping[str, Any], marginal)
+    portfolio = cast(Mapping[str, Any], portfolio)
+    vine = cast(Mapping[str, Any], vine)
 
     expected_gaussian = {
         "estimator": "pearson_correlation_of_normal_scores",
@@ -176,6 +176,10 @@ def _validate_protocol(
     upper = _finite_float(marginal, "pit_clip_upper", "marginal")
     if not 0 < lower < upper < 1:
         raise ValueError("marginal PIT bounds must lie strictly inside (0, 1)")
+    scale = _finite_float(marginal, "estimation_return_scale", "marginal")
+    smoothing = _finite_float(marginal, "ewma_lambda", "marginal")
+    if scale <= 0 or not 0 < smoothing < 1:
+        raise ValueError("invalid marginal inversion parameters")
     eigenvalue_floor = _finite_float(gaussian, "eigenvalue_floor", "gaussian")
     repair_tolerance = _finite_float(gaussian, "repair_tolerance", "gaussian")
     maximum_condition = _finite_float(gaussian, "maximum_condition_number", "gaussian")
@@ -240,6 +244,25 @@ def fit_gaussian_copula(
     )
 
 
+def _validated_correlation_matrix(correlation: np.ndarray, dimension: int) -> np.ndarray:
+    """Return a finite, symmetric, positive-definite correlation matrix."""
+
+    matrix = np.asarray(correlation, dtype=float)
+    if matrix.shape != (dimension, dimension):
+        raise ValueError("correlation matrix has the wrong dimensions")
+    if not np.isfinite(matrix).all():
+        raise ValueError("correlation matrix must be finite")
+    if not np.allclose(matrix, matrix.T, rtol=0.0, atol=1e-12):
+        raise ValueError("correlation matrix must be symmetric")
+    if not np.allclose(np.diag(matrix), 1.0, rtol=0.0, atol=1e-12):
+        raise ValueError("correlation matrix must have a unit diagonal")
+    try:
+        np.linalg.cholesky(matrix)
+    except np.linalg.LinAlgError as exc:
+        raise ValueError("correlation matrix must be positive definite") from exc
+    return matrix
+
+
 def gaussian_dependence_uniforms(
     independent_uniforms: np.ndarray,
     correlation: np.ndarray,
@@ -250,9 +273,9 @@ def gaussian_dependence_uniforms(
     """Map independent uniforms through a Gaussian copula using Cholesky."""
 
     uniforms = np.asarray(independent_uniforms, dtype=float)
-    matrix = np.asarray(correlation, dtype=float)
-    if uniforms.ndim != 2 or matrix.shape != (uniforms.shape[1], uniforms.shape[1]):
-        raise ValueError("uniform matrix and correlation dimensions do not agree")
+    if uniforms.ndim != 2:
+        raise ValueError("independent uniforms must be a two-dimensional matrix")
+    matrix = _validated_correlation_matrix(correlation, uniforms.shape[1])
     if not np.isfinite(uniforms).all() or bool(((uniforms < 0) | (uniforms > 1)).any()):
         raise ValueError("independent uniforms must be finite and lie in [0, 1]")
     if not 0 < lower < upper < 1:
@@ -269,14 +292,12 @@ def gaussian_copula_log_density(pits: np.ndarray, correlation: np.ndarray) -> np
     values = np.asarray(pits, dtype=float)
     if values.ndim == 1:
         values = values.reshape(1, -1)
-    matrix = np.asarray(correlation, dtype=float)
-    if values.ndim != 2 or matrix.shape != (values.shape[1], values.shape[1]):
-        raise ValueError("PIT and correlation dimensions do not agree")
+    if values.ndim != 2:
+        raise ValueError("PIT values must be one- or two-dimensional")
+    matrix = _validated_correlation_matrix(correlation, values.shape[1])
     if not np.isfinite(values).all() or bool(((values <= 0) | (values >= 1)).any()):
         raise ValueError("PIT values must be finite and lie strictly inside (0, 1)")
-    sign, log_determinant = np.linalg.slogdet(matrix)
-    if sign <= 0:
-        raise ValueError("correlation determinant must be positive")
+    _, log_determinant = np.linalg.slogdet(matrix)
     scores = ndtri(values)
     solved = np.linalg.solve(matrix, scores.T).T
     quadratic = np.sum(scores * solved, axis=1) - np.sum(scores * scores, axis=1)
@@ -292,6 +313,10 @@ def _ewma_empirical_innovations(
 ) -> np.ndarray:
     """Reconstruct the complete frozen EWMA innovation reference sample."""
 
+    if not np.isfinite(scale) or scale <= 0:
+        raise ValueError("EWMA return scale must be positive and finite")
+    if not np.isfinite(smoothing) or not 0 < smoothing < 1:
+        raise ValueError("EWMA smoothing parameter must lie in (0, 1)")
     dates = pd.to_datetime(group_returns["date"], errors="coerce")
     start = pd.Timestamp(refit["requested_training_start"])
     end = pd.Timestamp(refit["refit_date"])
@@ -307,12 +332,18 @@ def _ewma_empirical_innovations(
     selected = selected.sort_values("date")
     if len(selected) != int(refit["training_observations"]):
         raise ValueError(f"cannot reconstruct EWMA training sample for {refit['refit_id']}")
+    if selected["date"].isna().any() or selected["date"].duplicated().any():
+        raise ValueError(f"invalid EWMA training dates for {refit['refit_id']}")
     values = selected["log_return"].to_numpy(dtype=float) * scale
+    if len(values) < 2 or not np.isfinite(values).all():
+        raise ValueError(f"invalid EWMA training returns for {refit['refit_id']}")
     mean = float(refit["mean_constant_scaled"])
     if not np.isclose(mean, values.mean(), rtol=0.0, atol=1e-10):
         raise ValueError(f"EWMA mean does not match its training sample for {refit['refit_id']}")
     residuals = values - mean
     variance = float(np.var(residuals, ddof=1))
+    if not np.isfinite(variance) or variance <= 0:
+        raise ValueError(f"invalid EWMA training variance for {refit['refit_id']}")
     innovations = np.empty(len(residuals), dtype=float)
     for index, residual in enumerate(residuals):
         innovations[index] = residual / np.sqrt(variance)
@@ -337,8 +368,10 @@ def marginal_innovation_draws(
     """Invert every fitted Student-t or empirical innovation distribution."""
 
     uniforms = np.asarray(copula_uniforms, dtype=float)
-    if uniforms.shape[1] != len(group_order):
+    if uniforms.ndim != 2 or uniforms.shape[1] != len(group_order):
         raise ValueError("copula uniforms and group order have different dimensions")
+    if not np.isfinite(uniforms).all() or bool(((uniforms <= 0) | (uniforms >= 1)).any()):
+        raise ValueError("copula uniforms must be finite and lie strictly inside (0, 1)")
     indexed = monthly_refits.set_index("group_id", drop=False, verify_integrity=True)
     if set(indexed.index) != set(group_order):
         raise ValueError("monthly marginal refits do not match the copula group order")
@@ -350,6 +383,8 @@ def marginal_innovation_draws(
         degrees_of_freedom = refit["student_t_df"]
         if pd.notna(degrees_of_freedom):
             degrees_of_freedom = float(degrees_of_freedom)
+            if not np.isfinite(degrees_of_freedom) or degrees_of_freedom <= 2.0:
+                raise ValueError(f"invalid Student-t degrees of freedom for {refit['refit_id']}")
             result[:, column] = stdtrit(degrees_of_freedom, uniforms[:, column]) * np.sqrt(
                 (degrees_of_freedom - 2.0) / degrees_of_freedom
             )
@@ -383,7 +418,8 @@ def empirical_risk_levels(
     if not levels or any(not 0 < level < 1 for level in levels):
         raise ValueError("confidence levels must lie in (0, 1)")
     orders = {level: int(np.ceil(len(values) * level)) for level in levels}
-    partitioned = np.partition(values.copy(), [order - 1 for order in orders.values()])
+    partition_indices = sorted({order - 1 for order in orders.values()})
+    partitioned = np.partition(values.copy(), partition_indices)
     risks: dict[float, tuple[float, float]] = {}
     for level, order in orders.items():
         value_at_risk = float(partitioned[order - 1])
@@ -412,6 +448,7 @@ def _validate_input_frames(
             "grouping_id",
             "group_id",
             "copula_refit_id",
+            "margin_refit_id",
             "pit",
         },
         "marginal refit": {
@@ -437,6 +474,7 @@ def _validate_input_frames(
             "universe_variant",
             "grouping_id",
             "group_id",
+            "refit_id",
             "portfolio_weight",
             "conditional_mean_log_return",
             "conditional_volatility_log_return",
@@ -462,6 +500,40 @@ def _validate_input_frames(
         missing = sorted(required - set(frames[name].columns))
         if missing:
             raise ValueError(f"{name} frame is missing columns: {missing}")
+
+
+def _validate_block_bindings(
+    training_block: pd.DataFrame,
+    monthly_refits: pd.DataFrame,
+    daily_block: pd.DataFrame,
+    *,
+    group_order: Sequence[str],
+    refit_date: pd.Timestamp,
+    copula_refit_id: str,
+) -> None:
+    """Bind all monthly inputs to the exact marginal and copula refits."""
+
+    if monthly_refits.empty:
+        raise ValueError(f"no monthly marginal refits for {copula_refit_id}")
+    indexed_refits = monthly_refits.set_index("group_id", drop=False, verify_integrity=True)
+    if set(indexed_refits.index) != set(group_order):
+        raise ValueError(f"marginal refit groups differ for {copula_refit_id}")
+    if not bool((indexed_refits["refit_date"] == refit_date).all()):
+        raise ValueError(f"marginal refit date differs for {copula_refit_id}")
+
+    expected_ids = indexed_refits["refit_id"].astype(str).to_dict()
+    expected_training_ids = training_block["group_id"].map(expected_ids)
+    if not bool((training_block["margin_refit_id"].astype(str) == expected_training_ids).all()):
+        raise ValueError(f"training PIT marginal refit binding differs for {copula_refit_id}")
+    if daily_block.empty:
+        raise ValueError(f"no daily margins for {copula_refit_id}")
+    expected_daily_ids = daily_block["group_id"].map(expected_ids)
+    if expected_daily_ids.isna().any() or not bool(
+        (daily_block["refit_id"].astype(str) == expected_daily_ids).all()
+    ):
+        raise ValueError(f"daily marginal refit binding differs for {copula_refit_id}")
+    if bool((daily_block["date"] < refit_date).any()):
+        raise ValueError(f"daily margin precedes its refit date for {copula_refit_id}")
 
 
 def build_gaussian_outputs(
@@ -582,6 +654,19 @@ def build_gaussian_outputs(
             & (refits["month"] == month)
             & (refits["grouping_id"] == input_grouping)
         ].copy()
+        daily_block = daily.loc[
+            (daily["year"] == year)
+            & (daily["month"] == month)
+            & (daily["grouping_id"] == input_grouping)
+        ].copy()
+        _validate_block_bindings(
+            block,
+            monthly_refits,
+            daily_block,
+            group_order=group_order,
+            refit_date=refit_date,
+            copula_refit_id=copula_refit_id,
+        )
         innovations = marginal_innovation_draws(
             dependent,
             group_order,
@@ -621,13 +706,6 @@ def build_gaussian_outputs(
             }
         )
 
-        daily_block = daily.loc[
-            (daily["year"] == year)
-            & (daily["month"] == month)
-            & (daily["grouping_id"] == input_grouping)
-        ].copy()
-        if daily_block.empty:
-            raise ValueError(f"no daily margins for {copula_refit_id}")
         for date, day in daily_block.groupby("date", sort=True):
             ordered = day.set_index("group_id", verify_integrity=True).reindex(group_order)
             if ordered.isna().any().any():

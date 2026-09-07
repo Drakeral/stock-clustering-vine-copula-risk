@@ -104,6 +104,20 @@ class GaussianMethodTests(unittest.TestCase):
         density = gaussian_copula_log_density(first[:10], np.eye(2))
         np.testing.assert_allclose(density, 0.0, atol=1e-12)
 
+    def test_dependence_functions_reject_non_correlation_matrices(self):
+        uniforms = np.asarray([[0.25, 0.75], [0.5, 0.5]])
+        invalid_matrices = (
+            np.asarray([[1.0, 0.2], [0.1, 1.0]]),
+            np.asarray([[2.0, 0.0], [0.0, 1.0]]),
+            np.asarray([[1.0, 1.1], [1.1, 1.0]]),
+        )
+        for matrix in invalid_matrices:
+            with self.subTest(matrix=matrix.tolist()):
+                with self.assertRaisesRegex(ValueError, "correlation matrix"):
+                    gaussian_dependence_uniforms(uniforms, matrix)
+                with self.assertRaisesRegex(ValueError, "correlation matrix"):
+                    gaussian_copula_log_density(uniforms, matrix)
+
     def test_partitioned_risk_matches_frozen_reference_implementation(self):
         losses = np.asarray([-2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 8.0])
         risks = empirical_risk_levels(losses, [0.5, 0.75, 0.9])
@@ -198,6 +212,7 @@ class GaussianPipelineTests(unittest.TestCase):
                             "grouping_id": grouping_id,
                             "group_id": group_id,
                             "copula_refit_id": copula_refit_id,
+                            "margin_refit_id": marginal_refit_id,
                             "pit": pit,
                         }
                     )
@@ -228,6 +243,7 @@ class GaussianPipelineTests(unittest.TestCase):
                             "universe_variant": "security_primary",
                             "grouping_id": grouping_id,
                             "group_id": group_id,
+                            "refit_id": marginal_refit_id,
                             "portfolio_weight": 0.5,
                             "conditional_mean_log_return": 0.0,
                             "conditional_volatility_log_return": 0.01,
@@ -279,6 +295,27 @@ class GaussianPipelineTests(unittest.TestCase):
                 miniature_config(),
                 progress_every=0,
             )
+
+    def test_pipeline_rejects_stale_marginal_refit_bindings(self):
+        training, refits, daily, returns = self._frames()
+        for frame, column in ((training, "margin_refit_id"), (daily, "refit_id")):
+            corrupted = frame.copy()
+            corrupted.loc[0, column] = "stale-refit"
+            inputs = (
+                corrupted if frame is training else training,
+                refits,
+                corrupted if frame is daily else daily,
+                returns,
+            )
+            with (
+                self.subTest(column=column),
+                self.assertRaisesRegex(ValueError, "refit binding differs"),
+            ):
+                build_gaussian_outputs(
+                    *inputs,
+                    miniature_config(),
+                    progress_every=0,
+                )
 
     def test_output_schemas_bind_all_produced_fields(self):
         refits, forecasts, _, _ = build_gaussian_outputs(
