@@ -1,0 +1,83 @@
+{
+  "common_random_number_month_count": 72,
+  "dimension": 11,
+  "draws_per_month": 100000,
+  "evaluation_date_count": 1508,
+  "forecast_count": 3016,
+  "gate_name": "gaussian_copula_quality_v1",
+  "inputs": {
+    "annual_group_returns": {
+      "path": "data/processed/annual_group_returns.parquet",
+      "sha256": "21b467e74da5e585f098a96dec0ed14e4745ae3ba04dc25461f7a1b6dee08cb9"
+    },
+    "foundation_status": {
+      "path": "data/audit/current_gate_status.json",
+      "sha256": "66df582e2ba6255c8f2e975c0739480562203fd85de06fa24dea0e58b3dd98b9"
+    },
+    "marginal_daily_forecasts": {
+      "path": "data/processed/marginal_daily_forecasts.parquet",
+      "sha256": "f2f4d0c529960c4f263f29b3b72dc4e3789f71427f434e4f7c3a7b7dd698abe0"
+    },
+    "marginal_model_quality": {
+      "path": "data/audit/marginal_model_quality.json",
+      "sha256": "3c230e3f5a191b4b3f126a1688712115340b327a199c9dcbba1fa6ef4dcd8cc5"
+    },
+    "marginal_refits": {
+      "path": "data/processed/marginal_refits.parquet",
+      "sha256": "3ab07d0c6f6acccf702122d858a352ae81112a6a6da34279e60022a23638117e"
+    },
+    "model_config": {
+      "path": "config/model_config.toml",
+      "sha256": "eb7358f7abd5b19022f6a3dd19a344e8549f449617ab56cb7c1a979388f69b14"
+    },
+    "monthly_copula_training_pits": {
+      "path": "data/processed/monthly_copula_training_pits.parquet",
+      "sha256": "1ef39a00c88b5e300a21f302274a1aede80d00bb87069381e9faab95ea979e70"
+    }
+  },
+  "issues": [],
+  "maximum_absolute_correlation_adjustment": 0.0,
+  "maximum_allowed_condition_number": 10000000000.0,
+  "maximum_condition_number": 45.82607097908108,
+  "maximum_realised_portfolio_identity_error": 2.7755575615628914e-17,
+  "method": {
+    "eigenvalue_floor": 1e-08,
+    "estimator": "pearson_correlation_of_normal_scores",
+    "factorization": "cholesky",
+    "repair_method": "symmetric_eigenvalue_floor_then_unit_diagonal_rescale",
+    "simulation_bit_generator": "PCG64DXSM"
+  },
+  "minimum_repaired_eigenvalue": 0.14346145745593103,
+  "model_date_counts": {
+    "M1": 1508,
+    "M3": 1508
+  },
+  "model_ids": [
+    "M1",
+    "M3"
+  ],
+  "outputs": {
+    "gaussian_copula_refits": {
+      "path": "data/processed/gaussian_copula_refits.parquet",
+      "rows": 144,
+      "sha256": "e62de6021e1832d18ee0aa6d3c6df9f3566e9a5806242b66c5fc65d56db6d71e"
+    },
+    "gaussian_risk_forecasts": {
+      "path": "data/processed/gaussian_risk_forecasts.parquet",
+      "rows": 3016,
+      "sha256": "0e9d83dafd8918ddcb5d9fad2b9189a4e683b87a76c6b151609a01e2df6eca36"
+    },
+    "simulation_seed_manifest": {
+      "path": "data/manifests/simulation_seed_manifest.json",
+      "records": 72,
+      "sha256": "f0763b5e868329ebf55f6973abd74e9ec3f86940bea8c316d5b9e289cca2956d"
+    }
+  },
+  "portfolio_identity_tolerance": 1e-12,
+  "refit_count": 144,
+  "repaired_refit_count": 0,
+  "reporting_scope": "provisional_research_results",
+  "schema_version": 1,
+  "status": "pass",
+  "universe_variant": "security_primary"
+}

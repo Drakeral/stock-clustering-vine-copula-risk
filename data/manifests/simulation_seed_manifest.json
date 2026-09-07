@@ -1,0 +1,875 @@
+{
+  "base_seed": 5110,
+  "bit_generator": "PCG64DXSM",
+  "dimension": 11,
+  "draws_per_month": 100000,
+  "manifest_type": "monthly_common_random_numbers",
+  "records": [
+    {
+      "base_uniform_sha256": "2971a2c7c20a82f810a4fb6c5f3015c6e56088607ea9194cc68fadaa916044f8",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 1,
+      "seed_components": [
+        5110,
+        2020,
+        1
+      ],
+      "year": 2020
+    },
+    {
+      "base_uniform_sha256": "7afb0c74e12f39f9292f1df49f16260ff229765e1c8fc6ed9890e38e069dd049",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 2,
+      "seed_components": [
+        5110,
+        2020,
+        2
+      ],
+      "year": 2020
+    },
+    {
+      "base_uniform_sha256": "2100663cd268160e4bb59e03d07579cdc53f66175cce9085ded6282d3cc97639",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 3,
+      "seed_components": [
+        5110,
+        2020,
+        3
+      ],
+      "year": 2020
+    },
+    {
+      "base_uniform_sha256": "e6530824fde647afe5130fc2c9f2d2a716586ba4f2ad36d041a74052c46a88cf",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 4,
+      "seed_components": [
+        5110,
+        2020,
+        4
+      ],
+      "year": 2020
+    },
+    {
+      "base_uniform_sha256": "0bbdfe36f25dc70351c91c9b6c2a2d5e521332e2ab5c77eb2de4bf44d795a918",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 5,
+      "seed_components": [
+        5110,
+        2020,
+        5
+      ],
+      "year": 2020
+    },
+    {
+      "base_uniform_sha256": "2ca2e7cad1528166f8de9fd6494499cce742b0c967e2718450b48b70bba71518",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 6,
+      "seed_components": [
+        5110,
+        2020,
+        6
+      ],
+      "year": 2020
+    },
+    {
+      "base_uniform_sha256": "724b3759f02e22616a16e91b92ed8d46248e9a661c3ea3319f25e38a89244be7",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 7,
+      "seed_components": [
+        5110,
+        2020,
+        7
+      ],
+      "year": 2020
+    },
+    {
+      "base_uniform_sha256": "7e162ffad4615663b14ea808ecb1fca1f2be80a7a36864daedeb61cb4656c844",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 8,
+      "seed_components": [
+        5110,
+        2020,
+        8
+      ],
+      "year": 2020
+    },
+    {
+      "base_uniform_sha256": "2dd811860ae4c6dc26d8d8dad8f388158dacfdc681cdc85201440d75316c1d09",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 9,
+      "seed_components": [
+        5110,
+        2020,
+        9
+      ],
+      "year": 2020
+    },
+    {
+      "base_uniform_sha256": "617602d6e79964fc2bd18397b5f1e192d431519dfba3893a54e7d70674cbd8c8",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 10,
+      "seed_components": [
+        5110,
+        2020,
+        10
+      ],
+      "year": 2020
+    },
+    {
+      "base_uniform_sha256": "44bafb44727b319cfa25585b062cd59383eeb5dbe087ec0dd882e6513d61bb5c",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 11,
+      "seed_components": [
+        5110,
+        2020,
+        11
+      ],
+      "year": 2020
+    },
+    {
+      "base_uniform_sha256": "ebf8ac4e212872bf9228784661c4281ac30928adf68aa516d1c215b3b613cc16",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 12,
+      "seed_components": [
+        5110,
+        2020,
+        12
+      ],
+      "year": 2020
+    },
+    {
+      "base_uniform_sha256": "506bd3d589b6493ad81030cdaf03df40e4d2152cb02260bf1e975a1b05db7dcf",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 1,
+      "seed_components": [
+        5110,
+        2021,
+        1
+      ],
+      "year": 2021
+    },
+    {
+      "base_uniform_sha256": "3553ac5ef8c0fd732de04ef92c415fef245042b7c743d1bf0b5d84a01df17e5f",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 2,
+      "seed_components": [
+        5110,
+        2021,
+        2
+      ],
+      "year": 2021
+    },
+    {
+      "base_uniform_sha256": "b006e4e6be0a47bc31283bd695ddbc4b83680978e31724ac62dacf3a49092d00",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 3,
+      "seed_components": [
+        5110,
+        2021,
+        3
+      ],
+      "year": 2021
+    },
+    {
+      "base_uniform_sha256": "9ca466079c8f64d5a5174d80bc09a7f621b0cb5e0e521e77234d1b6e47ae7782",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 4,
+      "seed_components": [
+        5110,
+        2021,
+        4
+      ],
+      "year": 2021
+    },
+    {
+      "base_uniform_sha256": "0ecad486db0a3ce4b65e2087ec97e555736602827ddc6fcb30d6020793b0541d",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 5,
+      "seed_components": [
+        5110,
+        2021,
+        5
+      ],
+      "year": 2021
+    },
+    {
+      "base_uniform_sha256": "671d4249ccdf0ca85361ca8dfd0d07ce9473e26bc796a0605df688f39cb4354f",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 6,
+      "seed_components": [
+        5110,
+        2021,
+        6
+      ],
+      "year": 2021
+    },
+    {
+      "base_uniform_sha256": "1a83848efa6d1d5c834accf00b95c4ee43150d579b3378175a4dbf0f2276409e",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 7,
+      "seed_components": [
+        5110,
+        2021,
+        7
+      ],
+      "year": 2021
+    },
+    {
+      "base_uniform_sha256": "97a2e3207e2d63d385437bd6d1c9038f562c06d9b075fce13241f22aa4ed9238",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 8,
+      "seed_components": [
+        5110,
+        2021,
+        8
+      ],
+      "year": 2021
+    },
+    {
+      "base_uniform_sha256": "4d77be2fc24fe32ddcf85a82370ca8a4919bdacb1f26b38cf7811139d991de10",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 9,
+      "seed_components": [
+        5110,
+        2021,
+        9
+      ],
+      "year": 2021
+    },
+    {
+      "base_uniform_sha256": "7832ac3114a6b58dfdbad14e25ef5fc7a689168bee5b7e528e14584e748c5910",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 10,
+      "seed_components": [
+        5110,
+        2021,
+        10
+      ],
+      "year": 2021
+    },
+    {
+      "base_uniform_sha256": "a068be186357bceb2df0d44d8b004a3a9ac7d2f5c5c76f9a89550bb76ed4e570",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 11,
+      "seed_components": [
+        5110,
+        2021,
+        11
+      ],
+      "year": 2021
+    },
+    {
+      "base_uniform_sha256": "21b8e549d7ef2415ec2b4ca594f36ea662ebfe0aa06d33fbac3e2c6bf2352fc7",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 12,
+      "seed_components": [
+        5110,
+        2021,
+        12
+      ],
+      "year": 2021
+    },
+    {
+      "base_uniform_sha256": "4b1f3ee6ae305c4447d77123556114783b6f1c22019ac512a09adcd6415d7f85",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 1,
+      "seed_components": [
+        5110,
+        2022,
+        1
+      ],
+      "year": 2022
+    },
+    {
+      "base_uniform_sha256": "f8c430fa9a0bb57cdb54de778d455f1ad3271ce1ba2c027f8ccdfecfe6b5d915",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 2,
+      "seed_components": [
+        5110,
+        2022,
+        2
+      ],
+      "year": 2022
+    },
+    {
+      "base_uniform_sha256": "ed700fadb9de95115e46690871a0b1dd28d269e43f6e6660d0e0b02fdfc5172f",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 3,
+      "seed_components": [
+        5110,
+        2022,
+        3
+      ],
+      "year": 2022
+    },
+    {
+      "base_uniform_sha256": "57107b53ce02d943bef9d9b9adfc668723f96b4a8b2adf9a1123fb81f3bfdf92",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 4,
+      "seed_components": [
+        5110,
+        2022,
+        4
+      ],
+      "year": 2022
+    },
+    {
+      "base_uniform_sha256": "de79c086351e61c821136e9d83e8eec67db839ba9c37d6d498364876abd0e9a0",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 5,
+      "seed_components": [
+        5110,
+        2022,
+        5
+      ],
+      "year": 2022
+    },
+    {
+      "base_uniform_sha256": "f9f6303310b18364765b2f30173547104e493f696be9baba5556002c27515b1c",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 6,
+      "seed_components": [
+        5110,
+        2022,
+        6
+      ],
+      "year": 2022
+    },
+    {
+      "base_uniform_sha256": "59dd8c2c3ce590cefd954df12c377254f2302f2e05e30b478bb358ddb29d10d0",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 7,
+      "seed_components": [
+        5110,
+        2022,
+        7
+      ],
+      "year": 2022
+    },
+    {
+      "base_uniform_sha256": "ebe2bdca9a178c11ea608a93d384b4ea91599eaf2e56b90b3638d3d7f82ee255",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 8,
+      "seed_components": [
+        5110,
+        2022,
+        8
+      ],
+      "year": 2022
+    },
+    {
+      "base_uniform_sha256": "6e8541298ca67a23fb748bc33f0b92fdbdb5f2fcbe3646c12cabed90ff09ddb9",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 9,
+      "seed_components": [
+        5110,
+        2022,
+        9
+      ],
+      "year": 2022
+    },
+    {
+      "base_uniform_sha256": "c3734df38a718a4d8eefd490a2cf443c9ae7b334cc640372b56b4b4a6a823150",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 10,
+      "seed_components": [
+        5110,
+        2022,
+        10
+      ],
+      "year": 2022
+    },
+    {
+      "base_uniform_sha256": "b0f0c0f77a30d1d24304624783920eb947c6037661225c704c1b9f1109cd0c40",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 11,
+      "seed_components": [
+        5110,
+        2022,
+        11
+      ],
+      "year": 2022
+    },
+    {
+      "base_uniform_sha256": "3cf28a53c872cff1df040e30afa93454366ab51dd4a0b6ea0d5ef1003567bea5",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 12,
+      "seed_components": [
+        5110,
+        2022,
+        12
+      ],
+      "year": 2022
+    },
+    {
+      "base_uniform_sha256": "a0f5018ffd5a3e0673505f594afe137969a1883efdd4e357cf9c73f9e3c5acef",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 1,
+      "seed_components": [
+        5110,
+        2023,
+        1
+      ],
+      "year": 2023
+    },
+    {
+      "base_uniform_sha256": "a445fa377b5418e3cdc9a8318be3c37a9defe026a9c68748a1aba23d65da3fab",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 2,
+      "seed_components": [
+        5110,
+        2023,
+        2
+      ],
+      "year": 2023
+    },
+    {
+      "base_uniform_sha256": "fb8f9bc90fb1b0e8bfccffe5c43bd11ad4ae9e878d8615d5b6d38faa7531d862",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 3,
+      "seed_components": [
+        5110,
+        2023,
+        3
+      ],
+      "year": 2023
+    },
+    {
+      "base_uniform_sha256": "79bcf2e0313ec4f7c0dbaf47de4504c274f7456fceb77523913ddf53b7715b07",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 4,
+      "seed_components": [
+        5110,
+        2023,
+        4
+      ],
+      "year": 2023
+    },
+    {
+      "base_uniform_sha256": "4b0247f7e7d46f1db0ae5a07573ab77c2cb2edbe5cd26da5000f6e7ea7dbc3da",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 5,
+      "seed_components": [
+        5110,
+        2023,
+        5
+      ],
+      "year": 2023
+    },
+    {
+      "base_uniform_sha256": "d0deb8914ecb9f125c6654e6d7178aa6e9510c0c0a06a06d8e5a38af780bd062",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 6,
+      "seed_components": [
+        5110,
+        2023,
+        6
+      ],
+      "year": 2023
+    },
+    {
+      "base_uniform_sha256": "8d77eea5c545b0ad95be26dc38074e7c4101e0602867b5d8119c2b847709312c",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 7,
+      "seed_components": [
+        5110,
+        2023,
+        7
+      ],
+      "year": 2023
+    },
+    {
+      "base_uniform_sha256": "152e89aa0abb539018b3feb265e340fed3848983987b0dafc17c21000b5ad374",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 8,
+      "seed_components": [
+        5110,
+        2023,
+        8
+      ],
+      "year": 2023
+    },
+    {
+      "base_uniform_sha256": "c83634e7ee8db022ab01251bbcc422d9e8e76e232c6282a48870a489f1f28dbb",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 9,
+      "seed_components": [
+        5110,
+        2023,
+        9
+      ],
+      "year": 2023
+    },
+    {
+      "base_uniform_sha256": "80a6b4f92f0ac889d2a32b2fff07d9fdf99042b25a53161af1a09daed00ff69f",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 10,
+      "seed_components": [
+        5110,
+        2023,
+        10
+      ],
+      "year": 2023
+    },
+    {
+      "base_uniform_sha256": "b9f80d57915601fa0cfcf533ec803ba0d7d7dd5d0d6c7fb093b77d0b937c922a",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 11,
+      "seed_components": [
+        5110,
+        2023,
+        11
+      ],
+      "year": 2023
+    },
+    {
+      "base_uniform_sha256": "d71729bfbcf5628045264f8346540f11fd6a589338eba7106a6830e0c62fbcf1",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 12,
+      "seed_components": [
+        5110,
+        2023,
+        12
+      ],
+      "year": 2023
+    },
+    {
+      "base_uniform_sha256": "a084bc56f4c41e5756123af42008712d1ccb1c30f851e236945cb8ba0d89244c",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 1,
+      "seed_components": [
+        5110,
+        2024,
+        1
+      ],
+      "year": 2024
+    },
+    {
+      "base_uniform_sha256": "d05788a75934810cef171949b2f2084939ec650852a0d32dec808ed03efb594f",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 2,
+      "seed_components": [
+        5110,
+        2024,
+        2
+      ],
+      "year": 2024
+    },
+    {
+      "base_uniform_sha256": "6dc60e40b8d8ebcee585d6bc8997ec234916e206b6c8c63cd33fd28a684461c1",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 3,
+      "seed_components": [
+        5110,
+        2024,
+        3
+      ],
+      "year": 2024
+    },
+    {
+      "base_uniform_sha256": "deaeaa2e0495216a15ad9bfb7f6ebafc3ae43dbe7402ba21aea9493315558342",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 4,
+      "seed_components": [
+        5110,
+        2024,
+        4
+      ],
+      "year": 2024
+    },
+    {
+      "base_uniform_sha256": "093e2e221d1e64af7f90d5603d84c8456a8dd08acd64996816d1d889258dea8f",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 5,
+      "seed_components": [
+        5110,
+        2024,
+        5
+      ],
+      "year": 2024
+    },
+    {
+      "base_uniform_sha256": "81c31db81deb7377015f93a22b3a369ca634fcc8533a3c53eb7ed3524bf4374b",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 6,
+      "seed_components": [
+        5110,
+        2024,
+        6
+      ],
+      "year": 2024
+    },
+    {
+      "base_uniform_sha256": "e1f50312250990198d4acf6b7d4faf7c358b8abfe87a7ded59c96b993e2bb50a",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 7,
+      "seed_components": [
+        5110,
+        2024,
+        7
+      ],
+      "year": 2024
+    },
+    {
+      "base_uniform_sha256": "4793c5a586ef3903c03ead45f9a030b751b46459f0949cb8ef3f0e7a52d02757",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 8,
+      "seed_components": [
+        5110,
+        2024,
+        8
+      ],
+      "year": 2024
+    },
+    {
+      "base_uniform_sha256": "0fa9d8580836e26b7518c7172a6e37b8ea395ef0a11e1a612858550094e8bff4",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 9,
+      "seed_components": [
+        5110,
+        2024,
+        9
+      ],
+      "year": 2024
+    },
+    {
+      "base_uniform_sha256": "15dc6793fd39bf2d2739cd43fe2ccde73ac1654f3e368f884ce5c9bceaca9976",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 10,
+      "seed_components": [
+        5110,
+        2024,
+        10
+      ],
+      "year": 2024
+    },
+    {
+      "base_uniform_sha256": "b2b4e38db6257f34a72e1674eeb2916aa2ad6d10a064f25a88db7f67691ef81f",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 11,
+      "seed_components": [
+        5110,
+        2024,
+        11
+      ],
+      "year": 2024
+    },
+    {
+      "base_uniform_sha256": "4bd0187ee8342d5afef71a6eeb7cc57bd73ba88a1bc98d313d55d3833387819d",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 12,
+      "seed_components": [
+        5110,
+        2024,
+        12
+      ],
+      "year": 2024
+    },
+    {
+      "base_uniform_sha256": "99b26f7f8af17e8b74d473d8d09b6fa7afe2f7f6e35ed313197b991e68055f7d",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 1,
+      "seed_components": [
+        5110,
+        2025,
+        1
+      ],
+      "year": 2025
+    },
+    {
+      "base_uniform_sha256": "9bcc5218e7274db14b9d7c0521846afbd881e46306daa328a14f9b47f5a108ad",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 2,
+      "seed_components": [
+        5110,
+        2025,
+        2
+      ],
+      "year": 2025
+    },
+    {
+      "base_uniform_sha256": "84cfe1db132f9459fdf99cc8c36db835b21d2f39aa93fc6224a4437ac47d1037",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 3,
+      "seed_components": [
+        5110,
+        2025,
+        3
+      ],
+      "year": 2025
+    },
+    {
+      "base_uniform_sha256": "c820961020d926a80ab3178b827a061a26b3466a911d004d325ae9419dcc1778",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 4,
+      "seed_components": [
+        5110,
+        2025,
+        4
+      ],
+      "year": 2025
+    },
+    {
+      "base_uniform_sha256": "2d8b27b00dffc5ee1210b37aa4caac6a7b783a90e40d265b2d9109cea3573027",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 5,
+      "seed_components": [
+        5110,
+        2025,
+        5
+      ],
+      "year": 2025
+    },
+    {
+      "base_uniform_sha256": "6c3d10f9cad311536dce58cbe1ee8bf98f6aa53baa6a7bedaee48201fb231691",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 6,
+      "seed_components": [
+        5110,
+        2025,
+        6
+      ],
+      "year": 2025
+    },
+    {
+      "base_uniform_sha256": "303295b913b053f2c1e32f6bffbf0570101c96e07921327ee1c53f627206a11b",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 7,
+      "seed_components": [
+        5110,
+        2025,
+        7
+      ],
+      "year": 2025
+    },
+    {
+      "base_uniform_sha256": "ededb4d11bd827da8b74357b4052d6fabdd540a446b32b8a17518429b247acfe",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 8,
+      "seed_components": [
+        5110,
+        2025,
+        8
+      ],
+      "year": 2025
+    },
+    {
+      "base_uniform_sha256": "173f546cc2516dc68159339bb4dc60bfb1f605db5f96cb4e8d6243ee8a044dd9",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 9,
+      "seed_components": [
+        5110,
+        2025,
+        9
+      ],
+      "year": 2025
+    },
+    {
+      "base_uniform_sha256": "28c5fe1629fe80e1b7033609ce9509b52688e696c7fff494e5b48d5e59c3e631",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 10,
+      "seed_components": [
+        5110,
+        2025,
+        10
+      ],
+      "year": 2025
+    },
+    {
+      "base_uniform_sha256": "79db2cf4461f0328fa5a3e6972f4f3879191f5cfcff19a3ec81c5bff941c6808",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 11,
+      "seed_components": [
+        5110,
+        2025,
+        11
+      ],
+      "year": 2025
+    },
+    {
+      "base_uniform_sha256": "9d3320276d6228b874f671c033570a7d9404dd7aa5747a1af235f68c2c958bf9",
+      "dimension": 11,
+      "draws": 100000,
+      "month": 12,
+      "seed_components": [
+        5110,
+        2025,
+        12
+      ],
+      "year": 2025
+    }
+  ],
+  "schema_version": 1,
+  "seed_sequence": "SeedSequence([base_seed, year, month])"
+}
