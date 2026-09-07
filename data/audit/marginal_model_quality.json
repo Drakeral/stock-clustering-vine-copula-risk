@@ -22,7 +22,7 @@
     },
     "model_config": {
       "path": "config/model_config.toml",
-      "sha256": "b154a15cc5bf329a29cfeea7072a7183db2312c34b680a9f7c67c91b45c6ec2b"
+      "sha256": "eb7358f7abd5b19022f6a3dd19a344e8549f449617ab56cb7c1a979388f69b14"
     }
   },
   "issues": [],

@@ -339,7 +339,7 @@ def marginal_innovation_draws(
     uniforms = np.asarray(copula_uniforms, dtype=float)
     if uniforms.shape[1] != len(group_order):
         raise ValueError("copula uniforms and group order have different dimensions")
-    indexed = monthly_refits.set_index("group_id", verify_integrity=True)
+    indexed = monthly_refits.set_index("group_id", drop=False, verify_integrity=True)
     if set(indexed.index) != set(group_order):
         raise ValueError("monthly marginal refits do not match the copula group order")
     scale = float(marginal["estimation_return_scale"])

@@ -14,6 +14,7 @@ from scripts.build_gaussian_copula import (
     fit_gaussian_copula,
     gaussian_copula_log_density,
     gaussian_dependence_uniforms,
+    marginal_innovation_draws,
 )
 from scripts.research_methods import common_uniforms, empirical_var_es
 
@@ -148,6 +149,24 @@ class GaussianMethodTests(unittest.TestCase):
         )
         observed = _ewma_empirical_innovations(frame, refit, scale=100.0, smoothing=0.94)
         np.testing.assert_allclose(observed, expected)
+        refit_frame = pd.DataFrame(
+            [
+                {
+                    **refit.to_dict(),
+                    "group_id": "A",
+                    "student_t_df": np.nan,
+                }
+            ]
+        )
+        simulated = marginal_innovation_draws(
+            np.asarray([[0.1], [0.5], [0.9]]),
+            ["A"],
+            refit_frame,
+            frame,
+            miniature_config()["marginal"],
+        )
+        self.assertEqual(simulated.shape, (3, 1))
+        self.assertTrue(np.isfinite(simulated).all())
 
 
 class GaussianPipelineTests(unittest.TestCase):
