@@ -86,6 +86,12 @@
       "status": "present"
     },
     {
+      "bytes": 3267,
+      "path": "config/schemas/vine_copula_refit_record.schema.json",
+      "sha256": "65f660843ba76d4619ea6864a58184fca415af7e671113f66f5b0b823f9ebbc9",
+      "status": "present"
+    },
+    {
       "bytes": 3983,
       "path": "config/security_master.json",
       "sha256": "cec884570c4367699a10a7e68aa9451c6a515a11b84f5af1313aa70e55f6307b",
@@ -99,6 +105,7 @@
       "numpy": "2.5.2",
       "pandas": "2.3.3",
       "pyarrow": "23.0.1",
+      "pyvinecopulib": "0.7.6",
       "scipy": "1.18.1"
     },
     "implementation": "CPython",
@@ -110,9 +117,9 @@
     "run_scope": "provisional_research_results",
     "status": "provisional_pass"
   },
-  "generated_at_utc": "2026-09-07T15:14:01.571328+00:00",
+  "generated_at_utc": "2026-09-08T16:06:39.297852+00:00",
   "git": {
-    "commit": "8d91b31d0c8f6a6981bbfa84e0aec4e19f4e9815",
+    "commit": "0ce77aadb2ce74cf1d37508d4ce2fec0428f03b5",
     "commit_present": true,
     "repository_initialized": true,
     "worktree_clean": true
@@ -151,15 +158,15 @@
       "status": "present"
     },
     {
-      "bytes": 545,
+      "bytes": 576,
       "path": "pyproject.toml",
-      "sha256": "23f0a10704028c5fe0094aa456365209fcb8c58896e0cbe07531ea4dcd6f15d7",
+      "sha256": "b9f58e1c13799be5a339013ba9f6eade9db0ce0caa2d928b39fe19fe00a44e46",
       "status": "present"
     },
     {
-      "bytes": 63271,
+      "bytes": 111490,
       "path": "uv.lock",
-      "sha256": "793c92946122475865fec550bf9091bcd927673c9cd3aee4475202c481d14799",
+      "sha256": "0d8c88134ebacf0c60ff35f4acbcdeabc475592fed54ef54ae3c2d628adfc3d5",
       "status": "present"
     }
   ],
@@ -211,6 +218,12 @@
       "bytes": 668,
       "path": "data/audit/universe_provenance.json",
       "sha256": "98809bdb195b82928b26a72985968891e0df935f35255ebef6a27d3626dc692b",
+      "status": "present"
+    },
+    {
+      "bytes": 3715,
+      "path": "data/audit/vine_copula_quality.json",
+      "sha256": "48263974243eacd35b7a5fb846827aa8ad2d6d8bd8ea5ffd58d1601ba61d32fd",
       "status": "present"
     },
     {
@@ -301,6 +314,18 @@
       "bytes": 13641833,
       "path": "data/processed/security_daily.parquet",
       "sha256": "c999f9b2f11b71ea1af6a55e661064f2f959b2983913e949ef15e3a0b8451652",
+      "status": "present"
+    },
+    {
+      "bytes": 262499,
+      "path": "data/processed/vine_copula_refits.parquet",
+      "sha256": "7dbf0d5ad4b098c7acf56057853d6fd165515ef80c3321de880739fda4ac7b15",
+      "status": "present"
+    },
+    {
+      "bytes": 211178,
+      "path": "data/processed/vine_risk_forecasts.parquet",
+      "sha256": "a012b305bb8943caa33f6f06e651da69b64a39e211f9b322e2501082e4c80422",
       "status": "present"
     }
   ],
