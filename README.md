@@ -140,6 +140,7 @@ uv run python scripts/update_foundation_status.py --require-modelling-ready
 uv run python scripts/build_annual_groupings.py
 uv run python scripts/build_marginal_models.py
 uv run python scripts/build_gaussian_copula.py
+uv run python scripts/build_vine_copula.py
 uv run ruff check scripts tests
 uv run ruff format --check scripts tests
 uv run python -m unittest discover -s tests -v
@@ -225,6 +226,11 @@ added later.
   dependence matrices and numerical diagnostics;
 - `data/processed/gaussian_risk_forecasts.parquet`: daily M1/M3 portfolio VaR,
   ES, realised loss, and matched copula log scores;
+- `data/processed/vine_copula_refits.parquet`: fitted monthly M2/M4 truncated
+  R-vine structures, pair-family selections, parameters, fit diagnostics, and
+  explicit pair/whole-vine fallback records;
+- `data/processed/vine_risk_forecasts.parquet`: daily M2/M4 portfolio VaR, ES,
+  realised loss, matched vine log scores, and fallback flags;
 - `data/manifests/simulation_seed_manifest.json`: reproducible monthly common-
   random-number seeds and uniform-matrix hashes; and
 - `data/audit/clustering_diagnostics.json`: dependence gaps, ARI, NMI, pair
@@ -233,5 +239,7 @@ added later.
   PIT bounds, output hashes, and the frozen 1% EWMA quality gate;
 - `data/audit/gaussian_copula_quality.json`: M1/M3 fit, simulation, forecast-
   coverage, portfolio-identity, and numerical-stability checks;
+- `data/audit/vine_copula_quality.json`: M2/M4 truncation, family-selection,
+  failed-pair, whole-vine fallback, forecast-coverage, and output-hash checks;
 - `data/audit/`: separate provenance, input-integrity, construction, and current
   readiness reports.

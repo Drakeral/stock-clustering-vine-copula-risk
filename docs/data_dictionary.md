@@ -156,6 +156,24 @@ It fails for duplicate or incomplete forecasts, a missing monthly refit, an
 incomplete or incorrectly dimensioned training PIT matrix, look-ahead, non-finite
 output, an out-of-bound PIT, or an EWMA share above 1% of group-month fits.
 
+## Vine-copula model outputs
+
+`data/processed/vine_copula_refits.parquet` stores one M2 or M4 record per
+grouping-month. Each record binds the source marginal PIT block, matched Gaussian
+fallback, ordered variables, truncation level, selected R-vine structure and pair
+copulas, AIC/log-likelihood diagnostics, common-random-number hash, and all pair or
+whole-vine fallback dispositions. The primary output is truncated after tree 3.
+
+`data/processed/vine_risk_forecasts.parquet` uses the common forecast-record
+schema. It contains daily M2/M4 VaR and ES forecasts, realised simple portfolio
+return and loss, copula log score, monthly seed components, marginal fallback
+count, and whole-vine fallback flag.
+
+`data/audit/vine_copula_quality.json` binds both outputs and every upstream input
+by SHA-256. It separately reports computational validity and whether the vine is
+eligible to be declared best under the frozen one-percent whole-vine fallback
+limit.
+
 ## Lifecycle policy
 
 Every XNYS session between a security's explicit listing and removal dates is classified as `active_price`, `verified_halt`, `terminal_cash`, `removed`, or `unexplained_missing`; pre-listing dates are counted as `pre_inception`. A verified halt with no corporate action receives a stale synthetic price and zero return, while the cumulative price move remains on resumption as a `gap_bridge_return`. A corporate action on a missing price date requires review and cannot be stale-filled automatically.

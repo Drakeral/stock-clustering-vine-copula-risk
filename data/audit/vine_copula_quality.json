@@ -1,0 +1,117 @@
+{
+  "best_model_restrictions": [],
+  "dimension": 11,
+  "draws_per_month": 100000,
+  "eligible_to_be_declared_best": true,
+  "evaluation_date_count": 1508,
+  "failed_pair_count": 0,
+  "family_counts": {
+    "clayton": 175,
+    "frank": 983,
+    "gaussian": 252,
+    "gumbel": 372,
+    "indep": 80,
+    "student": 2026
+  },
+  "forecast_count": 3016,
+  "gate_name": "vine_copula_quality_v1",
+  "inputs": {
+    "annual_group_returns": {
+      "path": "data/processed/annual_group_returns.parquet",
+      "sha256": "21b467e74da5e585f098a96dec0ed14e4745ae3ba04dc25461f7a1b6dee08cb9"
+    },
+    "foundation_status": {
+      "path": "data/audit/current_gate_status.json",
+      "sha256": "66df582e2ba6255c8f2e975c0739480562203fd85de06fa24dea0e58b3dd98b9"
+    },
+    "gaussian_copula_quality": {
+      "path": "data/audit/gaussian_copula_quality.json",
+      "sha256": "ea43f423c2b960615a82ec3fe82593ac7ff6ad9accbaa3b2aae58058707f2e75"
+    },
+    "gaussian_copula_refits": {
+      "path": "data/processed/gaussian_copula_refits.parquet",
+      "sha256": "e62de6021e1832d18ee0aa6d3c6df9f3566e9a5806242b66c5fc65d56db6d71e"
+    },
+    "marginal_daily_forecasts": {
+      "path": "data/processed/marginal_daily_forecasts.parquet",
+      "sha256": "f2f4d0c529960c4f263f29b3b72dc4e3789f71427f434e4f7c3a7b7dd698abe0"
+    },
+    "marginal_model_quality": {
+      "path": "data/audit/marginal_model_quality.json",
+      "sha256": "e5477b16f30a68a7701f1b5f0c04e7df8e3ebdc49a396fb3ba32f5692595952b"
+    },
+    "marginal_refits": {
+      "path": "data/processed/marginal_refits.parquet",
+      "sha256": "3ab07d0c6f6acccf702122d858a352ae81112a6a6da34279e60022a23638117e"
+    },
+    "model_config": {
+      "path": "config/model_config.toml",
+      "sha256": "d6d0cd9a53cce7bfaf0e19b2c973648ff10dcb20d48e67b53c0e5c8367a509fc"
+    },
+    "monthly_copula_training_pits": {
+      "path": "data/processed/monthly_copula_training_pits.parquet",
+      "sha256": "1ef39a00c88b5e300a21f302274a1aede80d00bb87069381e9faab95ea979e70"
+    },
+    "simulation_seed_manifest": {
+      "path": "data/manifests/simulation_seed_manifest.json",
+      "sha256": "f0763b5e868329ebf55f6973abd74e9ec3f86940bea8c316d5b9e289cca2956d"
+    }
+  },
+  "issues": [],
+  "maximum_monthly_failed_pair_fraction": 0.0,
+  "maximum_realised_portfolio_identity_error": 2.7755575615628914e-17,
+  "maximum_whole_vine_fallback_date_fraction": 0.01,
+  "method": {
+    "families": [
+      "independence",
+      "gaussian",
+      "student_t",
+      "frank",
+      "clayton",
+      "gumbel"
+    ],
+    "family_selection": "aic_sequential_mle",
+    "library": "pyvinecopulib",
+    "library_version": "0.7.6",
+    "num_threads": 1,
+    "rotations_degrees": [
+      0,
+      90,
+      180,
+      270
+    ],
+    "structure_selection": "dissmann_abs_kendall_tau_mst",
+    "truncation_level": 3
+  },
+  "model_date_counts": {
+    "M2": 1508,
+    "M4": 1508
+  },
+  "model_ids": [
+    "M2",
+    "M4"
+  ],
+  "outputs": {
+    "vine_copula_refits": {
+      "path": "data/processed/vine_copula_refits.parquet",
+      "rows": 144,
+      "sha256": "7dbf0d5ad4b098c7acf56057853d6fd165515ef80c3321de880739fda4ac7b15"
+    },
+    "vine_risk_forecasts": {
+      "path": "data/processed/vine_risk_forecasts.parquet",
+      "rows": 3016,
+      "sha256": "a012b305bb8943caa33f6f06e651da69b64a39e211f9b322e2501082e4c80422"
+    }
+  },
+  "pair_count": 3888,
+  "portfolio_identity_tolerance": 1e-12,
+  "refit_count": 144,
+  "reporting_scope": "provisional_research_results",
+  "schema_version": 1,
+  "status": "pass",
+  "truncation_level": 3,
+  "universe_variant": "security_primary",
+  "whole_vine_fallback_date_count": 0,
+  "whole_vine_fallback_date_fraction": 0.0,
+  "whole_vine_fallback_refit_count": 0
+}

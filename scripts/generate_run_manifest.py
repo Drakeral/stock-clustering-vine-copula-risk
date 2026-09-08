@@ -133,6 +133,7 @@ def default_output_paths() -> list[Path]:
         Path("data/audit/clustering_diagnostics.json"),
         Path("data/audit/marginal_model_quality.json"),
         Path("data/audit/gaussian_copula_quality.json"),
+        Path("data/audit/vine_copula_quality.json"),
         Path("data/processed/security_daily.parquet"),
         Path("data/processed/daily_total_returns.parquet"),
         Path("data/processed/daily_simple_total_returns.parquet"),
@@ -147,6 +148,8 @@ def default_output_paths() -> list[Path]:
         Path("data/processed/monthly_copula_training_pits.parquet"),
         Path("data/processed/gaussian_copula_refits.parquet"),
         Path("data/processed/gaussian_risk_forecasts.parquet"),
+        Path("data/processed/vine_copula_refits.parquet"),
+        Path("data/processed/vine_risk_forecasts.parquet"),
         Path("data/manifests/simulation_seed_manifest.json"),
     ]
 
