@@ -117,9 +117,9 @@
     "run_scope": "provisional_research_results",
     "status": "provisional_pass"
   },
-  "generated_at_utc": "2026-09-08T16:06:39.297852+00:00",
+  "generated_at_utc": "2026-09-09T01:07:11.207317+00:00",
   "git": {
-    "commit": "0ce77aadb2ce74cf1d37508d4ce2fec0428f03b5",
+    "commit": "bf4e0052e4528d58be179598e6b31a7c2af7e1b7",
     "commit_present": true,
     "repository_initialized": true,
     "worktree_clean": true
@@ -221,9 +221,9 @@
       "status": "present"
     },
     {
-      "bytes": 3715,
+      "bytes": 3930,
       "path": "data/audit/vine_copula_quality.json",
-      "sha256": "48263974243eacd35b7a5fb846827aa8ad2d6d8bd8ea5ffd58d1601ba61d32fd",
+      "sha256": "6066e9439dc3c70b847b6e4d9e90ba4510b95905477db8c24eccea14e7c368a7",
       "status": "present"
     },
     {
