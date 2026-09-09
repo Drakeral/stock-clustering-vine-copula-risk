@@ -9,6 +9,7 @@ import pyvinecopulib as pv
 
 from scripts.build_gaussian_copula import build_gaussian_outputs
 from scripts.build_vine_copula import (
+    VineFitError,
     build_vine_outputs,
     fit_vine_copula,
     validate_vine_protocol,
@@ -258,7 +259,7 @@ class VinePipelineTests(unittest.TestCase):
         frames, config, gaussian_refits, gaussian_forecasts, seeds = self._inputs()
 
         def failed_fit(*_args, **_kwargs):
-            raise RuntimeError("synthetic failure")
+            raise VineFitError("synthetic failure")
 
         refits, forecasts, audit = build_vine_outputs(
             *frames,
@@ -271,6 +272,8 @@ class VinePipelineTests(unittest.TestCase):
         self.assertTrue(refits["whole_vine_fallback"].all())
         self.assertTrue(forecasts["whole_vine_fallback"].all())
         self.assertFalse(audit["eligible_to_be_declared_best"])
+        self.assertEqual(audit["model_whole_vine_fallback_date_counts"], {"M2": 2, "M4": 2})
+        self.assertEqual(audit["model_whole_vine_fallback_date_fractions"], {"M2": 1.0, "M4": 1.0})
         for vine_id, gaussian_id in (("M2", "M1"), ("M4", "M3")):
             vine_rows = forecasts.loc[forecasts["model_id"] == vine_id].set_index("date")
             gaussian_rows = gaussian_forecasts.loc[
@@ -281,6 +284,35 @@ class VinePipelineTests(unittest.TestCase):
                 gaussian_rows[["var_95", "var_975", "var_99", "es_975"]],
                 rtol=0.0,
                 atol=0.0,
+            )
+
+    def test_programming_error_is_not_silently_converted_to_a_fallback(self):
+        frames, config, gaussian_refits, _, seeds = self._inputs()
+
+        def broken_fit(*_args, **_kwargs):
+            raise KeyError("synthetic programming defect")
+
+        with self.assertRaisesRegex(KeyError, "synthetic programming defect"):
+            build_vine_outputs(
+                *frames,
+                gaussian_refits,
+                seeds,
+                config,
+                progress_every=0,
+                vine_fitter=broken_fit,
+            )
+
+    def test_seed_record_metadata_is_validated_before_modelling(self):
+        frames, config, gaussian_refits, _, seeds = self._inputs()
+        seeds["records"][0]["dimension"] = 99
+
+        with self.assertRaisesRegex(ValueError, "seed manifest record differs"):
+            build_vine_outputs(
+                *frames,
+                gaussian_refits,
+                seeds,
+                config,
+                progress_every=0,
             )
 
 
@@ -311,7 +343,7 @@ class ProductionVineArtifactTests(unittest.TestCase):
         )
         self.assertEqual(
             audit["eligible_to_be_declared_best"],
-            audit["whole_vine_fallback_date_fraction"] <= 0.01,
+            audit["maximum_model_whole_vine_fallback_date_fraction"] <= 0.01,
         )
         allowed_families = {
             pv.BicopFamily.indep,

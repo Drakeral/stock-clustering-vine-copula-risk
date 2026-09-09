@@ -172,7 +172,9 @@ count, and whole-vine fallback flag.
 `data/audit/vine_copula_quality.json` binds both outputs and every upstream input
 by SHA-256. It separately reports computational validity and whether the vine is
 eligible to be declared best under the frozen one-percent whole-vine fallback
-limit.
+limit. Fallback date counts and fractions are reported for each model; the maximum
+model-specific fraction governs eligibility. The audit also retains the union of
+dates on which either model fell back as a conservative descriptive diagnostic.
 
 ## Lifecycle policy
 

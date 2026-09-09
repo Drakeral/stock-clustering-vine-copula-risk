@@ -96,6 +96,14 @@ class VineFitResult:
 VineFitFunction = Callable[..., VineFitResult]
 
 
+class VineFitError(RuntimeError):
+    """Expected numerical or engine failure while fitting a vine model."""
+
+
+class VineEvaluationError(RuntimeError):
+    """Expected numerical or engine failure while evaluating a fitted vine."""
+
+
 def _sha256(path: Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as handle:
@@ -216,6 +224,8 @@ def validate_vine_protocol(
         raise ValueError("simulation.base_seed must remain 5110")
     if simulation.get("bit_generator") != "PCG64DXSM":
         raise ValueError("simulation bit generator differs from the frozen protocol")
+    if simulation.get("seed_components") != ["base_seed", "year", "month"]:
+        raise ValueError("simulation seed components differ from the frozen protocol")
     if simulation.get("common_random_numbers") is not True:
         raise ValueError("common random numbers must remain enabled")
     if _positive_integer(simulation, "draws_per_month", "simulation") < 100:
@@ -332,33 +342,38 @@ def fit_vine_copula(
         raise ValueError("vine PIT matrix has invalid dimensions")
     if not np.isfinite(values).all() or bool(((values < lower) | (values > upper)).any()):
         raise ValueError("vine PIT matrix is non-finite or outside the frozen bounds")
-    controls = pv.FitControlsVinecop(
-        family_set=[FAMILY_BY_CONFIG[name] for name in vine["families"]],
-        parametric_method="mle",
-        trunc_lvl=truncation_level,
-        tree_criterion="tau",
-        selection_criterion="aic",
-        preselect_families=False,
-        allow_rotations=True,
-        select_trunc_lvl=False,
-        select_threshold=False,
-        select_families=True,
-        tree_algorithm="mst_prim",
-        num_threads=1,
-        seeds=[int(seed) for seed in fit_seeds],
-    )
-    training = np.asfortranarray(values)
-    model = pv.Vinecop.from_data(training, controls=controls)
-    if model.dim != dimension or model.trunc_lvl != truncation_level:
-        raise ValueError("vine engine returned the wrong dimension or truncation")
-    model, failures = _sanitize_selected_pairs(model, vine)
-    expected_pairs = sum(dimension - tree for tree in range(1, truncation_level + 1))
-    observed_pairs = sum(len(tree) for tree in model.pair_copulas)
-    if observed_pairs != expected_pairs:
-        raise ValueError("vine engine returned the wrong number of pair copulas")
-    densities = np.asarray(model.pdf(training, num_threads=1), dtype=float)
-    if not np.isfinite(densities).all() or bool((densities <= 0).any()):
-        raise ValueError("fitted vine has invalid training densities")
+    try:
+        controls = pv.FitControlsVinecop(
+            family_set=[FAMILY_BY_CONFIG[name] for name in vine["families"]],
+            parametric_method="mle",
+            trunc_lvl=truncation_level,
+            tree_criterion="tau",
+            selection_criterion="aic",
+            preselect_families=False,
+            allow_rotations=True,
+            select_trunc_lvl=False,
+            select_threshold=False,
+            select_families=True,
+            tree_algorithm="mst_prim",
+            num_threads=1,
+            seeds=[int(seed) for seed in fit_seeds],
+        )
+        training = np.asfortranarray(values)
+        model = pv.Vinecop.from_data(training, controls=controls)
+        if model.dim != dimension or model.trunc_lvl != truncation_level:
+            raise VineFitError("vine engine returned the wrong dimension or truncation")
+        model, failures = _sanitize_selected_pairs(model, vine)
+        expected_pairs = sum(dimension - tree for tree in range(1, truncation_level + 1))
+        observed_pairs = sum(len(tree) for tree in model.pair_copulas)
+        if observed_pairs != expected_pairs:
+            raise VineFitError("vine engine returned the wrong number of pair copulas")
+        densities = np.asarray(model.pdf(training, num_threads=1), dtype=float)
+        if not np.isfinite(densities).all() or bool((densities <= 0).any()):
+            raise VineFitError("fitted vine has invalid training densities")
+    except VineFitError:
+        raise
+    except (RuntimeError, ValueError) as exc:
+        raise VineFitError(f"vine engine fit failed: {type(exc).__name__}") from exc
     loglikelihood = float(np.log(densities).sum())
     number_parameters = float(model.npars)
     family_counts, rotation_counts = _model_counts(model)
@@ -390,12 +405,19 @@ def vine_dependence_uniforms(
         raise ValueError("independent uniforms must be finite and lie in [0, 1]")
     if not 0 < lower < upper < 1:
         raise ValueError("vine PIT bounds must lie strictly inside (0, 1)")
-    dependent = np.asarray(
-        model.inverse_rosenblatt(np.asfortranarray(np.clip(uniforms, lower, upper)), num_threads=1),
-        dtype=float,
-    )
+    try:
+        dependent = np.asarray(
+            model.inverse_rosenblatt(
+                np.asfortranarray(np.clip(uniforms, lower, upper)), num_threads=1
+            ),
+            dtype=float,
+        )
+    except (RuntimeError, ValueError) as exc:
+        raise VineEvaluationError(
+            f"inverse Rosenblatt transform failed: {type(exc).__name__}"
+        ) from exc
     if dependent.shape != uniforms.shape or not np.isfinite(dependent).all():
-        raise ValueError("inverse Rosenblatt transform produced invalid uniforms")
+        raise VineEvaluationError("inverse Rosenblatt transform produced invalid uniforms")
     return np.clip(dependent, lower, upper)
 
 
@@ -409,9 +431,12 @@ def vine_log_density(pits: np.ndarray, model: pv.Vinecop) -> np.ndarray:
         raise ValueError("PIT values and vine dimensions do not agree")
     if not np.isfinite(values).all() or bool(((values <= 0) | (values >= 1)).any()):
         raise ValueError("PIT values must be finite and lie strictly inside (0, 1)")
-    densities = np.asarray(model.pdf(np.asfortranarray(values), num_threads=1), dtype=float)
+    try:
+        densities = np.asarray(model.pdf(np.asfortranarray(values), num_threads=1), dtype=float)
+    except (RuntimeError, ValueError) as exc:
+        raise VineEvaluationError(f"vine density evaluation failed: {type(exc).__name__}") from exc
     if not np.isfinite(densities).all() or bool((densities <= 0).any()):
-        raise ValueError("vine density is non-finite or non-positive")
+        raise VineEvaluationError("vine density is non-finite or non-positive")
     return np.log(densities)
 
 
@@ -482,19 +507,53 @@ def _validated_seed_records(
     seed_manifest: Mapping[str, Any],
     simulation: Mapping[str, Any],
 ) -> dict[tuple[int, int], Mapping[str, Any]]:
+    if seed_manifest.get("schema_version") != 1:
+        raise ValueError("unexpected common-random-number manifest schema version")
     if seed_manifest.get("manifest_type") != "monthly_common_random_numbers":
         raise ValueError("unexpected common-random-number manifest type")
+    if seed_manifest.get("seed_sequence") != "SeedSequence([base_seed, year, month])":
+        raise ValueError("unexpected common-random-number seed sequence")
     for key in ("bit_generator", "base_seed", "draws_per_month", "dimension"):
         if seed_manifest.get(key) != simulation.get(key):
             raise ValueError(f"seed manifest differs from simulation config: {key}")
+    raw_records = seed_manifest.get("records")
+    if not isinstance(raw_records, list):
+        raise TypeError("seed manifest records must be an array")
     records: dict[tuple[int, int], Mapping[str, Any]] = {}
-    for raw in seed_manifest.get("records", []):
+    for raw in raw_records:
         if not isinstance(raw, Mapping):
             raise TypeError("seed manifest record must be an object")
         record = cast(Mapping[str, Any], raw)
-        key = int(record["year"]), int(record["month"])
+        year = record.get("year")
+        month = record.get("month")
+        if (
+            isinstance(year, bool)
+            or not isinstance(year, int)
+            or isinstance(month, bool)
+            or not isinstance(month, int)
+            or not 1 <= month <= 12
+        ):
+            raise ValueError("seed manifest record has an invalid year or month")
+        key = year, month
         if key in records:
             raise ValueError(f"duplicate seed manifest month: {key}")
+        expected_record = {
+            "seed_components": [simulation["base_seed"], year, month],
+            "draws": simulation["draws_per_month"],
+            "dimension": simulation["dimension"],
+        }
+        for field, expected in expected_record.items():
+            if record.get(field) != expected:
+                raise ValueError(
+                    f"seed manifest record differs from simulation config: {key}/{field}"
+                )
+        uniform_hash = record.get("base_uniform_sha256")
+        if (
+            not isinstance(uniform_hash, str)
+            or len(uniform_hash) != 64
+            or any(character not in "0123456789abcdef" for character in uniform_hash)
+        ):
+            raise ValueError(f"seed manifest record has an invalid uniform hash: {key}")
         records[key] = record
     return records
 
@@ -717,7 +776,7 @@ def build_vine_outputs(
             )
             if fit_result.failed_pair_fraction > maximum_pair_failure:
                 fallback_reason = "failed_pair_fraction_exceeded"
-        except Exception as exc:  # The frozen whole-vine fallback is intentionally broad.
+        except VineFitError as exc:
             fallback_reason = f"structure_or_fit_failure:{type(exc).__name__}"
 
         daily_pits = daily_block.pivot(index="date", columns="group_id", values="pit")
@@ -738,7 +797,7 @@ def build_vine_outputs(
                 log_density_values = vine_log_density(
                     daily_pits.to_numpy(dtype=float), fit_result.model
                 )
-            except Exception as exc:
+            except VineEvaluationError as exc:
                 fallback_reason = f"vine_evaluation_failure:{type(exc).__name__}"
                 whole_vine_fallback = True
         if whole_vine_fallback:
@@ -871,14 +930,23 @@ def build_vine_outputs(
         maximum_identity_error = float(np.max(np.abs(realised_wide["M2"] - realised_wide["M4"])))
         if maximum_identity_error > float(model_config["portfolio"]["reconstruction_tolerance"]):
             issues.append("grouping_portfolio_identity_failed")
-    fallback_dates = int(
+    evaluation_dates = int(forecast_frame["date"].nunique())
+    fallback_date_counts = {
+        str(model_id): int(rows.loc[rows["whole_vine_fallback"], "date"].nunique())
+        for model_id, rows in forecast_frame.groupby("model_id")
+    }
+    fallback_date_fractions = {
+        model_id: fallback_date_counts[model_id] / date_counts[model_id]
+        for model_id in sorted(fallback_date_counts)
+    }
+    maximum_model_fallback_fraction = max(fallback_date_fractions.values(), default=0.0)
+    any_model_fallback_dates = int(
         forecast_frame.loc[forecast_frame["whole_vine_fallback"], "date"].nunique()
     )
-    evaluation_dates = int(forecast_frame["date"].nunique())
-    fallback_fraction = fallback_dates / evaluation_dates
+    any_model_fallback_fraction = any_model_fallback_dates / evaluation_dates
     fallback_limit = float(vine["maximum_whole_vine_fallback_date_fraction"])
     restrictions = []
-    if fallback_fraction > fallback_limit:
+    if maximum_model_fallback_fraction > fallback_limit:
         restrictions.append("whole_vine_fallback_fraction_exceeded")
     aggregate_families: Counter[str] = Counter()
     for encoded in fit_frame["family_counts_json"]:
@@ -900,8 +968,11 @@ def build_vine_outputs(
         "failed_pair_count": int(fit_frame["failed_pair_count"].sum()),
         "maximum_monthly_failed_pair_fraction": float(fit_frame["failed_pair_fraction"].max()),
         "whole_vine_fallback_refit_count": int(fit_frame["whole_vine_fallback"].sum()),
-        "whole_vine_fallback_date_count": fallback_dates,
-        "whole_vine_fallback_date_fraction": fallback_fraction,
+        "whole_vine_fallback_date_count": any_model_fallback_dates,
+        "whole_vine_fallback_date_fraction": any_model_fallback_fraction,
+        "model_whole_vine_fallback_date_counts": fallback_date_counts,
+        "model_whole_vine_fallback_date_fractions": fallback_date_fractions,
+        "maximum_model_whole_vine_fallback_date_fraction": maximum_model_fallback_fraction,
         "maximum_whole_vine_fallback_date_fraction": fallback_limit,
         "eligible_to_be_declared_best": not restrictions,
         "family_counts": dict(sorted(aggregate_families.items())),

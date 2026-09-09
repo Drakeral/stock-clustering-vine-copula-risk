@@ -58,6 +58,7 @@
     }
   },
   "issues": [],
+  "maximum_model_whole_vine_fallback_date_fraction": 0.0,
   "maximum_monthly_failed_pair_fraction": 0.0,
   "maximum_realised_portfolio_identity_error": 2.7755575615628914e-17,
   "maximum_whole_vine_fallback_date_fraction": 0.01,
@@ -91,6 +92,14 @@
     "M2",
     "M4"
   ],
+  "model_whole_vine_fallback_date_counts": {
+    "M2": 0,
+    "M4": 0
+  },
+  "model_whole_vine_fallback_date_fractions": {
+    "M2": 0.0,
+    "M4": 0.0
+  },
   "outputs": {
     "vine_copula_refits": {
       "path": "data/processed/vine_copula_refits.parquet",
