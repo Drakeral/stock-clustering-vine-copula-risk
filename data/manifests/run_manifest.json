@@ -123,9 +123,9 @@
     "run_scope": "provisional_research_results",
     "status": "provisional_pass"
   },
-  "generated_at_utc": "2026-09-10T13:36:30.752307+00:00",
+  "generated_at_utc": "2026-09-10T15:16:58.667524+00:00",
   "git": {
-    "commit": "fb7b55c3a6d7ae70ea030d0c9c047aee3e7e2aa1",
+    "commit": "95589bca5c076b2987f033427e0c4333559e349c",
     "commit_present": true,
     "repository_initialized": true,
     "worktree_clean": true
@@ -164,9 +164,9 @@
       "status": "present"
     },
     {
-      "bytes": 576,
+      "bytes": 626,
       "path": "pyproject.toml",
-      "sha256": "b9f58e1c13799be5a339013ba9f6eade9db0ce0caa2d928b39fe19fe00a44e46",
+      "sha256": "9f57413e5cb870be688847303f57c8b092701299af8b5e40383ab32c3f9e525a",
       "status": "present"
     },
     {
