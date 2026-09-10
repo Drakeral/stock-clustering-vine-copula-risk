@@ -56,15 +56,21 @@
       "status": "present"
     },
     {
-      "bytes": 1530,
+      "bytes": 2616,
       "path": "config/schemas/forecast_record.schema.json",
-      "sha256": "b2d33373167520a8cd96145598a2875d02f082d8a3d88c84db424c11714cf00f",
+      "sha256": "1a603c00c11ddcd4f7cc89cec4d1431e928aa5da3aff1b944b531257bf0b97c3",
       "status": "present"
     },
     {
       "bytes": 2428,
       "path": "config/schemas/gaussian_copula_refit_record.schema.json",
       "sha256": "e7a969c0d54cd5bba4631e271053fd6c4c5c76f2b4d3df15053718ebceb066f7",
+      "status": "present"
+    },
+    {
+      "bytes": 908,
+      "path": "config/schemas/historical_simulation_window_record.schema.json",
+      "sha256": "77ee25141b93ef906f191ada4222dc1cdeac092b41c7a943c22a76699bded528",
       "status": "present"
     },
     {
@@ -117,9 +123,9 @@
     "run_scope": "provisional_research_results",
     "status": "provisional_pass"
   },
-  "generated_at_utc": "2026-09-09T01:07:11.207317+00:00",
+  "generated_at_utc": "2026-09-10T13:36:30.752307+00:00",
   "git": {
-    "commit": "bf4e0052e4528d58be179598e6b31a7c2af7e1b7",
+    "commit": "fb7b55c3a6d7ae70ea030d0c9c047aee3e7e2aa1",
     "commit_present": true,
     "repository_initialized": true,
     "worktree_clean": true
@@ -194,6 +200,12 @@
       "bytes": 2979,
       "path": "data/audit/gaussian_copula_quality.json",
       "sha256": "ea43f423c2b960615a82ec3fe82593ac7ff6ad9accbaa3b2aae58058707f2e75",
+      "status": "present"
+    },
+    {
+      "bytes": 2680,
+      "path": "data/audit/historical_simulation_quality.json",
+      "sha256": "454789bf5e2b16665603be52c946f592e3a37bcba5254bc4750b612a65144069",
       "status": "present"
     },
     {
@@ -278,6 +290,18 @@
       "bytes": 211137,
       "path": "data/processed/gaussian_risk_forecasts.parquet",
       "sha256": "0e9d83dafd8918ddcb5d9fad2b9189a4e683b87a76c6b151609a01e2df6eca36",
+      "status": "present"
+    },
+    {
+      "bytes": 64090,
+      "path": "data/processed/historical_simulation_risk_forecasts.parquet",
+      "sha256": "b9260b2b20bec7af06d3a2e9f068b8e4cec3f8f0bc5a5d90e014c49a832f731f",
+      "status": "present"
+    },
+    {
+      "bytes": 63011,
+      "path": "data/processed/historical_simulation_windows.parquet",
+      "sha256": "9f96a8bb74a114aec7b23d268f31056dd182eb0908e827152972013184efaf74",
       "status": "present"
     },
     {
