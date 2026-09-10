@@ -101,6 +101,11 @@ observations. VaR is empirical order statistic `ceil(n*c)`. ES integrates the
 empirical quantile function over the upper tail, using fractional weight on the
 boundary order statistic when `n*(1-c)` is non-integral.
 
+M0 is constructed directly from the canonical daily-rebalanced equal-weight
+portfolio return series under each year's active-security set. It does not use a
+grouping, marginal model, copula, simulation, or random seed. Its common forecast
+records therefore store null seed components and null copula log scores.
+
 ## Margins, copulas, and simulation
 
 The first marginal attempt is AR(1)-GARCH(1,1) with Student-t innovations. An

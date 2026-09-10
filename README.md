@@ -137,6 +137,7 @@ uv run python scripts/verify_foundation_inputs.py
 uv run python scripts/build_return_panel.py
 uv run python scripts/validate_portfolio_arithmetic.py
 uv run python scripts/update_foundation_status.py --require-modelling-ready
+uv run python scripts/build_historical_simulation.py
 uv run python scripts/build_annual_groupings.py
 uv run python scripts/build_marginal_models.py
 uv run python scripts/build_gaussian_copula.py
@@ -208,6 +209,10 @@ added later.
   `daily_total_returns.parquet`: simple- and log-return stock panels;
 - `data/processed/portfolio_constituent_simple_returns.parquet` and
   `portfolio_constituent_returns.parquet`: daily-rebalanced modelling inputs;
+- `data/processed/historical_simulation_risk_forecasts.parquet`: daily M0 rolling
+  historical-simulation VaR, ES, realised return, and loss;
+- `data/processed/historical_simulation_windows.parquet`: exact leakage-free M0
+  training bounds and observation counts for every forecast date;
 - `data/processed/annual_group_assignments.json`: leakage-free annual GICS and
   hierarchical-cluster membership for 2020–2025;
 - `data/processed/annual_group_returns.parquet`: simple and log group returns,
@@ -235,6 +240,8 @@ added later.
   random-number seeds and uniform-matrix hashes; and
 - `data/audit/clustering_diagnostics.json`: dependence gaps, ARI, NMI, pair
   counts, portfolio-identity errors, and hashes of the grouping artifacts;
+- `data/audit/historical_simulation_quality.json`: M0 window, forecast coverage,
+  arithmetic, upstream lineage, and output-hash checks;
 - `data/audit/marginal_model_quality.json`: marginal coverage, fallback incidence,
   PIT bounds, output hashes, and the frozen 1% EWMA quality gate;
 - `data/audit/gaussian_copula_quality.json`: M1/M3 fit, simulation, forecast-

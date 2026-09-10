@@ -1,0 +1,83 @@
+{
+  "annual_active_security_counts": {
+    "2020": 100,
+    "2021": 98,
+    "2022": 98,
+    "2023": 98,
+    "2024": 98,
+    "2025": 98
+  },
+  "annual_forecast_counts": {
+    "2020": 253,
+    "2021": 252,
+    "2022": 251,
+    "2023": 250,
+    "2024": 252,
+    "2025": 250
+  },
+  "evaluation_date_count": 1508,
+  "first_forecast_date": "2020-01-02",
+  "forecast_count": 1508,
+  "gate_name": "historical_simulation_quality_v1",
+  "grouping_id": "none",
+  "inputs": {
+    "active_universe": {
+      "path": "data/processed/active_universe_by_year.json",
+      "sha256": "ed3ef62c7f253fcf1af987a589987a63f74d9130e533dcb4c283a661849ba626"
+    },
+    "foundation_status": {
+      "path": "data/audit/current_gate_status.json",
+      "sha256": "66df582e2ba6255c8f2e975c0739480562203fd85de06fa24dea0e58b3dd98b9"
+    },
+    "model_config": {
+      "path": "config/model_config.toml",
+      "sha256": "d6d0cd9a53cce7bfaf0e19b2c973648ff10dcb20d48e67b53c0e5c8367a509fc"
+    },
+    "portfolio_arithmetic": {
+      "path": "data/audit/portfolio_arithmetic.json",
+      "sha256": "96e11c6b59ff140dc4655ef35b0c20d00c53f0196a3438f76425b496214bcd20"
+    },
+    "portfolio_constituent_simple_returns": {
+      "path": "data/processed/portfolio_constituent_simple_returns.parquet",
+      "sha256": "e37b805bd8c290ace18a9aab120b3272ed10e8d64b3eab70c892b03c72caf3e9"
+    }
+  },
+  "issues": [],
+  "last_forecast_date": "2025-12-31",
+  "maximum_realised_loss_identity_error": 0.0,
+  "maximum_training_observations": 758,
+  "method": {
+    "es_boundary_method": "fractional_order_statistic",
+    "es_confidence_level": 0.975,
+    "minimum_training_observations": 700,
+    "portfolio_definition": "daily_rebalanced_equal_weight",
+    "quantile_method": "inverted_empirical_cdf",
+    "realised_loss_definition": "negative_simple_portfolio_return",
+    "var_confidence_levels": [
+      0.95,
+      0.975,
+      0.99
+    ],
+    "window_calendar_years": 3,
+    "window_interval": "left_closed_right_open"
+  },
+  "minimum_training_observations": 750,
+  "model_id": "M0",
+  "outputs": {
+    "historical_simulation_risk_forecasts": {
+      "path": "data/processed/historical_simulation_risk_forecasts.parquet",
+      "rows": 1508,
+      "sha256": "b9260b2b20bec7af06d3a2e9f068b8e4cec3f8f0bc5a5d90e014c49a832f731f"
+    },
+    "historical_simulation_windows": {
+      "path": "data/processed/historical_simulation_windows.parquet",
+      "rows": 1508,
+      "sha256": "9f96a8bb74a114aec7b23d268f31056dd182eb0908e827152972013184efaf74"
+    }
+  },
+  "reporting_scope": "provisional_research_results",
+  "required_minimum_training_observations": 700,
+  "schema_version": 1,
+  "status": "pass",
+  "window_count": 1508
+}

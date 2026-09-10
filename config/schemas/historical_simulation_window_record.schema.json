@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/fe5110/historical_simulation_window_record.schema.json",
+  "title": "FE5110 M0 historical-simulation window record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "refit_id",
+    "forecast_date",
+    "requested_training_start",
+    "training_start",
+    "training_end",
+    "training_observations",
+    "active_security_count"
+  ],
+  "properties": {
+    "refit_id": {"type": "string", "minLength": 1},
+    "forecast_date": {"type": "string", "format": "date"},
+    "requested_training_start": {"type": "string", "format": "date"},
+    "training_start": {"type": "string", "format": "date"},
+    "training_end": {"type": "string", "format": "date"},
+    "training_observations": {"type": "integer", "minimum": 700},
+    "active_security_count": {"type": "integer", "minimum": 1}
+  }
+}

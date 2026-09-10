@@ -340,6 +340,8 @@ class RunManifestTests(unittest.TestCase):
         self.assertIn("data/audit/marginal_model_quality.json", paths)
         self.assertIn("data/processed/annual_group_assignments.json", paths)
         self.assertIn("data/processed/annual_group_returns.parquet", paths)
+        self.assertIn("data/processed/historical_simulation_risk_forecasts.parquet", paths)
+        self.assertIn("data/processed/historical_simulation_windows.parquet", paths)
         self.assertIn("data/processed/marginal_refits.parquet", paths)
         self.assertIn("data/processed/marginal_daily_forecasts.parquet", paths)
         self.assertIn("data/processed/monthly_copula_training_pits.parquet", paths)
@@ -350,6 +352,7 @@ class RunManifestTests(unittest.TestCase):
         self.assertIn("data/manifests/simulation_seed_manifest.json", paths)
         self.assertIn("data/audit/gaussian_copula_quality.json", paths)
         self.assertIn("data/audit/vine_copula_quality.json", paths)
+        self.assertIn("data/audit/historical_simulation_quality.json", paths)
 
     def test_git_state_counts_untracked_files_as_dirty(self):
         with tempfile.TemporaryDirectory() as temporary:

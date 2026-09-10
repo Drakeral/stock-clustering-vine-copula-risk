@@ -122,6 +122,26 @@ Long-form daily group-return panel used by the later marginal and copula models.
 and reports annual dependence gaps, pair counts, ARI, NMI, and the direct-versus-
 grouped primary-portfolio arithmetic error.
 
+## Historical-simulation benchmark outputs
+
+`data/processed/historical_simulation_risk_forecasts.parquet` stores the M0
+benchmark using the common forecast schema. It contains one record per 2020–2025
+evaluation date and uses the canonical daily-rebalanced equal-weight portfolio,
+not either grouping representation. Because M0 is deterministic and has neither
+marginal nor copula estimation, `seed_components` and `copula_log_score` are null,
+the fallback fields remain zero/false, and `grouping_id` is `none`.
+
+`data/processed/historical_simulation_windows.parquet` binds each daily M0
+`refit_id` to its requested three-calendar-year start, first and last observations,
+observation count, forecast date, and current annual active-security count. Every
+training end date is strictly before its forecast date and every window has at
+least 700 observations. Its schema is
+`config/schemas/historical_simulation_window_record.schema.json`.
+
+`data/audit/historical_simulation_quality.json` binds both M0 outputs to the
+simple-return panel, annual active schedule, passed portfolio-arithmetic audit,
+foundation status, and frozen model configuration by SHA-256.
+
 ### `data/processed/marginal_refits.parquet`
 
 One row per year, month, grouping system, and group in the primary security

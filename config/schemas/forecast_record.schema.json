@@ -4,6 +4,40 @@
   "title": "FE5110 one-day risk forecast record",
   "type": "object",
   "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {"model_id": {"const": "M0"}},
+        "required": ["model_id"]
+      },
+      "then": {
+        "properties": {
+          "grouping_id": {"const": "none"},
+          "seed_components": {"type": "null"},
+          "margin_fallback_count": {"const": 0},
+          "whole_vine_fallback": {"const": false},
+          "copula_log_score": {"type": "null"},
+          "forecast_status": {"const": "ok"}
+        }
+      },
+      "else": {
+        "properties": {
+          "grouping_id": {"enum": ["gics", "hierarchical"]},
+          "seed_components": {
+            "type": "array",
+            "prefixItems": [
+              {"const": 5110},
+              {"type": "integer", "minimum": 2020, "maximum": 2025},
+              {"type": "integer", "minimum": 1, "maximum": 12}
+            ],
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "copula_log_score": {"type": "number"}
+        }
+      }
+    }
+  ],
   "required": [
     "date",
     "model_id",
@@ -33,14 +67,19 @@
     "realised_simple_return": {"type": "number"},
     "realised_loss": {"type": "number"},
     "seed_components": {
-      "type": "array",
-      "prefixItems": [
-        {"const": 5110},
-        {"type": "integer", "minimum": 2020, "maximum": 2025},
-        {"type": "integer", "minimum": 1, "maximum": 12}
-      ],
-      "minItems": 3,
-      "maxItems": 3
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "array",
+          "prefixItems": [
+            {"const": 5110},
+            {"type": "integer", "minimum": 2020, "maximum": 2025},
+            {"type": "integer", "minimum": 1, "maximum": 12}
+          ],
+          "minItems": 3,
+          "maxItems": 3
+        }
+      ]
     },
     "margin_fallback_count": {"type": "integer", "minimum": 0},
     "whole_vine_fallback": {"type": "boolean"},
