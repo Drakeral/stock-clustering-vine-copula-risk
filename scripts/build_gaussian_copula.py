@@ -21,12 +21,27 @@ except ModuleNotFoundError:  # pragma: no cover
     import tomli as tomllib
 
 try:
+    from scripts.pipeline_io import (
+        PROJECT_ROOT,
+        project_path as _project_path,
+        reporting_scope as _reporting_scope,
+        sha256_file as _sha256,
+        write_json_atomic as _write_json_atomic,
+        write_parquet_atomic as _write_parquet_atomic,
+    )
     from scripts.research_methods import common_uniforms
 except ModuleNotFoundError:  # Support direct execution as ``python scripts/...``.
+    from pipeline_io import (
+        PROJECT_ROOT,
+        project_path as _project_path,
+        reporting_scope as _reporting_scope,
+        sha256_file as _sha256,
+        write_json_atomic as _write_json_atomic,
+        write_parquet_atomic as _write_parquet_atomic,
+    )
     from research_methods import common_uniforms
 
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
 MODEL_BY_GROUPING = {
     "gics_sector": ("M1", "gics"),
     "hierarchical_cluster": ("M3", "hierarchical"),
@@ -44,38 +59,9 @@ class GaussianCopulaFit:
     correlation_repaired: bool
 
 
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
-
-
 def _array_sha256(values: np.ndarray) -> str:
     contiguous = np.ascontiguousarray(values, dtype=np.float64)
     return hashlib.sha256(contiguous.tobytes(order="C")).hexdigest()
-
-
-def _project_path(path: Path) -> str:
-    try:
-        return path.resolve().relative_to(PROJECT_ROOT).as_posix()
-    except ValueError:
-        return str(path.resolve())
-
-
-def _write_json_atomic(path: Path, payload: Mapping[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".part")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    temporary.replace(path)
-
-
-def _write_parquet_atomic(path: Path, frame: pd.DataFrame) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".part")
-    frame.to_parquet(temporary, index=False, engine="pyarrow")
-    temporary.replace(path)
 
 
 def _finite_float(section: Mapping[str, Any], key: str, section_name: str) -> float:
@@ -833,19 +819,6 @@ def build_gaussian_outputs(
         seed_manifest,
         audit,
     )
-
-
-def _reporting_scope(gate: Mapping[str, Any]) -> str:
-    foundation = gate.get("foundation_v2", {})
-    readiness = gate.get("gates", {}).get("modelling_readiness", {})
-    if foundation.get("status") not in {"pass", "provisional_pass"}:
-        raise RuntimeError("foundation_v2 is not ready for modelling")
-    if readiness.get("status") not in {"pass", "pass_provisional"}:
-        raise RuntimeError("modelling-readiness gate is not passed")
-    scope = foundation.get("reporting_scope")
-    if scope not in {"confirmatory", "provisional_research_results"}:
-        raise RuntimeError(f"unsupported reporting scope: {scope}")
-    return str(scope)
 
 
 def _validate_marginal_binding(

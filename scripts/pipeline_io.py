@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
+import tempfile
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -36,18 +38,36 @@ def write_json_atomic(path: Path, payload: Mapping[str, Any]) -> None:
     """Atomically replace a JSON artifact."""
 
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".part")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    temporary.replace(path)
+    temporary = _temporary_path(path)
+    try:
+        temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def write_parquet_atomic(path: Path, frame: pd.DataFrame) -> None:
     """Atomically replace a Parquet artifact."""
 
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".part")
-    frame.to_parquet(temporary, index=False, engine="pyarrow")
-    temporary.replace(path)
+    temporary = _temporary_path(path)
+    try:
+        frame.to_parquet(temporary, index=False, engine="pyarrow")
+        temporary.replace(path)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def _temporary_path(destination: Path) -> Path:
+    """Reserve a unique sibling path for one atomic artifact write."""
+
+    descriptor, name = tempfile.mkstemp(
+        dir=destination.parent,
+        prefix=f".{destination.name}.",
+        suffix=".part",
+    )
+    os.close(descriptor)
+    return Path(name)
 
 
 def reporting_scope(gate: Mapping[str, Any]) -> str:
@@ -64,6 +84,11 @@ def reporting_scope(gate: Mapping[str, Any]) -> str:
         raise RuntimeError("foundation_v2 is not ready for modelling")
     if readiness.get("status") not in {"pass", "pass_provisional"}:
         raise RuntimeError("modelling-readiness gate is not passed")
+    if (foundation.get("status"), readiness.get("status")) not in {
+        ("pass", "pass"),
+        ("provisional_pass", "pass_provisional"),
+    }:
+        raise RuntimeError("foundation and modelling-readiness statuses are inconsistent")
     scope = foundation.get("reporting_scope")
     if scope not in {"confirmatory", "provisional_research_results"}:
         raise RuntimeError(f"unsupported reporting scope: {scope}")

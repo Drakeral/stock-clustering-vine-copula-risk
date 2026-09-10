@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 from collections import Counter
 from collections.abc import Callable, Mapping, Sequence
@@ -23,10 +22,7 @@ except ModuleNotFoundError:  # pragma: no cover
 
 try:
     from scripts.build_gaussian_copula import (
-        PROJECT_ROOT,
         _array_sha256,
-        _project_path,
-        _reporting_scope,
         _validate_block_bindings,
         _validate_input_frames,
         _validate_marginal_binding,
@@ -35,13 +31,18 @@ try:
         gaussian_dependence_uniforms,
         marginal_innovation_draws,
     )
+    from scripts.pipeline_io import (
+        PROJECT_ROOT,
+        project_path as _project_path,
+        reporting_scope as _reporting_scope,
+        sha256_file as _sha256,
+        write_json_atomic as _write_json_atomic,
+        write_parquet_atomic as _write_parquet_atomic,
+    )
     from scripts.research_methods import common_uniforms
 except ModuleNotFoundError:  # Support direct execution as ``python scripts/...``.
     from build_gaussian_copula import (
-        PROJECT_ROOT,
         _array_sha256,
-        _project_path,
-        _reporting_scope,
         _validate_block_bindings,
         _validate_input_frames,
         _validate_marginal_binding,
@@ -49,6 +50,14 @@ except ModuleNotFoundError:  # Support direct execution as ``python scripts/...`
         gaussian_copula_log_density,
         gaussian_dependence_uniforms,
         marginal_innovation_draws,
+    )
+    from pipeline_io import (
+        PROJECT_ROOT,
+        project_path as _project_path,
+        reporting_scope as _reporting_scope,
+        sha256_file as _sha256,
+        write_json_atomic as _write_json_atomic,
+        write_parquet_atomic as _write_parquet_atomic,
     )
     from research_methods import common_uniforms
 
@@ -102,28 +111,6 @@ class VineFitError(RuntimeError):
 
 class VineEvaluationError(RuntimeError):
     """Expected numerical or engine failure while evaluating a fitted vine."""
-
-
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
-
-
-def _write_json_atomic(path: Path, payload: Mapping[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".part")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    temporary.replace(path)
-
-
-def _write_parquet_atomic(path: Path, frame: pd.DataFrame) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".part")
-    frame.to_parquet(temporary, index=False, engine="pyarrow")
-    temporary.replace(path)
 
 
 def _finite_float(section: Mapping[str, Any], key: str, section_name: str) -> float:

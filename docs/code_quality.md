@@ -47,6 +47,11 @@ the artifact-bound tests were skipped.
 - Bind ignored derived outputs to tracked audits/manifests with SHA-256 hashes.
 - Write generated JSON and Parquet outputs atomically so an interrupted run does
   not replace a valid artifact with a partial file.
+- Reuse `scripts/pipeline_io.py` for modelling-stage paths, hashes, reporting
+  scope checks and atomic writes. Its temporary files are unique per writer and
+  are removed after either success or failure.
+- Catch only expected numerical and solver exceptions at model-fallback
+  boundaries. Programming defects must propagate so tests and CI expose them.
 
 ## Current bounded technical debt
 

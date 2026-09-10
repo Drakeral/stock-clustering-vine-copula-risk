@@ -10,9 +10,7 @@ stage. Every artifact inherits the foundation gate's reporting scope.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
-import os
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -26,6 +24,14 @@ except ModuleNotFoundError:  # pragma: no cover
     import tomli as tomllib
 
 try:
+    from scripts.pipeline_io import (
+        PROJECT_ROOT,
+        project_path as _project_path,
+        reporting_scope as _reporting_scope,
+        sha256_file as _sha256,
+        write_json_atomic as _write_json_atomic,
+        write_parquet_atomic as _write_parquet_atomic,
+    )
     from scripts.research_methods import (
         adjusted_rand_index,
         alphabet_issuer_composite,
@@ -38,6 +44,14 @@ try:
         pairwise_spearman,
     )
 except ModuleNotFoundError:  # Support direct execution as ``python scripts/...``.
+    from pipeline_io import (
+        PROJECT_ROOT,
+        project_path as _project_path,
+        reporting_scope as _reporting_scope,
+        sha256_file as _sha256,
+        write_json_atomic as _write_json_atomic,
+        write_parquet_atomic as _write_parquet_atomic,
+    )
     from research_methods import (
         adjusted_rand_index,
         alphabet_issuer_composite,
@@ -49,39 +63,6 @@ except ModuleNotFoundError:  # Support direct execution as ``python scripts/...`
         normalized_mutual_information,
         pairwise_spearman,
     )
-
-
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-
-
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
-
-
-def _project_path(path: Path) -> str:
-    resolved = path.resolve()
-    try:
-        return resolved.relative_to(PROJECT_ROOT).as_posix()
-    except ValueError:
-        return str(resolved)
-
-
-def _write_json_atomic(path: Path, payload: Mapping[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".part")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    os.replace(temporary, path)
-
-
-def _write_parquet_atomic(path: Path, frame: pd.DataFrame) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".part")
-    frame.to_parquet(temporary, index=False, engine="pyarrow")
-    os.replace(temporary, path)
 
 
 def _gics_labels(universe: Mapping[str, Any]) -> dict[str, str]:
@@ -135,21 +116,6 @@ def _validate_protocol(config: Mapping[str, Any]) -> Mapping[str, Any]:
     if mismatches:
         raise ValueError(f"unsupported clustering protocol: {mismatches}")
     return clustering
-
-
-def _reporting_scope(gate: Mapping[str, Any]) -> str:
-    foundation = gate.get("foundation_v2", {})
-    readiness = gate.get("gates", {}).get("modelling_readiness", {})
-    if foundation.get("status") not in {"pass", "provisional_pass"}:
-        raise RuntimeError("foundation_v2 is not ready for modelling")
-    if readiness.get("status") not in {"pass", "pass_provisional"}:
-        raise RuntimeError("modelling-readiness gate is not passed")
-    scope = foundation.get("reporting_scope")
-    if scope not in {"confirmatory", "provisional_research_results"}:
-        raise RuntimeError(f"unsupported foundation reporting scope: {scope}")
-    if readiness.get("status") == "pass_provisional" and scope != "provisional_research_results":
-        raise RuntimeError("provisional readiness must use provisional reporting scope")
-    return str(scope)
 
 
 def _validate_arithmetic_binding(

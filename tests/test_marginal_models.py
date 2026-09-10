@@ -3,6 +3,7 @@ import hashlib
 import json
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 import pandas as pd
@@ -11,6 +12,7 @@ from scripts.build_marginal_models import (
     MarginState,
     MonthlyTask,
     PersistenceBoundedGARCH,
+    _fit_arch_attempt,
     _task_protocol,
     _validate_protocol,
     align_training_pits,
@@ -180,6 +182,49 @@ class FallbackAndFilteringTests(unittest.TestCase):
         self.assertEqual(len(attempts), 4)
         self.assertAlmostEqual(first.next_variance, second.next_variance)
         np.testing.assert_array_equal(first.empirical_innovations, second.empirical_innovations)
+
+    def test_expected_solver_error_is_recorded_for_fallback(self):
+        sample = pd.Series(
+            np.sin(np.arange(750) / 7) / 100,
+            index=pd.bdate_range("2017-01-03", periods=750),
+        )
+        with patch(
+            "scripts.build_marginal_models.StudentsT",
+            side_effect=RuntimeError("synthetic solver failure"),
+        ):
+            state, attempt = _fit_arch_attempt(
+                sample,
+                "initial_ar_garch_t",
+                "AR",
+                None,
+                1000,
+                marginal_config(),
+            )
+
+        self.assertIsNone(state)
+        self.assertEqual(attempt["exception_type"], "RuntimeError")
+        self.assertEqual(attempt["rejection_reasons"], ["fit_exception"])
+
+    def test_programming_error_is_not_silently_treated_as_fit_failure(self):
+        sample = pd.Series(
+            np.sin(np.arange(750) / 7) / 100,
+            index=pd.bdate_range("2017-01-03", periods=750),
+        )
+        with (
+            patch(
+                "scripts.build_marginal_models.StudentsT",
+                side_effect=KeyError("synthetic programming defect"),
+            ),
+            self.assertRaisesRegex(KeyError, "synthetic programming defect"),
+        ):
+            _fit_arch_attempt(
+                sample,
+                "initial_ar_garch_t",
+                "AR",
+                None,
+                1000,
+                marginal_config(),
+            )
 
     def test_daily_filter_uses_fixed_parameters_and_clips_pits(self):
         evaluation = pd.Series([0.0, 0.01], index=pd.to_datetime(["2020-01-02", "2020-01-03"]))

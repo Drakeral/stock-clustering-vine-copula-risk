@@ -10,7 +10,6 @@ updated after every observed return.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import warnings
 from collections.abc import Callable, Mapping
@@ -28,15 +27,28 @@ except ModuleNotFoundError:  # pragma: no cover
     import tomli as tomllib
 
 try:
+    from scripts.pipeline_io import (
+        PROJECT_ROOT,
+        project_path as _project_path,
+        reporting_scope as _reporting_scope,
+        sha256_file as _sha256,
+        write_json_atomic as _write_json_atomic,
+        write_parquet_atomic as _write_parquet_atomic,
+    )
     from scripts.research_methods import (
         fallback_fraction_passes,
         margin_fit_rejection_reasons,
     )
 except ModuleNotFoundError:  # Support direct execution as ``python scripts/...``.
+    from pipeline_io import (
+        PROJECT_ROOT,
+        project_path as _project_path,
+        reporting_scope as _reporting_scope,
+        sha256_file as _sha256,
+        write_json_atomic as _write_json_atomic,
+        write_parquet_atomic as _write_parquet_atomic,
+    )
     from research_methods import fallback_fraction_passes, margin_fit_rejection_reasons
-
-
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 @dataclass(frozen=True)
@@ -102,35 +114,6 @@ class PersistenceBoundedGARCH(GARCH):
         return matrix, boundary
 
 
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for block in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
-
-
-def _project_path(path: Path) -> str:
-    try:
-        return path.resolve().relative_to(PROJECT_ROOT).as_posix()
-    except ValueError:
-        return str(path.resolve())
-
-
-def _write_json_atomic(path: Path, payload: Mapping[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".part")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    temporary.replace(path)
-
-
-def _write_parquet_atomic(path: Path, frame: pd.DataFrame) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".part")
-    frame.to_parquet(temporary, index=False, engine="pyarrow")
-    temporary.replace(path)
-
-
 def _finite_config_float(
     section: Mapping[str, Any], key: str, *, section_name: str = "marginal"
 ) -> float:
@@ -157,21 +140,6 @@ def _positive_config_integer(
     if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
         raise ValueError(f"{section_name} configuration value must be a positive integer: {key}")
     return value
-
-
-def _reporting_scope(gate: Mapping[str, Any]) -> str:
-    foundation = gate.get("foundation_v2", {})
-    readiness = gate.get("gates", {}).get("modelling_readiness", {})
-    if foundation.get("status") not in {"pass", "provisional_pass"}:
-        raise RuntimeError("foundation_v2 is not ready for modelling")
-    if readiness.get("status") not in {"pass", "pass_provisional"}:
-        raise RuntimeError("modelling-readiness gate is not passed")
-    scope = foundation.get("reporting_scope")
-    if scope not in {"confirmatory", "provisional_research_results"}:
-        raise RuntimeError(f"unsupported reporting scope: {scope}")
-    if readiness.get("status") == "pass_provisional" and scope != "provisional_research_results":
-        raise RuntimeError("provisional readiness requires provisional reporting scope")
-    return str(scope)
 
 
 def _validate_protocol(model_config: Mapping[str, Any]) -> Mapping[str, Any]:
@@ -571,7 +539,10 @@ def _fit_arch_attempt(
             ),
             attempt,
         )
-    except Exception as exc:  # The fallback contract requires logging numerical failures.
+    except (ArithmeticError, RuntimeError, ValueError) as exc:
+        # Expected numerical/solver failures activate the deterministic fallback.
+        # Programming defects such as KeyError, TypeError, and AttributeError must
+        # propagate instead of being silently misclassified as unstable fits.
         attempt["exception_type"] = type(exc).__name__
         attempt["exception_message"] = str(exc)[:500]
         attempt["rejection_reasons"] = ["fit_exception"]
