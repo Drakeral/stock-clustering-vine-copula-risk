@@ -128,6 +128,178 @@ def _mapping(value: object, name: str) -> Mapping[str, Any]:
     return cast(Mapping[str, Any], value)
 
 
+def _require_settings(settings: Mapping[str, tuple[object, object]], error_prefix: str) -> None:
+    mismatches = {
+        name: {"observed": observed, "expected": expected}
+        for name, (observed, expected) in settings.items()
+        if observed != expected
+    }
+    if mismatches:
+        raise ValueError(f"{error_prefix}: {mismatches}")
+
+
+def _validate_named_evaluation_settings(
+    evaluation: Mapping[str, Any],
+    calibration: Mapping[str, Any],
+    h1: Mapping[str, Any],
+    h2: Mapping[str, Any],
+    h3: Mapping[str, Any],
+) -> None:
+    _require_settings(
+        {
+            "evaluation.model_ids": (evaluation.get("model_ids"), list(MODEL_IDS)),
+            "evaluation.primary_score_columns": (
+                evaluation.get("primary_score_columns"),
+                list(PRIMARY_SCORES),
+            ),
+            "evaluation.model_ranking": (
+                evaluation.get("model_ranking"),
+                "equal_weight_average_rank_across_primary_scores",
+            ),
+            "calibration.tests": (
+                calibration.get("tests"),
+                ["kupiec_unconditional_coverage", "christoffersen_independence"],
+            ),
+            "calibration.multiplicity": (
+                calibration.get("multiplicity"),
+                "holm_familywise",
+            ),
+            "h1.annual_aggregation": (
+                h1.get("annual_aggregation"),
+                "equal_weight_mean_across_evaluation_years",
+            ),
+            "h1.bootstrap": (
+                h1.get("bootstrap"),
+                "paired_circular_moving_block_within_year",
+            ),
+            "h1.bit_generator": (h1.get("bit_generator"), "PCG64DXSM"),
+            "h1.seed_components": (h1.get("seed_components"), [5110, 1]),
+            "h1.confidence_interval": (
+                h1.get("confidence_interval"),
+                "two_sided_percentile_linear",
+            ),
+            "h1.degenerate_sample_action": (
+                h1.get("degenerate_sample_action"),
+                "discard_whole_paired_replication_and_continue_rng_stream",
+            ),
+            "h2.loss_difference": (h2.get("loss_difference"), "vine_minus_gaussian"),
+            "h2.score_columns": (h2.get("score_columns"), list(PRIMARY_SCORES)),
+            "h2.hac": (h2.get("hac"), "newey_west_bartlett"),
+            "h2.multiplicity": (h2.get("multiplicity"), "holm_familywise"),
+            "h3.candidate_model": (h3.get("candidate_model"), "M4"),
+            "h3.ranking": (
+                h3.get("ranking"),
+                "unique_lowest_equal_weight_average_primary_score_rank",
+            ),
+        },
+        "evaluation protocol differs from the implemented freeze",
+    )
+    _require_settings(
+        {
+            "h2.comparisons": (
+                h2.get("comparisons"),
+                [
+                    {
+                        "vine_model": "M2",
+                        "gaussian_model": "M1",
+                        "grouping_id": "gics",
+                    },
+                    {
+                        "vine_model": "M4",
+                        "gaussian_model": "M3",
+                        "grouping_id": "hierarchical",
+                    },
+                ],
+            )
+        },
+        "H2 matched comparisons differ from the freeze",
+    )
+
+
+def _validate_numeric_evaluation_settings(
+    evaluation: Mapping[str, Any],
+    calibration: Mapping[str, Any],
+    h1: Mapping[str, Any],
+    h2: Mapping[str, Any],
+    inference: Mapping[str, Any],
+    forecast: Mapping[str, Any],
+    clustering: Mapping[str, Any],
+) -> None:
+    start_year = int(evaluation.get("evaluation_start_year", -1))
+    end_year = int(evaluation.get("evaluation_end_year", -1))
+    _require_settings(
+        {
+            "evaluation.years_vs_model": (
+                (start_year, end_year),
+                (
+                    clustering.get("evaluation_start_year"),
+                    clustering.get("evaluation_end_year"),
+                ),
+            ),
+            "evaluation.years_vs_freeze": ((start_year, end_year), (2020, 2025)),
+            "forecast.var_confidence_levels": (
+                [float(value) for value in forecast.get("var_confidence_levels", [])],
+                [0.95, 0.975, 0.99],
+            ),
+            "calibration.confirmatory_confidence_levels": (
+                [float(value) for value in calibration.get("confirmatory_confidence_levels", [])],
+                [0.95, 0.99],
+            ),
+            "calibration.descriptive_annual_confidence_levels": (
+                [
+                    float(value)
+                    for value in calibration.get("descriptive_annual_confidence_levels", [])
+                ],
+                [0.95, 0.975, 0.99],
+            ),
+        },
+        "evaluation confidence levels or years differ from the freeze",
+    )
+    _require_settings(
+        {
+            "h1.block_length_trading_days": (
+                h1.get("block_length_trading_days"),
+                inference.get("h1_block_length_trading_days"),
+            ),
+            "h1.replications": (
+                h1.get("replications"),
+                inference.get("h1_bootstrap_replications"),
+            ),
+            "h1.confidence_level": (
+                h1.get("confidence_level"),
+                inference.get("h1_confidence_level"),
+            ),
+            "h2.hac_lag": (h2.get("hac_lag"), inference.get("dm_hac_lag")),
+            "h2.family_size": (h2.get("family_size"), inference.get("dm_holm_family_size")),
+            "h2.familywise_alpha": (
+                h2.get("familywise_alpha"),
+                inference.get("confirmatory_familywise_alpha"),
+            ),
+        },
+        "evaluation and model inference settings disagree",
+    )
+    _require_settings(
+        {
+            "calibration.family_size": (calibration.get("family_size"), 20),
+            "calibration.familywise_alpha": (calibration.get("familywise_alpha"), 0.05),
+            "h1.block_length_trading_days": (h1.get("block_length_trading_days"), 20),
+            "h1.replications": (h1.get("replications"), 10_000),
+            "h1.confidence_level": (h1.get("confidence_level"), 0.95),
+            "h2.hac_lag": (h2.get("hac_lag"), 7),
+            "h2.family_size": (h2.get("family_size"), 6),
+            "h2.familywise_alpha": (h2.get("familywise_alpha"), 0.05),
+        },
+        "evaluation numeric settings differ from the freeze",
+    )
+    if calibration.get("family_size") != len(MODEL_IDS) * 2 * 2:
+        raise ValueError(
+            "calibration family size must equal five models by two levels by two tests"
+        )
+    tolerance = evaluation.get("realised_loss_identity_tolerance")
+    if not isinstance(tolerance, int | float) or isinstance(tolerance, bool) or tolerance <= 0:
+        raise ValueError("evaluation realised-loss tolerance must be positive")
+
+
 def validate_evaluation_protocol(
     evaluation_config: Mapping[str, Any], model_config: Mapping[str, Any]
 ) -> dict[str, Mapping[str, Any]]:
@@ -146,136 +318,10 @@ def validate_evaluation_protocol(
     forecast = _mapping(model_config.get("forecast"), "model forecast")
     clustering = _mapping(model_config.get("clustering"), "model clustering")
 
-    expected = {
-        "evaluation.model_ids": (evaluation.get("model_ids"), list(MODEL_IDS)),
-        "evaluation.primary_score_columns": (
-            evaluation.get("primary_score_columns"),
-            list(PRIMARY_SCORES),
-        ),
-        "evaluation.model_ranking": (
-            evaluation.get("model_ranking"),
-            "equal_weight_average_rank_across_primary_scores",
-        ),
-        "calibration.tests": (
-            calibration.get("tests"),
-            ["kupiec_unconditional_coverage", "christoffersen_independence"],
-        ),
-        "calibration.multiplicity": (calibration.get("multiplicity"), "holm_familywise"),
-        "h1.annual_aggregation": (
-            h1.get("annual_aggregation"),
-            "equal_weight_mean_across_evaluation_years",
-        ),
-        "h1.bootstrap": (h1.get("bootstrap"), "paired_circular_moving_block_within_year"),
-        "h1.bit_generator": (h1.get("bit_generator"), "PCG64DXSM"),
-        "h1.seed_components": (h1.get("seed_components"), [5110, 1]),
-        "h1.confidence_interval": (
-            h1.get("confidence_interval"),
-            "two_sided_percentile_linear",
-        ),
-        "h1.degenerate_sample_action": (
-            h1.get("degenerate_sample_action"),
-            "discard_whole_paired_replication_and_continue_rng_stream",
-        ),
-        "h2.loss_difference": (h2.get("loss_difference"), "vine_minus_gaussian"),
-        "h2.score_columns": (h2.get("score_columns"), list(PRIMARY_SCORES)),
-        "h2.hac": (h2.get("hac"), "newey_west_bartlett"),
-        "h2.multiplicity": (h2.get("multiplicity"), "holm_familywise"),
-        "h3.candidate_model": (h3.get("candidate_model"), "M4"),
-        "h3.ranking": (
-            h3.get("ranking"),
-            "unique_lowest_equal_weight_average_primary_score_rank",
-        ),
-    }
-    mismatches = {
-        name: {"observed": observed, "expected": required}
-        for name, (observed, required) in expected.items()
-        if observed != required
-    }
-    if mismatches:
-        raise ValueError(f"evaluation protocol differs from the implemented freeze: {mismatches}")
-
-    start_year = int(evaluation.get("evaluation_start_year", -1))
-    end_year = int(evaluation.get("evaluation_end_year", -1))
-    if (start_year, end_year) != (
-        clustering.get("evaluation_start_year"),
-        clustering.get("evaluation_end_year"),
-    ) or (start_year, end_year) != (2020, 2025):
-        raise ValueError("evaluation years do not match the frozen model protocol")
-    if [float(value) for value in forecast.get("var_confidence_levels", [])] != [
-        0.95,
-        0.975,
-        0.99,
-    ]:
-        raise ValueError("forecast confidence levels differ from the evaluation protocol")
-    if [float(value) for value in calibration.get("confirmatory_confidence_levels", [])] != [
-        0.95,
-        0.99,
-    ]:
-        raise ValueError("confirmatory calibration levels must be 95% and 99%")
-    if [float(value) for value in calibration.get("descriptive_annual_confidence_levels", [])] != [
-        0.95,
-        0.975,
-        0.99,
-    ]:
-        raise ValueError("annual calibration levels differ from the frozen protocol")
-
-    numeric_pairs = {
-        "calibration.family_size": (calibration.get("family_size"), 20),
-        "calibration.familywise_alpha": (calibration.get("familywise_alpha"), 0.05),
-        "h1.block_length_trading_days": (
-            h1.get("block_length_trading_days"),
-            inference.get("h1_block_length_trading_days"),
-        ),
-        "h1.replications": (h1.get("replications"), inference.get("h1_bootstrap_replications")),
-        "h1.confidence_level": (
-            h1.get("confidence_level"),
-            inference.get("h1_confidence_level"),
-        ),
-        "h2.hac_lag": (h2.get("hac_lag"), inference.get("dm_hac_lag")),
-        "h2.family_size": (h2.get("family_size"), inference.get("dm_holm_family_size")),
-        "h2.familywise_alpha": (
-            h2.get("familywise_alpha"),
-            inference.get("confirmatory_familywise_alpha"),
-        ),
-    }
-    invalid_numeric = {
-        name: {"observed": observed, "expected": required}
-        for name, (observed, required) in numeric_pairs.items()
-        if observed != required
-    }
-    if invalid_numeric:
-        raise ValueError(f"evaluation and model inference settings disagree: {invalid_numeric}")
-    frozen_numeric = {
-        "calibration.family_size": (calibration.get("family_size"), 20),
-        "calibration.familywise_alpha": (calibration.get("familywise_alpha"), 0.05),
-        "h1.block_length_trading_days": (h1.get("block_length_trading_days"), 20),
-        "h1.replications": (h1.get("replications"), 10_000),
-        "h1.confidence_level": (h1.get("confidence_level"), 0.95),
-        "h2.hac_lag": (h2.get("hac_lag"), 7),
-        "h2.family_size": (h2.get("family_size"), 6),
-        "h2.familywise_alpha": (h2.get("familywise_alpha"), 0.05),
-    }
-    unfrozen = {
-        name: {"observed": observed, "expected": required}
-        for name, (observed, required) in frozen_numeric.items()
-        if observed != required
-    }
-    if unfrozen:
-        raise ValueError(f"evaluation numeric settings differ from the freeze: {unfrozen}")
-    if calibration.get("family_size") != len(MODEL_IDS) * 2 * 2:
-        raise ValueError(
-            "calibration family size must equal five models by two levels by two tests"
-        )
-    comparisons = h2.get("comparisons")
-    expected_comparisons = [
-        {"vine_model": "M2", "gaussian_model": "M1", "grouping_id": "gics"},
-        {"vine_model": "M4", "gaussian_model": "M3", "grouping_id": "hierarchical"},
-    ]
-    if comparisons != expected_comparisons or h2.get("family_size") != 6:
-        raise ValueError("H2 must contain the six frozen matched comparisons")
-    tolerance = evaluation.get("realised_loss_identity_tolerance")
-    if not isinstance(tolerance, int | float) or isinstance(tolerance, bool) or tolerance <= 0:
-        raise ValueError("evaluation realised-loss tolerance must be positive")
+    _validate_named_evaluation_settings(evaluation, calibration, h1, h2, h3)
+    _validate_numeric_evaluation_settings(
+        evaluation, calibration, h1, h2, inference, forecast, clustering
+    )
     return {
         "evaluation": evaluation,
         "calibration": calibration,
@@ -283,6 +329,106 @@ def validate_evaluation_protocol(
         "h2": h2,
         "h3": h3,
     }
+
+
+def _normalize_forecast_source(
+    source: pd.DataFrame, expected_models: set[str], source_number: int
+) -> pd.DataFrame:
+    if set(source.columns) != set(FORECAST_COLUMNS):
+        missing = sorted(set(FORECAST_COLUMNS) - set(source.columns))
+        extra = sorted(set(source.columns) - set(FORECAST_COLUMNS))
+        raise ValueError(
+            f"forecast source {source_number} schema mismatch; missing={missing}, extra={extra}"
+        )
+    frame = source.loc[:, FORECAST_COLUMNS].copy()
+    try:
+        frame["date"] = pd.to_datetime(frame["date"], errors="raise")
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"forecast source {source_number} contains invalid dates") from exc
+    if frame["date"].isna().any():
+        raise ValueError(f"forecast source {source_number} contains missing dates")
+    models = set(frame["model_id"].astype(str))
+    if models != expected_models:
+        raise ValueError(
+            f"forecast source {source_number} models differ; observed={sorted(models)}, "
+            f"expected={sorted(expected_models)}"
+        )
+    if frame.duplicated(["model_id", "date"]).any():
+        raise ValueError(f"forecast source {source_number} contains duplicate model-date rows")
+    return frame
+
+
+def _validate_risk_numbers(combined: pd.DataFrame) -> None:
+    numeric_columns = [
+        "var_95",
+        "var_975",
+        "var_99",
+        "es_975",
+        "realised_simple_return",
+        "realised_loss",
+    ]
+    if not np.isfinite(combined[numeric_columns].to_numpy(dtype=float)).all():
+        raise ValueError("forecast risk and realised values must be finite")
+    if bool((combined["var_95"] > combined["var_975"]).any()) or bool(
+        (combined["var_975"] > combined["var_99"]).any()
+    ):
+        raise ValueError("forecast VaR levels must be nondecreasing")
+    if bool((combined["es_975"] <= 0).any()) or bool(
+        (combined["es_975"] < combined["var_975"]).any()
+    ):
+        raise ValueError("97.5% ES must be positive and at least its matched VaR")
+
+
+def _validate_copula_log_scores(combined: pd.DataFrame) -> None:
+    non_m0 = combined["model_id"] != "M0"
+    if not np.isfinite(combined.loc[non_m0, "copula_log_score"].to_numpy(dtype=float)).all():
+        raise ValueError("copula models require finite copula log scores")
+    if combined.loc[~non_m0, "copula_log_score"].notna().any():
+        raise ValueError("M0 must not contain a copula log score")
+
+
+def _validate_forecast_values(combined: pd.DataFrame, evaluation: Mapping[str, Any]) -> float:
+    start_year = int(evaluation["evaluation_start_year"])
+    end_year = int(evaluation["evaluation_end_year"])
+    if set(combined["date"].dt.year) != set(range(start_year, end_year + 1)):
+        raise ValueError("forecast dates do not cover every frozen evaluation year")
+    if not combined["forecast_status"].isin(evaluation["required_forecast_statuses"]).all():
+        raise ValueError("forecast evaluation cannot include failed or unsupported statuses")
+    for model_id, expected_grouping in MODEL_GROUPINGS.items():
+        model_groupings = set(
+            combined.loc[combined["model_id"] == model_id, "grouping_id"].astype(str)
+        )
+        if model_groupings != {expected_grouping}:
+            raise ValueError(f"{model_id} does not use grouping {expected_grouping}")
+    _validate_risk_numbers(combined)
+    tolerance = float(evaluation["realised_loss_identity_tolerance"])
+    sign_error = np.abs(combined["realised_loss"] + combined["realised_simple_return"])
+    if float(sign_error.max()) > tolerance:
+        raise ValueError("realised loss does not equal negative realised simple return")
+    _validate_copula_log_scores(combined)
+    return tolerance
+
+
+def _validate_matched_forecasts(
+    combined: pd.DataFrame, tolerance: float
+) -> tuple[pd.DatetimeIndex, float]:
+    dates_by_model = {
+        model: pd.DatetimeIndex(combined.loc[combined["model_id"] == model, "date"])
+        for model in MODEL_IDS
+    }
+    reference_dates = dates_by_model["M0"].sort_values()
+    mismatched = [
+        model
+        for model, dates in dates_by_model.items()
+        if not dates.sort_values().equals(reference_dates)
+    ]
+    if mismatched:
+        raise ValueError(f"forecast dates do not match M0 for models: {mismatched}")
+    realised = combined.pivot(index="date", columns="model_id", values="realised_loss")
+    maximum_identity_error = float(realised.sub(realised["M0"], axis="index").abs().max().max())
+    if maximum_identity_error > tolerance:
+        raise ValueError("models do not share the same realised portfolio loss")
+    return reference_dates, maximum_identity_error
 
 
 def combine_forecasts(
@@ -294,30 +440,10 @@ def combine_forecasts(
     """Validate schemas, identities, and matched dates before combining M0-M4."""
 
     sources = ((historical, {"M0"}), (gaussian, {"M1", "M3"}), (vine, {"M2", "M4"}))
-    normalized: list[pd.DataFrame] = []
-    for number, (source, expected_models) in enumerate(sources, start=1):
-        if set(source.columns) != set(FORECAST_COLUMNS):
-            missing = sorted(set(FORECAST_COLUMNS) - set(source.columns))
-            extra = sorted(set(source.columns) - set(FORECAST_COLUMNS))
-            raise ValueError(
-                f"forecast source {number} schema mismatch; missing={missing}, extra={extra}"
-            )
-        frame = source.loc[:, FORECAST_COLUMNS].copy()
-        try:
-            frame["date"] = pd.to_datetime(frame["date"], errors="raise")
-        except (TypeError, ValueError) as exc:
-            raise ValueError(f"forecast source {number} contains invalid dates") from exc
-        if frame["date"].isna().any():
-            raise ValueError(f"forecast source {number} contains missing dates")
-        models = set(frame["model_id"].astype(str))
-        if models != expected_models:
-            raise ValueError(
-                f"forecast source {number} models differ; observed={sorted(models)}, "
-                f"expected={sorted(expected_models)}"
-            )
-        if frame.duplicated(["model_id", "date"]).any():
-            raise ValueError(f"forecast source {number} contains duplicate model-date rows")
-        normalized.append(frame)
+    normalized = [
+        _normalize_forecast_source(source, expected_models, number)
+        for number, (source, expected_models) in enumerate(sources, start=1)
+    ]
 
     # M0 has no copula score. Build the nullable numeric column explicitly so
     # concatenation does not depend on pandas' evolving all-null dtype inference.
@@ -329,58 +455,8 @@ def combine_forecasts(
         ignore_index=True,
     )
     combined["copula_log_score"] = pd.to_numeric(copula_log_scores, errors="coerce")
-    start_year = int(evaluation["evaluation_start_year"])
-    end_year = int(evaluation["evaluation_end_year"])
-    if set(combined["date"].dt.year) != set(range(start_year, end_year + 1)):
-        raise ValueError("forecast dates do not cover every frozen evaluation year")
-    if not combined["forecast_status"].isin(evaluation["required_forecast_statuses"]).all():
-        raise ValueError("forecast evaluation cannot include failed or unsupported statuses")
-
-    for model_id, expected_grouping in MODEL_GROUPINGS.items():
-        rows = combined.loc[combined["model_id"] == model_id]
-        if set(rows["grouping_id"].astype(str)) != {expected_grouping}:
-            raise ValueError(f"{model_id} does not use grouping {expected_grouping}")
-    numeric_columns = [
-        "var_95",
-        "var_975",
-        "var_99",
-        "es_975",
-        "realised_simple_return",
-        "realised_loss",
-    ]
-    numeric = combined[numeric_columns].to_numpy(dtype=float)
-    if not np.isfinite(numeric).all():
-        raise ValueError("forecast risk and realised values must be finite")
-    if bool((combined["var_95"] > combined["var_975"]).any()) or bool(
-        (combined["var_975"] > combined["var_99"]).any()
-    ):
-        raise ValueError("forecast VaR levels must be nondecreasing")
-    if bool((combined["es_975"] <= 0).any()) or bool(
-        (combined["es_975"] < combined["var_975"]).any()
-    ):
-        raise ValueError("97.5% ES must be positive and at least its matched VaR")
-    tolerance = float(evaluation["realised_loss_identity_tolerance"])
-    sign_error = np.abs(combined["realised_loss"] + combined["realised_simple_return"])
-    if float(sign_error.max()) > tolerance:
-        raise ValueError("realised loss does not equal negative realised simple return")
-    non_m0 = combined["model_id"] != "M0"
-    if not np.isfinite(combined.loc[non_m0, "copula_log_score"].to_numpy(dtype=float)).all():
-        raise ValueError("copula models require finite copula log scores")
-    if combined.loc[~non_m0, "copula_log_score"].notna().any():
-        raise ValueError("M0 must not contain a copula log score")
-
-    dates_by_model = {
-        model: pd.DatetimeIndex(combined.loc[combined["model_id"] == model, "date"])
-        for model in MODEL_IDS
-    }
-    reference_dates = dates_by_model["M0"].sort_values()
-    for model, dates in dates_by_model.items():
-        if not dates.sort_values().equals(reference_dates):
-            raise ValueError(f"{model} forecast dates do not match M0")
-    realised = combined.pivot(index="date", columns="model_id", values="realised_loss")
-    maximum_identity_error = float(realised.sub(realised["M0"], axis="index").abs().max().max())
-    if maximum_identity_error > tolerance:
-        raise ValueError("models do not share the same realised portfolio loss")
+    tolerance = _validate_forecast_values(combined, evaluation)
+    reference_dates, maximum_identity_error = _validate_matched_forecasts(combined, tolerance)
 
     order = {model: index for index, model in enumerate(MODEL_IDS)}
     combined["_model_order"] = combined["model_id"].map(order)
@@ -635,13 +711,7 @@ def _spearman_correlation(values: np.ndarray) -> np.ndarray:
     return correlation
 
 
-def prepare_h1_years(
-    stock_returns: pd.DataFrame,
-    assignments: Mapping[str, Any],
-    clustering_diagnostics: Mapping[str, Any],
-) -> list[H1Year]:
-    """Bind annual stock panels and fixed labels to existing OOS diagnostics."""
-
+def _normalize_h1_panel(stock_returns: pd.DataFrame) -> pd.DataFrame:
     panel = stock_returns.copy()
     if not isinstance(panel.index, pd.DatetimeIndex):
         try:
@@ -650,6 +720,49 @@ def prepare_h1_years(
             raise ValueError("stock-return panel has an invalid date index") from exc
     if panel.index.has_duplicates or not panel.index.is_monotonic_increasing:
         raise ValueError("stock-return dates must be unique and increasing")
+    return panel
+
+
+def _annual_h1_labels(
+    annual_assignment: Mapping[str, Any], panel_columns: pd.Index
+) -> tuple[int, list[str], np.ndarray, np.ndarray]:
+    year = int(annual_assignment["year"])
+    raw_labels = annual_assignment.get("assignments")
+    if not isinstance(raw_labels, list) or not raw_labels:
+        raise ValueError(f"year {year} has no security assignments")
+    tickers = [str(row["ticker"]) for row in raw_labels]
+    if len(tickers) != len(set(tickers)) or not set(tickers).issubset(panel_columns):
+        raise ValueError(f"year {year} contains duplicate or unavailable assigned securities")
+    gics = np.asarray([str(row["gics_sector"]) for row in raw_labels])
+    clusters = np.asarray([str(row["hierarchical_cluster"]) for row in raw_labels])
+    return year, tickers, gics, clusters
+
+
+def _validate_h1_diagnostic_binding(
+    year: int,
+    observed_gics: float,
+    observed_cluster: float,
+    diagnostics_by_year: Mapping[int, Mapping[str, Any]],
+) -> None:
+    diagnostic = diagnostics_by_year.get(year)
+    if diagnostic is None:
+        raise ValueError(f"year {year} is absent from clustering diagnostics")
+    expected_gics = float(diagnostic["gics_dependence_gap"]["gap"])
+    expected_cluster = float(diagnostic["hierarchical_dependence_gap"]["gap"])
+    gics_matches = np.isclose(observed_gics, expected_gics, atol=1e-12, rtol=0)
+    cluster_matches = np.isclose(observed_cluster, expected_cluster, atol=1e-12, rtol=0)
+    if not gics_matches or not cluster_matches:
+        raise ValueError(f"year {year} H1 inputs do not reproduce clustering diagnostics")
+
+
+def prepare_h1_years(
+    stock_returns: pd.DataFrame,
+    assignments: Mapping[str, Any],
+    clustering_diagnostics: Mapping[str, Any],
+) -> list[H1Year]:
+    """Bind annual stock panels and fixed labels to existing OOS diagnostics."""
+
+    panel = _normalize_h1_panel(stock_returns)
     assignment_rows = assignments.get("years")
     diagnostic_rows = clustering_diagnostics.get("years")
     if not isinstance(assignment_rows, list) or not isinstance(diagnostic_rows, list):
@@ -657,34 +770,18 @@ def prepare_h1_years(
     diagnostics_by_year = {int(row["year"]): row for row in diagnostic_rows}
     result: list[H1Year] = []
     for annual_assignment in assignment_rows:
-        year = int(annual_assignment["year"])
-        raw_labels = annual_assignment.get("assignments")
-        if not isinstance(raw_labels, list) or not raw_labels:
-            raise ValueError(f"year {year} has no security assignments")
-        tickers = [str(row["ticker"]) for row in raw_labels]
-        if len(tickers) != len(set(tickers)) or not set(tickers).issubset(panel.columns):
-            raise ValueError(f"year {year} contains duplicate or unavailable assigned securities")
+        year, tickers, gics, clusters = _annual_h1_labels(annual_assignment, panel.columns)
         annual = panel.loc[panel.index.year == year, tickers]
         values = annual.to_numpy(dtype=float)
         if annual.empty or not np.isfinite(values).all():
             raise ValueError(f"year {year} H1 evaluation panel is empty or incomplete")
-        gics = np.asarray([str(row["gics_sector"]) for row in raw_labels])
-        clusters = np.asarray([str(row["hierarchical_cluster"]) for row in raw_labels])
         upper_rows, upper_columns = np.triu_indices(len(tickers), k=1)
         gics_within = gics[upper_rows] == gics[upper_columns]
         cluster_within = clusters[upper_rows] == clusters[upper_columns]
         correlation = _spearman_correlation(values)
         observed_gics = _gap(correlation, upper_rows, upper_columns, gics_within)
         observed_cluster = _gap(correlation, upper_rows, upper_columns, cluster_within)
-        diagnostic = diagnostics_by_year.get(year)
-        if diagnostic is None:
-            raise ValueError(f"year {year} is absent from clustering diagnostics")
-        expected_gics = float(diagnostic["gics_dependence_gap"]["gap"])
-        expected_cluster = float(diagnostic["hierarchical_dependence_gap"]["gap"])
-        if not np.isclose(observed_gics, expected_gics, atol=1e-12, rtol=0) or not np.isclose(
-            observed_cluster, expected_cluster, atol=1e-12, rtol=0
-        ):
-            raise ValueError(f"year {year} H1 inputs do not reproduce clustering diagnostics")
+        _validate_h1_diagnostic_binding(year, observed_gics, observed_cluster, diagnostics_by_year)
         result.append(
             H1Year(
                 year,

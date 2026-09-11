@@ -11,6 +11,7 @@ Run the checkpoint from the repository root:
 ```zsh
 uv sync --frozen
 uv run ruff check scripts tests
+uv run ruff check scripts/evaluate_risk_models.py --select C901
 uv run ruff format --check scripts tests
 uv run python -m compileall -q scripts tests
 uv run python -m unittest discover -s tests -v
@@ -29,7 +30,9 @@ tracked changes after the manifest is committed.
 GitHub Actions runs the portable lint, format, compilation and unit-test checks
 on every push to `main` and on every pull request. The workflow installs the
 pinned uv version, then reconstructs the environment from `uv.lock` with
-`uv sync --frozen`.
+`uv sync --frozen`. It also enforces Ruff's cyclomatic-complexity limit on the
+model-evaluation module, where statistical validation and inference are most
+densely orchestrated.
 
 Six acceptance-test classes bind the checked-in audit records to large generated
 Parquet artifacts. Those files are intentionally excluded from Git, so the

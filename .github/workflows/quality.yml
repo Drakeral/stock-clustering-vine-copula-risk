@@ -37,6 +37,9 @@ jobs:
       - name: Lint
         run: uv run ruff check scripts tests
 
+      - name: Check evaluation complexity
+        run: uv run ruff check scripts/evaluate_risk_models.py --select C901
+
       - name: Check formatting
         run: uv run ruff format --check scripts tests
 
