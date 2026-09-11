@@ -14,6 +14,12 @@
       "status": "present"
     },
     {
+      "bytes": 2243,
+      "path": "config/evaluation_config.toml",
+      "sha256": "84c382e8a679f917f8b58c7e98083e835ce2a35feed3dd622320e43b63443d86",
+      "status": "present"
+    },
+    {
       "bytes": 1109,
       "path": "config/licensed_universe_schema.json",
       "sha256": "7ed8d2a6fc834e5216428cba060c7e0ca3975adca538c112737aabeb8aaef9f9",
@@ -92,6 +98,12 @@
       "status": "present"
     },
     {
+      "bytes": 1576,
+      "path": "config/schemas/risk_evaluation_daily_record.schema.json",
+      "sha256": "53feb523bc2189a18626c4afe0c6bc5f7686c124d20984c6a6a3adb0bb0f0536",
+      "status": "present"
+    },
+    {
       "bytes": 3267,
       "path": "config/schemas/vine_copula_refit_record.schema.json",
       "sha256": "65f660843ba76d4619ea6864a58184fca415af7e671113f66f5b0b823f9ebbc9",
@@ -123,9 +135,9 @@
     "run_scope": "provisional_research_results",
     "status": "provisional_pass"
   },
-  "generated_at_utc": "2026-09-10T15:16:58.667524+00:00",
+  "generated_at_utc": "2026-09-11T14:18:28.752785+00:00",
   "git": {
-    "commit": "95589bca5c076b2987f033427e0c4333559e349c",
+    "commit": "66c9fd0b82b2650a13c2388bffc53dd84fc5f6ea",
     "commit_present": true,
     "repository_initialized": true,
     "worktree_clean": true
@@ -221,6 +233,12 @@
       "status": "present"
     },
     {
+      "bytes": 59777,
+      "path": "data/audit/model_evaluation.json",
+      "sha256": "054b726e08c8791e7c9d67a3f16b4b45460627e1deb4328d9ad1d0bb050d6767",
+      "status": "present"
+    },
+    {
       "bytes": 7026,
       "path": "data/audit/portfolio_arithmetic.json",
       "sha256": "96e11c6b59ff140dc4655ef35b0c20d00c53f0196a3438f76425b496214bcd20",
@@ -236,6 +254,12 @@
       "bytes": 3930,
       "path": "data/audit/vine_copula_quality.json",
       "sha256": "6066e9439dc3c70b847b6e4d9e90ba4510b95905477db8c24eccea14e7c368a7",
+      "status": "present"
+    },
+    {
+      "bytes": 848,
+      "path": "data/manifests/inference_seed_manifest.json",
+      "sha256": "85015430e92bc6be6cbb894b2714d3e260ae98ede1af42d1fa1ebc5eaa93eac5",
       "status": "present"
     },
     {
@@ -332,6 +356,12 @@
       "bytes": 2037857,
       "path": "data/processed/portfolio_constituent_simple_returns.parquet",
       "sha256": "e37b805bd8c290ace18a9aab120b3272ed10e8d64b3eab70c892b03c72caf3e9",
+      "status": "present"
+    },
+    {
+      "bytes": 570588,
+      "path": "data/processed/risk_evaluation_daily.parquet",
+      "sha256": "e87b9adeab4423b14309e1c8dced163602f51c3aaa0012f0943c851e88d7c6d9",
       "status": "present"
     },
     {
