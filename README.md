@@ -142,6 +142,7 @@ uv run python scripts/build_annual_groupings.py
 uv run python scripts/build_marginal_models.py
 uv run python scripts/build_gaussian_copula.py
 uv run python scripts/build_vine_copula.py
+uv run python scripts/evaluate_risk_models.py
 uv run ruff check scripts tests
 uv run ruff format --check scripts tests
 uv run python -m unittest discover -s tests -v
@@ -236,8 +237,12 @@ added later.
   explicit pair/whole-vine fallback records;
 - `data/processed/vine_risk_forecasts.parquet`: daily M2/M4 portfolio VaR, ES,
   realised loss, matched vine log scores, and fallback flags;
+- `data/processed/risk_evaluation_daily.parquet`: matched M0-M4 daily quantile
+  losses, FZ0 scores, VaR exceptions, realised losses, and model diagnostics;
 - `data/manifests/simulation_seed_manifest.json`: reproducible monthly common-
   random-number seeds and uniform-matrix hashes; and
+- `data/manifests/inference_seed_manifest.json`: the H1 block-bootstrap seed,
+  accepted-index hash, and deterministic degenerate-resample dispositions;
 - `data/audit/clustering_diagnostics.json`: dependence gaps, ARI, NMI, pair
   counts, portfolio-identity errors, and hashes of the grouping artifacts;
 - `data/audit/historical_simulation_quality.json`: M0 window, forecast coverage,
@@ -248,5 +253,8 @@ added later.
   coverage, portfolio-identity, and numerical-stability checks;
 - `data/audit/vine_copula_quality.json`: M2/M4 truncation, family-selection,
   failed-pair, whole-vine fallback, forecast-coverage, and output-hash checks;
+- `data/audit/model_evaluation.json`: model summaries, full-period and annual
+  calibration diagnostics, six adjusted DM comparisons, H1 bootstrap inference,
+  and the frozen H1-H3 decisions;
 - `data/audit/`: separate provenance, input-integrity, construction, and current
   readiness reports.

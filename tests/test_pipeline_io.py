@@ -42,6 +42,8 @@ class PipelineIoTests(unittest.TestCase):
             pd.testing.assert_frame_equal(
                 pd.read_parquet(parquet_path), pd.DataFrame({"value": [1, 2]})
             )
+            self.assertEqual(json_path.stat().st_mode & 0o777, 0o644)
+            self.assertEqual(parquet_path.stat().st_mode & 0o777, 0o644)
             self.assertEqual(list(root.glob("*.part")), [])
             self.assertEqual(list(root.glob(".*.part")), [])
 
@@ -50,6 +52,8 @@ class PipelineIoTests(unittest.TestCase):
             root = Path(temporary)
             with self.assertRaises(TypeError):
                 write_json_atomic(root / "audit.json", {"invalid": object()})
+            with self.assertRaises(ValueError):
+                write_json_atomic(root / "audit.json", {"invalid": float("nan")})
             self.assertEqual(list(root.glob(".*.part")), [])
 
     def test_reporting_scope_requires_consistent_gate_states(self):

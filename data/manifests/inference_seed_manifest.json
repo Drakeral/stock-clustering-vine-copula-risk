@@ -1,0 +1,32 @@
+{
+  "bit_generator": "PCG64DXSM",
+  "block_length_trading_days": 20,
+  "candidate_draws": 10009,
+  "degenerate_candidate_rejections": 9,
+  "degenerate_sample_action": "discard_whole_paired_replication_and_continue_rng_stream",
+  "evaluation_years": [
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "indices_dtype": "int32",
+  "indices_sha256": "401e5dcc79b226b042fbab973103d4176a4aa27b894bfc4088e46d3a30391e89",
+  "indices_shape": [
+    10000,
+    1508
+  ],
+  "manifest_type": "h1_bootstrap_seed_manifest",
+  "observation_count": 1508,
+  "replicate_statistics_sha256": "24a1abb4e5da8aa39186bf9a93cd460446e393d644483572b0c919da1ba6a8a9",
+  "replications": 10000,
+  "reporting_scope": "provisional_research_results",
+  "schema_version": 1,
+  "seed_components": [
+    5110,
+    1
+  ],
+  "seed_sequence": "SeedSequence([5110, 1])"
+}

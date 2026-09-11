@@ -31,7 +31,7 @@ on every push to `main` and on every pull request. The workflow installs the
 pinned uv version, then reconstructs the environment from `uv.lock` with
 `uv sync --frozen`.
 
-Five acceptance-test classes bind the checked-in audit records to large generated
+Six acceptance-test classes bind the checked-in audit records to large generated
 Parquet artifacts. Those files are intentionally excluded from Git, so the
 classes report as skipped in a clean public clone. They run automatically when
 the artifacts exist locally. The full checkpoint above additionally requires

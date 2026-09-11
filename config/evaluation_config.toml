@@ -1,0 +1,56 @@
+schema_version = 1
+protocol_status = "frozen_before_aggregate_result_evaluation"
+
+[evaluation]
+model_ids = ["M0", "M1", "M2", "M3", "M4"]
+evaluation_start_year = 2020
+evaluation_end_year = 2025
+required_forecast_statuses = ["ok", "fallback"]
+realised_loss_identity_tolerance = 1e-12
+primary_score_columns = ["quantile_loss_95", "quantile_loss_99", "fz0_975"]
+model_ranking = "equal_weight_average_rank_across_primary_scores"
+
+[calibration]
+confirmatory_confidence_levels = [0.95, 0.99]
+descriptive_annual_confidence_levels = [0.95, 0.975, 0.99]
+tests = ["kupiec_unconditional_coverage", "christoffersen_independence"]
+conditional_coverage = "reported_unadjusted_descriptive_companion"
+multiplicity = "holm_familywise"
+family_size = 20
+familywise_alpha = 0.05
+annual_99_percent_inference = "descriptive_only"
+
+[h1]
+annual_aggregation = "equal_weight_mean_across_evaluation_years"
+bootstrap = "paired_circular_moving_block_within_year"
+block_length_trading_days = 20
+replications = 10000
+bit_generator = "PCG64DXSM"
+seed_components = [5110, 1]
+confidence_interval = "two_sided_percentile_linear"
+confidence_level = 0.95
+degenerate_sample_action = "discard_whole_paired_replication_and_continue_rng_stream"
+support_rule = "positive_mean_cluster_gap_and_strictly_positive_difference_ci"
+
+[h2]
+loss_difference = "vine_minus_gaussian"
+comparisons = [
+  { vine_model = "M2", gaussian_model = "M1", grouping_id = "gics" },
+  { vine_model = "M4", gaussian_model = "M3", grouping_id = "hierarchical" },
+]
+score_columns = ["quantile_loss_95", "quantile_loss_99", "fz0_975"]
+test = "diebold_mariano_two_sided_then_direction_check"
+hac = "newey_west_bartlett"
+hac_lag = 7
+multiplicity = "holm_familywise"
+family_size = 6
+familywise_alpha = 0.05
+full_support_rule = "all_six_adjusted_tests_significant_and_vine_mean_loss_lower"
+partial_support_rule = "at_least_one_adjusted_test_favours_vine_and_none_favours_gaussian"
+
+[h3]
+candidate_model = "M4"
+ranking = "unique_lowest_equal_weight_average_primary_score_rank"
+systematic_calibration_failure = "any_holm_adjusted_kupiec_or_independence_rejection"
+vine_quality_requirement = "eligible_to_be_declared_best"
+support_rule = "candidate_uniquely_first_with_no_systematic_calibration_failure_and_vine_eligible"

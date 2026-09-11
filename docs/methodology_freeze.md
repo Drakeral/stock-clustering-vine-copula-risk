@@ -7,6 +7,11 @@ implementations of the return arithmetic, forecast scores, historical simulation
 dependence gap, resampling, and multiplicity corrections are in
 `scripts/research_methods.py`.
 
+The aggregate evaluation decisions that do not affect fitted forecasts are
+separately frozen in `config/evaluation_config.toml`. This keeps evaluation-only
+rules machine-readable without changing the configuration hashes attached to the
+already fitted M0-M4 artifacts.
+
 ## Protocol amendment PA-001: provenance scope
 
 On 2 September 2026, the project user authorized the frozen contemporaneous
@@ -187,16 +192,28 @@ two-sided with a direction check and Newey-West/Bartlett HAC lag 7. Holm correct
 at 5% is applied across the six matched tests: two grouping comparisons times the
 95% VaR, 99% VaR, and 97.5% FZ0 losses. Full support for H2 requires all six
 adjusted results to favour the vine; other patterns are explicitly partial or no
-support.
+support. Partial support requires at least one adjusted test to favour the vine
+and none to favour the Gaussian; every other non-full pattern is no support.
 
 H1 uses 10,000 paired circular moving-block replications with block length 20
 trading days. Entire daily cross-sectional vectors are resampled, and blocks wrap
-within but never cross evaluation years.
+within but never cross evaluation years. The six annual dependence gaps are
+aggregated with equal year weights, and the 95% interval is the two-sided linear
+percentile interval. If a resample makes any retained security constant and its
+Spearman correlations undefined, the entire paired replication is discarded and
+redrawn by continuing the same `SeedSequence([5110, 1])` PCG64DXSM stream. The
+candidate and rejection counts and accepted-index hash are retained.
 
 A separate Holm family contains 20 full-period calibration tests: five models,
 two primary VaR levels, and the Kupiec coverage and Christoffersen independence
 tests. Annual 99% counts and tests are descriptive only. Forecast loss and paired
 DM inference have greater evidential weight than annual coverage p-values.
+
+The overall H3 ranking gives equal weight to each model's rank for 95% quantile
+loss, 99% quantile loss, and 97.5% FZ0. M4 must be uniquely first, remain eligible
+under the vine-quality gate, and have no Holm-adjusted Kupiec or Christoffersen
+independence rejection at either primary VaR level. Any such rejection is the
+operational definition of systematic calibration failure.
 
 The later spectral-clustering and PCA-plus-k-means comparisons are exploratory and
 use Benjamini-Hochberg FDR at 5%.

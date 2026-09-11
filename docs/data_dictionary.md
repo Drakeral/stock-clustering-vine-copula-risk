@@ -196,6 +196,27 @@ limit. Fallback date counts and fractions are reported for each model; the maxim
 model-specific fraction governs eligibility. The audit also retains the union of
 dates on which either model fell back as a conservative descriptive diagnostic.
 
+## Model-evaluation outputs
+
+`data/processed/risk_evaluation_daily.parquet` contains one matched row per model
+and evaluation date. Its 7,540 rows cover M0-M4 on the same 1,508 realised
+portfolio losses and store 95% and 99% quantile losses, the 97.5% FZ0 score,
+strict VaR exception indicators, and the source fallback/log-score diagnostics.
+Its schema is `config/schemas/risk_evaluation_daily_record.schema.json`.
+
+`data/manifests/inference_seed_manifest.json` records the H1 PCG64DXSM seed,
+block length, candidate and accepted replication counts, accepted-index hash,
+and replicate-statistic hash. A paired candidate that makes any retained stock
+constant is discarded in full and redrawn by continuing the same random stream.
+
+`data/audit/model_evaluation.json` binds every forecast, assignment, stock-return,
+configuration, upstream audit, daily score, and inference-seed artifact by
+SHA-256. It reports the 20-test Holm calibration family, annual descriptive
+diagnostics, six matched vine-minus-Gaussian DM tests, equal-year H1 bootstrap,
+model rankings, and the preregistered H1-H3 decisions. A hypothesis not being
+supported is a research result and does not make this computational quality gate
+fail.
+
 ## Lifecycle policy
 
 Every XNYS session between a security's explicit listing and removal dates is classified as `active_price`, `verified_halt`, `terminal_cash`, `removed`, or `unexplained_missing`; pre-listing dates are counted as `pre_inception`. A verified halt with no corporate action receives a stale synthetic price and zero return, while the cumulative price move remains on resumption as a `gap_bridge_return`. A corporate action on a missing price date requires review and cannot be stale-filled automatically.
