@@ -226,6 +226,51 @@ class FallbackAndFilteringTests(unittest.TestCase):
                 marginal_config(),
             )
 
+    def test_nonfinite_fit_metadata_is_rejected_and_json_safe(self):
+        class FakeResult:
+            params = pd.Series(
+                {
+                    "Const": 0.0,
+                    "y[1]": 0.0,
+                    "omega": 0.1,
+                    "alpha[1]": 0.1,
+                    "beta[1]": 0.8,
+                    "nu": np.nan,
+                }
+            )
+            resid = pd.Series([0.1])
+            conditional_volatility = pd.Series([1.0])
+            std_resid = pd.Series([0.1])
+            convergence_flag = 0
+            loglikelihood = np.nan
+            aic = np.inf
+            bic = 1.0
+
+        class FakeModel:
+            def fit(self, **_kwargs):
+                return FakeResult()
+
+        sample = pd.Series(
+            np.sin(np.arange(750) / 7) / 100,
+            index=pd.bdate_range("2017-01-03", periods=750),
+        )
+        with patch("scripts.build_marginal_models.ARX", return_value=FakeModel()):
+            state, attempt = _fit_arch_attempt(
+                sample,
+                "initial_ar_garch_t",
+                "AR",
+                None,
+                1000,
+                marginal_config(),
+            )
+
+        self.assertIsNone(state)
+        self.assertIn("nonfinite_fit_statistic", attempt["rejection_reasons"])
+        self.assertIsNone(attempt["parameters"]["nu"])
+        self.assertIsNone(attempt["loglikelihood"])
+        self.assertIsNone(attempt["aic"])
+        json.dumps(attempt, allow_nan=False)
+
     def test_daily_filter_uses_fixed_parameters_and_clips_pits(self):
         evaluation = pd.Series([0.0, 0.01], index=pd.to_datetime(["2020-01-02", "2020-01-03"]))
         task = MonthlyTask(

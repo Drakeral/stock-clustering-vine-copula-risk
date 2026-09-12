@@ -20,6 +20,15 @@ try:
 except ModuleNotFoundError:  # Python 3.9-3.10
     import tomli as tomllib
 
+try:
+    from scripts.pipeline_io import (
+        write_json_atomic,
+        write_parquet_atomic,
+        write_text_atomic,
+    )
+except ModuleNotFoundError:  # Support direct execution as ``python scripts/...``.
+    from pipeline_io import write_json_atomic, write_parquet_atomic, write_text_atomic
+
 
 def load_config(path: Path) -> dict[str, Any]:
     with path.open("rb") as handle:
@@ -1487,11 +1496,16 @@ def main() -> None:
     ):
         path.parent.mkdir(parents=True, exist_ok=True)
 
-    daily.to_parquet(security_daily_path, index=False, compression="zstd")
-    panel.to_parquet(panel_path, compression="zstd")
-    portfolio_panel.to_parquet(portfolio_panel_path, compression="zstd")
-    simple_panel.to_parquet(simple_panel_path, compression="zstd")
-    simple_portfolio_panel.to_parquet(simple_portfolio_panel_path, compression="zstd")
+    write_parquet_atomic(security_daily_path, daily, index=False, compression="zstd")
+    write_parquet_atomic(panel_path, panel, index=True, compression="zstd")
+    write_parquet_atomic(portfolio_panel_path, portfolio_panel, index=True, compression="zstd")
+    write_parquet_atomic(simple_panel_path, simple_panel, index=True, compression="zstd")
+    write_parquet_atomic(
+        simple_portfolio_panel_path,
+        simple_portfolio_panel,
+        index=True,
+        compression="zstd",
+    )
     frozen_constituents = []
     coverage_lookup = coverage.set_index("ticker").to_dict("index")
     for row in universe["constituents"]:
@@ -1521,12 +1535,8 @@ def main() -> None:
         "included_tickers": included,
         "constituents": frozen_constituents,
     }
-    final_universe_path.write_text(
-        json.dumps(final_universe, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
-    active_universe_path.write_text(
-        json.dumps(active_schedule, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    write_json_atomic(final_universe_path, final_universe)
+    write_json_atomic(active_universe_path, active_schedule)
     report = quality_report(
         daily,
         coverage,
@@ -1573,13 +1583,9 @@ def main() -> None:
         "portfolio_simple_return_panel_sha256": sha256_file(simple_portfolio_panel_path),
     }
     local_report = {**report, "reference_event_reconciliation": reference_reconciliation}
-    quality_local_json_path.write_text(
-        json.dumps(local_report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
-    quality_json_path.write_text(
-        json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
-    quality_md_path.write_text(markdown_report(report), encoding="utf-8")
+    write_json_atomic(quality_local_json_path, local_report)
+    write_json_atomic(quality_json_path, report)
+    write_text_atomic(quality_md_path, markdown_report(report))
     print(f"Security-day data: {security_daily_path}")
     print(f"Return panel: {panel_path} ({panel.shape[0]} dates x {panel.shape[1]} securities)")
     print(f"Simple-return panel: {simple_panel_path}")

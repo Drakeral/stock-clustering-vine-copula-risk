@@ -37,25 +37,42 @@ def project_path(path: Path) -> str:
 def write_json_atomic(path: Path, payload: Mapping[str, Any]) -> None:
     """Atomically replace a JSON artifact."""
 
+    write_text_atomic(
+        path,
+        json.dumps(payload, allow_nan=False, indent=2, sort_keys=True) + "\n",
+    )
+
+
+def write_text_atomic(path: Path, content: str, *, encoding: str = "utf-8") -> None:
+    """Atomically replace a text artifact using a unique sibling temporary file."""
+
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = _temporary_path(path)
     try:
-        temporary.write_text(
-            json.dumps(payload, allow_nan=False, indent=2, sort_keys=True) + "\n",
-            encoding="utf-8",
-        )
+        temporary.write_text(content, encoding=encoding)
         temporary.replace(path)
     finally:
         temporary.unlink(missing_ok=True)
 
 
-def write_parquet_atomic(path: Path, frame: pd.DataFrame) -> None:
+def write_parquet_atomic(
+    path: Path,
+    frame: pd.DataFrame,
+    *,
+    index: bool = False,
+    compression: str = "snappy",
+) -> None:
     """Atomically replace a Parquet artifact."""
 
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = _temporary_path(path)
     try:
-        frame.to_parquet(temporary, index=False, engine="pyarrow")
+        frame.to_parquet(
+            temporary,
+            index=index,
+            compression=compression,
+            engine="pyarrow",
+        )
         temporary.replace(path)
     finally:
         temporary.unlink(missing_ok=True)

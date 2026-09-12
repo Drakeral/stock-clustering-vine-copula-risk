@@ -19,6 +19,11 @@ import re
 from pathlib import Path
 from typing import Any
 
+try:
+    from scripts.pipeline_io import write_text_atomic
+except ModuleNotFoundError:  # Support direct execution as ``python scripts/...``.
+    from pipeline_io import write_text_atomic
+
 GICS_SECTORS = (
     "Communication Services",
     "Consumer Discretionary",
@@ -565,19 +570,17 @@ def main() -> None:
     }
 
     for path, payload in ((args.output, universe), (args.metadata_output, source_manifest)):
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(canonical_json(payload), encoding="utf-8")
+        write_text_atomic(path, canonical_json(payload))
     if args.provenance_audit_output:
-        args.provenance_audit_output.parent.mkdir(parents=True, exist_ok=True)
-        args.provenance_audit_output.write_text(canonical_json(audit), encoding="utf-8")
+        write_text_atomic(args.provenance_audit_output, canonical_json(audit))
     if normalized_licensed_universe is not None:
-        args.licensed_normalized_output.parent.mkdir(parents=True, exist_ok=True)
-        args.licensed_normalized_output.write_text(
-            canonical_json(normalized_licensed_universe), encoding="utf-8"
+        write_text_atomic(
+            args.licensed_normalized_output,
+            canonical_json(normalized_licensed_universe),
         )
-        args.licensed_reconciliation_output.parent.mkdir(parents=True, exist_ok=True)
-        args.licensed_reconciliation_output.write_text(
-            canonical_json(reconciliation), encoding="utf-8"
+        write_text_atomic(
+            args.licensed_reconciliation_output,
+            canonical_json(reconciliation),
         )
 
 

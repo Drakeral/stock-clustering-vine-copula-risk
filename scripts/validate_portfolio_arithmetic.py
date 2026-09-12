@@ -19,8 +19,10 @@ import numpy as np
 import pandas as pd
 
 try:
+    from scripts.pipeline_io import write_json_atomic
     from scripts.research_methods import group_simple_returns
 except ModuleNotFoundError:  # Support direct execution as ``python scripts/...``.
+    from pipeline_io import write_json_atomic
     from research_methods import group_simple_returns
 
 
@@ -284,8 +286,7 @@ def main() -> int:
             "sha256": _sha256(args.universe),
         },
     }
-    args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
+    write_json_atomic(args.output, report)
     print(
         f"portfolio_arithmetic={report['status']} "
         f"checked_dates={report['checked_return_dates']} "

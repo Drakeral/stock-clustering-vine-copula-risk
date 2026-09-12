@@ -466,10 +466,14 @@ def alphabet_issuer_composite(
     required = {"GOOG", "GOOGL"}
     if not required.issubset(simple_returns.columns) or not required.issubset(labels):
         raise ValueError("GOOG and GOOGL must both be present")
+    if composite_name in simple_returns.columns or composite_name in labels:
+        raise ValueError(f"composite name already exists: {composite_name}")
     if labels["GOOG"] != labels["GOOGL"]:
         raise ValueError("Alphabet share classes must have the same group label")
     result = simple_returns.drop(columns=["GOOG", "GOOGL"]).copy()
-    result[composite_name] = simple_returns[["GOOG", "GOOGL"]].mean(axis=1)
+    # The robustness position is explicitly 50/50. Propagating a missing return
+    # prevents pandas from silently reallocating the full position to one class.
+    result[composite_name] = simple_returns[["GOOG", "GOOGL"]].mean(axis=1, skipna=False)
     result_labels = {key: value for key, value in labels.items() if key not in required}
     result_labels[composite_name] = labels["GOOG"]
     return result, result_labels

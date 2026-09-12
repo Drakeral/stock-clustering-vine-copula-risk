@@ -14,6 +14,7 @@ import argparse
 import csv
 import datetime as dt
 import hashlib
+import io
 import json
 import time
 import urllib.error
@@ -21,6 +22,11 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Any
+
+try:
+    from scripts.pipeline_io import write_text_atomic
+except ModuleNotFoundError:  # Support direct execution as ``python scripts/...``.
+    from pipeline_io import write_text_atomic
 
 SEARCH_ENDPOINT = "https://query2.finance.yahoo.com/v1/finance/search"
 CHART_ENDPOINT = "https://query2.finance.yahoo.com/v8/finance/chart/{symbol}"
@@ -148,8 +154,7 @@ def raw_path(root: Path, ticker: str, kind: str) -> Path:
 
 
 def write_raw(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(canonical_json(payload), encoding="utf-8")
+    write_text_atomic(path, canonical_json(payload))
 
 
 def cached_or_fetched(path: Path, url: str, refresh: bool) -> tuple[dict[str, Any], bool]:
@@ -158,6 +163,33 @@ def cached_or_fetched(path: Path, url: str, refresh: bool) -> tuple[dict[str, An
     payload = fetch_json(url)
     write_raw(path, payload)
     return payload, True
+
+
+def retrieval_timestamp(
+    manifest_path: Path,
+    *,
+    candidate_sha256: str,
+    output_sha256: str,
+    fetched_any_payload: bool,
+    current_timestamp: str,
+) -> str:
+    """Preserve source retrieval time when a cached rebuild changes no payload."""
+
+    if fetched_any_payload or not manifest_path.is_file():
+        return current_timestamp
+    try:
+        previous = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return current_timestamp
+    previous_timestamp = previous.get("retrieved_at_utc")
+    if (
+        previous.get("candidate_sha256") == candidate_sha256
+        and previous.get("output_sha256") == output_sha256
+        and isinstance(previous_timestamp, str)
+        and previous_timestamp
+    ):
+        return previous_timestamp
+    return current_timestamp
 
 
 def build_reference(
@@ -169,7 +201,8 @@ def build_reference(
     refresh: bool = False,
 ) -> dict[str, Any]:
     candidates = read_candidate(candidate_path)
-    retrieved_at = dt.datetime.now(dt.UTC).replace(microsecond=0).isoformat()
+    current_timestamp = dt.datetime.now(dt.UTC).replace(microsecond=0).isoformat()
+    fetched_any_payload = False
     rows: list[dict[str, Any]] = []
     failures: list[dict[str, str]] = []
 
@@ -199,6 +232,7 @@ def build_reference(
         except RuntimeError as exc:
             search_error = str(exc)
         if search_fetched:
+            fetched_any_payload = True
             time.sleep(delay_seconds)
         try:
             chart_payload, chart_fetched = cached_or_fetched(
@@ -207,6 +241,7 @@ def build_reference(
         except RuntimeError as exc:
             chart_error = str(exc)
         if chart_fetched:
+            fetched_any_payload = True
             time.sleep(delay_seconds)
 
         quote = select_quote(search_payload, yahoo_symbol)
@@ -223,6 +258,7 @@ def build_reference(
                 )
                 quote = select_quote(fallback_payload, yahoo_symbol)
                 if fallback_fetched:
+                    fetched_any_payload = True
                     time.sleep(delay_seconds)
             except RuntimeError as exc:
                 if not search_error:
@@ -291,11 +327,20 @@ def build_reference(
             }
         )
 
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    with output_path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=OUTPUT_COLUMNS)
-        writer.writeheader()
-        writer.writerows(rows)
+    buffer = io.StringIO(newline="")
+    writer = csv.DictWriter(buffer, fieldnames=OUTPUT_COLUMNS)
+    writer.writeheader()
+    writer.writerows(rows)
+    write_text_atomic(output_path, buffer.getvalue())
+    candidate_sha256 = sha256_file(candidate_path)
+    output_sha256 = sha256_file(output_path)
+    retrieved_at = retrieval_timestamp(
+        manifest_path,
+        candidate_sha256=candidate_sha256,
+        output_sha256=output_sha256,
+        fetched_any_payload=fetched_any_payload,
+        current_timestamp=current_timestamp,
+    )
 
     manifest = {
         "schema_version": 1,
@@ -304,9 +349,9 @@ def build_reference(
         "retrieved_at_utc": retrieved_at,
         "target_date": TARGET_DATE.isoformat(),
         "candidate_path": candidate_path.as_posix(),
-        "candidate_sha256": sha256_file(candidate_path),
+        "candidate_sha256": candidate_sha256,
         "output_path": output_path.as_posix(),
-        "output_sha256": sha256_file(output_path),
+        "output_sha256": output_sha256,
         "row_count": len(rows),
         "metadata_found_count": sum(
             row["metadata_status"] != "not_found_or_inactive" for row in rows
@@ -328,8 +373,7 @@ def build_reference(
             ),
         },
     }
-    manifest_path.parent.mkdir(parents=True, exist_ok=True)
-    manifest_path.write_text(canonical_json(manifest), encoding="utf-8")
+    write_text_atomic(manifest_path, canonical_json(manifest))
     return manifest
 
 

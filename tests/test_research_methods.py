@@ -78,6 +78,23 @@ class PortfolioArithmeticTests(unittest.TestCase):
         self.assertAlmostEqual(combined.loc[0, "ALPHABET"], 0.0)
         self.assertEqual(labels["ALPHABET"], "Communication")
 
+    def test_alphabet_composite_does_not_reallocate_a_missing_share_class(self):
+        frame = pd.DataFrame({"GOOG": [np.nan], "GOOGL": [0.10], "X": [0.03]})
+        combined, _ = alphabet_issuer_composite(
+            frame, {"GOOG": "Communication", "GOOGL": "Communication", "X": "Other"}
+        )
+        self.assertTrue(pd.isna(combined.loc[0, "ALPHABET"]))
+
+    def test_alphabet_composite_rejects_name_collision(self):
+        frame = pd.DataFrame({"GOOG": [0.10], "GOOGL": [-0.10], "ALPHABET": [0.20]})
+        labels = {
+            "GOOG": "Communication",
+            "GOOGL": "Communication",
+            "ALPHABET": "Communication",
+        }
+        with self.assertRaisesRegex(ValueError, "composite name already exists"):
+            alphabet_issuer_composite(frame, labels)
+
 
 class DependenceTests(unittest.TestCase):
     def test_pair_weighted_and_group_weighted_gap_with_singleton(self):

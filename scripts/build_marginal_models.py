@@ -416,6 +416,13 @@ def _parameter_value(parameters: pd.Series, name: str) -> float:
     return float(parameters[name]) if name in parameters else float("nan")
 
 
+def _finite_float_or_none(value: object) -> float | None:
+    """Return finite fit metadata without emitting non-standard JSON numbers."""
+
+    numeric = float(value)
+    return numeric if np.isfinite(numeric) else None
+
+
 def _fit_arch_attempt(
     sample: pd.Series,
     attempt_id: str,
@@ -494,6 +501,11 @@ def _fit_arch_attempt(
             persistence_limit=float(marginal["garch_persistence_limit"]),
             student_t_df_minimum=float(marginal["student_t_df_minimum"]),
         )
+        loglikelihood = _finite_float_or_none(result.loglikelihood)
+        aic = _finite_float_or_none(result.aic)
+        bic = _finite_float_or_none(result.bic)
+        if any(value is None for value in (loglikelihood, aic, bic)):
+            reasons.append("nonfinite_fit_statistic")
         convergence_flag = int(result.convergence_flag)
         if convergence_flag != 0:
             reasons.insert(0, f"optimizer_convergence_flag_{convergence_flag}")
@@ -502,10 +514,12 @@ def _fit_arch_attempt(
                 "status": "accepted" if not reasons else "rejected",
                 "rejection_reasons": reasons,
                 "convergence_flag": convergence_flag,
-                "parameters": {key: float(value) for key, value in parameters.items()},
-                "loglikelihood": float(result.loglikelihood),
-                "aic": float(result.aic),
-                "bic": float(result.bic),
+                "parameters": {
+                    key: _finite_float_or_none(value) for key, value in parameters.items()
+                },
+                "loglikelihood": loglikelihood,
+                "aic": aic,
+                "bic": bic,
             }
         )
         if reasons:
@@ -533,9 +547,9 @@ def _fit_arch_attempt(
                 training_standardized_residuals=standardized_residuals,
                 empirical_innovations=None,
                 convergence_flag=convergence_flag,
-                loglikelihood=float(result.loglikelihood),
-                aic=float(result.aic),
-                bic=float(result.bic),
+                loglikelihood=loglikelihood,
+                aic=aic,
+                bic=bic,
             ),
             attempt,
         )

@@ -29,6 +29,7 @@ from scripts.verify_foundation_inputs import (
     SPECIAL_CLOSURES,
     FrozenInputSpec,
     canonical_json_bytes,
+    enrich_legacy_operational_manifest,
     sha256_file,
     verify_foundation_inputs,
     xnys_sessions,
@@ -239,6 +240,22 @@ class MarketInputIntegrityTests(unittest.TestCase):
                 audit["public_manifest_sha256"],
                 hashlib.sha256(canonical_json_bytes(public)).hexdigest(),
             )
+
+            legacy = copy.deepcopy(manifest)
+            legacy["schema_version"] = 1
+            legacy.pop("reference_file_count")
+            for row in legacy["daily_files"]:
+                row.pop("row_count")
+                row.pop("columns")
+            for row in legacy["reference_downloads"]:
+                row.pop("local_path")
+            upgraded = enrich_legacy_operational_manifest(root, legacy, reference_root)
+            upgraded_public, upgraded_audit = verify_foundation_inputs(
+                root, upgraded, universe, master, reference_root, frozen
+            )
+            self.assertEqual(upgraded_audit["status"], "pass")
+            self.assertEqual(upgraded_public, public)
+
             bad_hash = copy.deepcopy(manifest)
             bad_hash["daily_files"][0]["sha256"] = "0" * 64
             _, bad_audit = verify_foundation_inputs(

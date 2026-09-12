@@ -6,7 +6,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +13,11 @@ try:
     import tomllib
 except ModuleNotFoundError:  # pragma: no cover
     import tomli as tomllib
+
+try:
+    from scripts.pipeline_io import write_json_atomic as _write_json_atomic
+except ModuleNotFoundError:  # Support direct execution as ``python scripts/...``.
+    from pipeline_io import write_json_atomic as _write_json_atomic
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -366,13 +370,6 @@ def aggregate_foundation_status(
         },
         "historical_access_audit_is_preserved": True,
     }
-
-
-def _write_json_atomic(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".part")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    os.replace(temporary, path)
 
 
 def main() -> int:

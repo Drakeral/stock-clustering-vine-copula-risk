@@ -16,6 +16,7 @@ from scripts.pipeline_io import (
     sha256_file,
     write_json_atomic,
     write_parquet_atomic,
+    write_text_atomic,
 )
 
 
@@ -45,6 +46,29 @@ class PipelineIoTests(unittest.TestCase):
             self.assertEqual(json_path.stat().st_mode & 0o777, 0o644)
             self.assertEqual(parquet_path.stat().st_mode & 0o777, 0o644)
             self.assertEqual(list(root.glob("*.part")), [])
+            self.assertEqual(list(root.glob(".*.part")), [])
+
+    def test_atomic_text_and_indexed_parquet_preserve_content(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            text_path = root / "report.md"
+            parquet_path = root / "panel.parquet"
+            frame = pd.DataFrame(
+                {"A": [0.1, 0.2]},
+                index=pd.to_datetime(["2020-01-02", "2020-01-03"]),
+            )
+            frame.index.name = "date"
+
+            write_text_atomic(text_path, "complete\n")
+            write_parquet_atomic(
+                parquet_path,
+                frame,
+                index=True,
+                compression="zstd",
+            )
+
+            self.assertEqual(text_path.read_text(encoding="utf-8"), "complete\n")
+            pd.testing.assert_frame_equal(pd.read_parquet(parquet_path), frame)
             self.assertEqual(list(root.glob(".*.part")), [])
 
     def test_atomic_writer_cleans_up_after_serialization_failure(self):

@@ -320,6 +320,58 @@ def _canonical_daily_identity(spec: FrozenInputSpec, day: dt.date) -> tuple[str,
     return key, local_path
 
 
+def enrich_legacy_operational_manifest(
+    project_root: Path,
+    manifest: dict[str, Any],
+    reference_root: Path,
+) -> dict[str, Any]:
+    """Add independently observed fields required by the strict v2 verifier."""
+
+    if manifest.get("schema_version") != 1:
+        return manifest
+    upgraded = {**manifest, "schema_version": 2}
+    daily_value = manifest.get("daily_files")
+    if not isinstance(daily_value, list):
+        raise ValueError("Legacy operational manifest daily_files must be a list")
+    daily_records: list[dict[str, Any]] = []
+    for original in daily_value:
+        if not isinstance(original, dict):
+            raise ValueError("Legacy operational daily record must be an object")
+        record = dict(original)
+        try:
+            day = dt.date.fromisoformat(str(record["date"]))
+            path = _safe_project_path(project_root, str(record["local_path"]))
+            observed = inspect_daily(path, day, set())
+        except (KeyError, OSError, ValueError) as exc:
+            raise ValueError(
+                f"Cannot enrich legacy daily record {record.get('date', 'unknown')}: {exc}"
+            ) from exc
+        record["row_count"] = observed["row_count"]
+        record["columns"] = observed["columns"]
+        daily_records.append(record)
+    upgraded["daily_files"] = daily_records
+
+    reference_value = manifest.get("reference_downloads")
+    if not isinstance(reference_value, list):
+        raise ValueError("Legacy operational manifest reference_downloads must be a list")
+    reference_records: list[dict[str, Any]] = []
+    for original in reference_value:
+        if not isinstance(original, dict):
+            raise ValueError("Legacy operational reference record must be an object")
+        record = dict(original)
+        ticker = str(record.get("ticker", ""))
+        event_type = str(record.get("event_type", ""))
+        inferred = reference_root / event_type / f"{ticker.replace('.', '_')}.json"
+        try:
+            record["local_path"] = inferred.resolve().relative_to(project_root.resolve()).as_posix()
+        except ValueError as exc:
+            raise ValueError("Legacy reference path is outside the project") from exc
+        reference_records.append(record)
+    upgraded["reference_downloads"] = reference_records
+    upgraded["reference_file_count"] = len(reference_records)
+    return upgraded
+
+
 def verify_foundation_inputs(
     project_root: Path,
     manifest: dict[str, Any],
@@ -618,6 +670,11 @@ def main() -> None:
     manifest_path = args.manifest or Path(paths["download_manifest_json"])
     manifest_path = manifest_path if manifest_path.is_absolute() else project_root / manifest_path
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest = enrich_legacy_operational_manifest(
+        project_root,
+        manifest,
+        _safe_project_path(project_root, paths["corporate_actions_directory"]),
+    )
     public, audit = verify_foundation_inputs(
         project_root,
         manifest,
@@ -634,8 +691,9 @@ def main() -> None:
     audit_path = (
         args.audit_output if args.audit_output.is_absolute() else project_root / args.audit_output
     )
-    write_json_atomic(public_path, public)
     write_json_atomic(audit_path, audit)
+    if audit["status"] == "pass":
+        write_json_atomic(public_path, public)
     print(f"market_input_integrity={audit['status']}")
     print(f"verified daily={public['daily_file_count']} reference={public['reference_file_count']}")
     if audit["status"] != "pass":

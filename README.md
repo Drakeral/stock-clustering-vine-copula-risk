@@ -28,7 +28,8 @@ supersede the amendment and obtain the strict provenance pass later.
 
 Python 3.12 and [uv](https://docs.astral.sh/uv/) are required.
 The repeatable lint, test and repository-hygiene checkpoint is documented in
-`docs/code_quality.md`.
+`docs/code_quality.md`. The latest holistic research-code review, remediations,
+and interpretation boundaries are recorded in `docs/quantitative_code_audit.md`.
 
 ```zsh
 uv sync --frozen
@@ -151,10 +152,11 @@ uv run python -m unittest discover -s tests -v
 The download is resumable. Existing daily and reference files are schema-
 validated and hashed rather than overwritten. Use `--overwrite` only for an
 intentional provider refresh. The verifier recomputes every hash and row count;
-it does not infer sessions from the provider file list. For the legacy inputs in
-this working copy, an offline re-verification after a wrapper-format migration
-can use `--manifest data/manifests/market_input_manifest.json`; a fresh downloader
-run emits the strict operational manifest used by the default command.
+it does not infer sessions from the provider file list. The default verifier can
+enrich this working copy's legacy operational manifest in memory by independently
+inspecting every file; it does not mutate the ignored source manifest. A failed
+verification updates the gate audit but cannot replace the last valid public
+manifest. A fresh downloader run emits the strict v2 operational manifest.
 
 Immediately before any clustering or risk-model command, require the aggregate
 gate explicitly:

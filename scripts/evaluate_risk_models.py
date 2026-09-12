@@ -514,8 +514,8 @@ def calibration_results(
     full: list[dict[str, Any]] = []
     for model_id in MODEL_IDS:
         model = scores.loc[scores["model_id"] == model_id].sort_values("date")
-        for confidence in calibration["confirmatory_confidence_levels"]:
-            confidence = float(confidence)
+        for configured_confidence in calibration["confirmatory_confidence_levels"]:
+            confidence = float(configured_confidence)
             indicators = model[EXCEPTION_COLUMNS[confidence]].to_numpy(dtype=bool)
             coverage = kupiec_unconditional_coverage(indicators, confidence)
             independence = christoffersen_independence(indicators)
@@ -562,8 +562,8 @@ def calibration_results(
     for model_id in MODEL_IDS:
         model = scores.loc[scores["model_id"] == model_id].sort_values("date")
         for year, annual_model in model.groupby("year", sort=True):
-            for confidence in calibration["descriptive_annual_confidence_levels"]:
-                confidence = float(confidence)
+            for configured_confidence in calibration["descriptive_annual_confidence_levels"]:
+                confidence = float(configured_confidence)
                 indicators = annual_model[EXCEPTION_COLUMNS[confidence]].to_numpy(dtype=bool)
                 coverage = kupiec_unconditional_coverage(indicators, confidence)
                 independence = christoffersen_independence(indicators)
