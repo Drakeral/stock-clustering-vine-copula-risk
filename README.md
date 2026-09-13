@@ -144,6 +144,8 @@ uv run python scripts/build_marginal_models.py
 uv run python scripts/build_gaussian_copula.py
 uv run python scripts/build_vine_copula.py
 uv run python scripts/evaluate_risk_models.py
+uv run python scripts/build_vine_copula.py --truncation-level 10
+uv run python scripts/evaluate_full_vine_robustness.py
 uv run ruff check scripts tests
 uv run ruff format --check scripts tests
 uv run python -m unittest discover -s tests -v
@@ -241,6 +243,12 @@ added later.
   realised loss, matched vine log scores, and fallback flags;
 - `data/processed/risk_evaluation_daily.parquet`: matched M0-M4 daily quantile
   losses, FZ0 scores, VaR exceptions, realised losses, and model diagnostics;
+- `data/processed/full_vine_copula_refits.parquet` and
+  `full_vine_risk_forecasts.parquet`: isolated tree-10 M2/M4 robustness fits and
+  daily forecasts using the same monthly information sets and random uniforms as
+  the primary tree-3 vines;
+- `data/processed/full_vine_robustness_daily.parquet`: matched tree-3/tree-10
+  scores, exceptions, and diagnostics for all four vine variants;
 - `data/manifests/simulation_seed_manifest.json`: reproducible monthly common-
   random-number seeds and uniform-matrix hashes; and
 - `data/manifests/inference_seed_manifest.json`: the H1 block-bootstrap seed,
@@ -258,5 +266,10 @@ added later.
 - `data/audit/model_evaluation.json`: model summaries, full-period and annual
   calibration diagnostics, six adjusted DM comparisons, H1 bootstrap inference,
   and the frozen H1-H3 decisions;
+- `data/audit/full_vine_robustness_quality.json`: tree-10 fit, pair-family,
+  fallback, forecast-coverage, and bound-output checks;
+- `data/audit/full_vine_robustness_evaluation.json`: refit/forecast identity
+  checks, complexity summaries, the frozen 16-test calibration family, six
+  tree-10-minus-tree-3 DM comparisons, and matched descriptive log scores;
 - `data/audit/`: separate provenance, input-integrity, construction, and current
   readiness reports.

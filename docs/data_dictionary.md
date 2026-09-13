@@ -217,6 +217,24 @@ model rankings, and the preregistered H1-H3 decisions. A hypothesis not being
 supported is a research result and does not make this computational quality gate
 fail.
 
+## Full-vine robustness outputs
+
+`data/processed/full_vine_copula_refits.parquet` and
+`data/processed/full_vine_risk_forecasts.parquet` use the existing vine-refit and
+forecast schemas, but contain the isolated tree-10 M2/M4 robustness run. Their
+primary tree-3 counterparts cannot be selected as robustness output paths.
+
+`data/processed/full_vine_robustness_daily.parquet` contains one row per
+tree-depth variant and date: `M2_t3`, `M2_t10`, `M4_t3`, and `M4_t10`. It stores
+the risk forecasts, realised loss, three frozen forecast losses, strict VaR
+exceptions, copula log score, and fallback flags. Its schema is
+`config/schemas/full_vine_robustness_daily_record.schema.json`.
+
+`data/audit/full_vine_robustness_evaluation.json` verifies monthly training-set,
+group-order, seed, margin-state, realised-return, and date identity before
+reporting the frozen calibration and DM test families. It explicitly leaves the
+primary H1-H3 decisions unchanged.
+
 ## Lifecycle policy
 
 Every XNYS session between a security's explicit listing and removal dates is classified as `active_price`, `verified_halt`, `terminal_cash`, `removed`, or `unexplained_missing`; pre-listing dates are counted as `pre_inception`. A verified halt with no corporate action receives a stale synthetic price and zero return, while the cumulative price move remains on resumption as a `gap_bridge_return`. A corporate action on a missing price date requires review and cannot be stale-filled automatically.

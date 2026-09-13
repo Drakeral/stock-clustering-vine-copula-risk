@@ -1,6 +1,6 @@
 # Quantitative Code Audit
 
-Audit date: 12 September 2026
+Audit date: 13 September 2026
 
 ## Conclusion
 
@@ -20,8 +20,8 @@ The review covered universe construction and provenance, market-input
 verification, lifecycle and corporate-action handling, return construction,
 portfolio arithmetic, annual grouping construction, marginal filtering,
 Gaussian and R-vine copulas, Monte Carlo risk forecasts, statistical inference,
-artifact schemas and hashes, tests, CI, dependency locking, secret boundaries,
-and repository hygiene.
+the full ten-tree vine robustness analysis, artifact schemas and hashes, tests,
+CI, dependency locking, secret boundaries, and repository hygiene.
 
 ## Quantitative invariants confirmed
 
@@ -65,6 +65,12 @@ and repository hygiene.
   output with a partial file while preserving the existing file formats.
 - Evaluation loop variables were clarified to remove accidental reassignment
   without changing calculations.
+- Primary tree-3 and robustness tree-10 vine runs now resolve to distinct output
+  paths. A fail-closed guard prevents a robustness invocation from overwriting
+  any primary refit, forecast, or audit artifact.
+- The tree-depth evaluator verifies identical monthly information sets, group
+  order, marginal states, realised returns, dates, and common-random-number
+  seeds before calculating any robustness comparison.
 
 ## Verification evidence
 
@@ -80,7 +86,11 @@ daily model records. Realised portfolio losses agree across all five models to
 within `5.56e-17`. All 1,580 accepted GARCH-family refits have finite likelihood,
 AIC, and BIC values. The four EWMA refits remain below the frozen one-percent
 quality limit. All 144 primary vine refits completed without whole-vine
-fallback, and all eight tabular output schemas match their generated columns.
+fallback. The full tree-10 run also completed all 144 refits and 3,016 forecasts
+without failed pairs or whole-vine fallback. Its 7,920 pair positions and 6,032
+matched robustness score rows pass their production artifact checks. The full
+local suite contains 121 passing tests, including all seven artifact-bound
+production classes.
 
 ## Interpretation and remaining boundaries
 
@@ -92,12 +102,20 @@ fallback, and all eight tabular output schemas match their generated columns.
 - M4 ranks first and passes the frozen H3 calibration restriction, but this is a
   provisional model-ranking result, not evidence that vines dominate Gaussian
   copulas or that clustering creates return predictability.
+- Tree 10 increases mean fitted parameters from 40.51 to 66.22. Its mean
+  out-of-sample copula log score is descriptively higher within both GICS and
+  hierarchical groupings, but none of the six tree-10-minus-tree-3 VaR/ES loss
+  comparisons is significant after Holm adjustment. All four tree-depth
+  variants avoid adjusted Kupiec or Christoffersen independence rejections.
+  The robustness run therefore supplies no adjusted forecast-loss evidence that
+  the additional trees improve or worsen the primary portfolio-risk forecasts,
+  and it does not alter H1-H3.
 - With 1,508 evaluation dates, the 99% VaR analysis has only about 15 expected
   exceptions. Forecast losses and matched comparisons should carry more weight
   than annual 99% coverage p-values.
-- The configured full ten-tree vine robustness run, secondary group-balanced
-  portfolios, spectral clustering, and PCA-plus-k-means extension remain future
-  stages. They must not be described as implemented results.
+- Secondary group-balanced portfolios, spectral clustering, and the
+  PCA-plus-k-means extension remain future stages. They must not be described as
+  implemented results.
 - Several mature ingestion and orchestration functions remain long and complex.
   Their behavior is well covered at important boundaries, but further
   decomposition should be incremental and paired with characterization tests to

@@ -366,9 +366,14 @@ class RunManifestTests(unittest.TestCase):
         self.assertIn("data/processed/gaussian_risk_forecasts.parquet", paths)
         self.assertIn("data/processed/vine_copula_refits.parquet", paths)
         self.assertIn("data/processed/vine_risk_forecasts.parquet", paths)
+        self.assertIn("data/processed/full_vine_copula_refits.parquet", paths)
+        self.assertIn("data/processed/full_vine_risk_forecasts.parquet", paths)
+        self.assertIn("data/processed/full_vine_robustness_daily.parquet", paths)
         self.assertIn("data/manifests/simulation_seed_manifest.json", paths)
         self.assertIn("data/audit/gaussian_copula_quality.json", paths)
         self.assertIn("data/audit/vine_copula_quality.json", paths)
+        self.assertIn("data/audit/full_vine_robustness_quality.json", paths)
+        self.assertIn("data/audit/full_vine_robustness_evaluation.json", paths)
         self.assertIn("data/audit/historical_simulation_quality.json", paths)
 
     def test_git_state_counts_untracked_files_as_dirty(self):

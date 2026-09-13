@@ -38,7 +38,9 @@ jobs:
         run: uv run ruff check scripts tests
 
       - name: Check evaluation complexity
-        run: uv run ruff check scripts/evaluate_risk_models.py --select C901
+        run: >-
+          uv run ruff check scripts/evaluate_risk_models.py
+          scripts/evaluate_full_vine_robustness.py --select C901
 
       - name: Check formatting
         run: uv run ruff format --check scripts tests

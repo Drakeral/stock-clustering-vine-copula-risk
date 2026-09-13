@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fit truncated R-vines and produce matched M2/M4 portfolio-risk forecasts."""
+"""Fit primary or full robustness R-vines and produce matched M2/M4 forecasts."""
 
 from __future__ import annotations
 
@@ -65,6 +65,16 @@ except ModuleNotFoundError:  # Support direct execution as ``python scripts/...`
 VINE_MODEL_BY_GROUPING = {
     "gics_sector": ("M2", "gics", "M1"),
     "hierarchical_cluster": ("M4", "hierarchical", "M3"),
+}
+PRIMARY_OUTPUTS = {
+    "refits": PROJECT_ROOT / "data/processed/vine_copula_refits.parquet",
+    "forecasts": PROJECT_ROOT / "data/processed/vine_risk_forecasts.parquet",
+    "audit": PROJECT_ROOT / "data/audit/vine_copula_quality.json",
+}
+ROBUSTNESS_OUTPUTS = {
+    "refits": PROJECT_ROOT / "data/processed/full_vine_copula_refits.parquet",
+    "forecasts": PROJECT_ROOT / "data/processed/full_vine_risk_forecasts.parquet",
+    "audit": PROJECT_ROOT / "data/audit/full_vine_robustness_quality.json",
 }
 FAMILY_BY_CONFIG = {
     "independence": pv.BicopFamily.indep,
@@ -233,6 +243,46 @@ def validate_vine_protocol(
     if not 0 <= _finite_float(vine, "maximum_whole_vine_fallback_date_fraction", "vine") <= 1:
         raise ValueError("invalid maximum whole-vine fallback fraction")
     return vine, simulation, forecast, marginal, selected_truncation
+
+
+def vine_analysis_role(vine: Mapping[str, Any], truncation_level: int) -> str:
+    """Classify a frozen truncation level without inspecting model results."""
+
+    primary = int(vine["primary_truncation_tree"])
+    robustness = int(vine["robustness_truncation_tree"])
+    if truncation_level == primary:
+        return "primary"
+    if truncation_level == robustness:
+        return "robustness"
+    raise ValueError("truncation level is not one of the frozen protocol levels")
+
+
+def resolve_output_paths(
+    vine: Mapping[str, Any],
+    truncation_level: int,
+    *,
+    refits_output: Path | None,
+    forecasts_output: Path | None,
+    audit_output: Path | None,
+) -> tuple[Path, Path, Path]:
+    """Resolve role-specific outputs and protect primary artifacts from robustness runs."""
+
+    role = vine_analysis_role(vine, truncation_level)
+    defaults = PRIMARY_OUTPUTS if role == "primary" else ROBUSTNESS_OUTPUTS
+    resolved = (
+        refits_output or defaults["refits"],
+        forecasts_output or defaults["forecasts"],
+        audit_output or defaults["audit"],
+    )
+    canonical = tuple(path.resolve() for path in resolved)
+    if len(set(canonical)) != len(canonical):
+        raise ValueError("vine refit, forecast, and audit outputs must be distinct")
+    if role == "robustness":
+        protected = {path.resolve() for path in PRIMARY_OUTPUTS.values()}
+        collisions = sorted(str(path) for path in set(canonical) & protected)
+        if collisions:
+            raise ValueError(f"robustness run cannot overwrite primary artifacts: {collisions}")
+    return resolved
 
 
 def _pair_failure(
@@ -932,6 +982,7 @@ def build_vine_outputs(
     )
     any_model_fallback_fraction = any_model_fallback_dates / evaluation_dates
     fallback_limit = float(vine["maximum_whole_vine_fallback_date_fraction"])
+    analysis_role = vine_analysis_role(vine, truncation)
     restrictions = []
     if maximum_model_fallback_fraction > fallback_limit:
         restrictions.append("whole_vine_fallback_fraction_exceeded")
@@ -940,7 +991,12 @@ def build_vine_outputs(
         aggregate_families.update(json.loads(encoded))
     audit = {
         "schema_version": 1,
-        "gate_name": "vine_copula_quality_v1",
+        "gate_name": (
+            "vine_copula_quality_v1"
+            if analysis_role == "primary"
+            else "full_vine_robustness_quality_v1"
+        ),
+        "analysis_role": analysis_role,
         "status": "pass" if not issues else "fail",
         "universe_variant": universe_variant,
         "model_ids": sorted(expected_models),
@@ -1044,17 +1100,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--refits-output",
         type=Path,
-        default=PROJECT_ROOT / "data/processed/vine_copula_refits.parquet",
+        help="Defaults to the role-specific primary or full-vine path.",
     )
     parser.add_argument(
         "--forecasts-output",
         type=Path,
-        default=PROJECT_ROOT / "data/processed/vine_risk_forecasts.parquet",
+        help="Defaults to the role-specific primary or full-vine path.",
     )
     parser.add_argument(
         "--audit-output",
         type=Path,
-        default=PROJECT_ROOT / "data/audit/vine_copula_quality.json",
+        help="Defaults to the role-specific primary or full-vine path.",
     )
     parser.add_argument("--universe-variant", default="security_primary")
     parser.add_argument("--truncation-level", type=int)
@@ -1068,8 +1124,15 @@ def main() -> int:
         raise ValueError("--progress-every must be nonnegative")
     with args.model_config.open("rb") as handle:
         model_config = tomllib.load(handle)
-    _, _, _, _, truncation = validate_vine_protocol(
+    vine, _, _, _, truncation = validate_vine_protocol(
         model_config, truncation_level=args.truncation_level
+    )
+    refits_output, forecasts_output, audit_output = resolve_output_paths(
+        vine,
+        truncation,
+        refits_output=args.refits_output,
+        forecasts_output=args.forecasts_output,
+        audit_output=args.audit_output,
     )
     scope = _reporting_scope(json.loads(args.foundation_status.read_text(encoding="utf-8")))
     marginal_audit = json.loads(args.marginal_audit.read_text(encoding="utf-8"))
@@ -1100,8 +1163,9 @@ def main() -> int:
         truncation_level=truncation,
         progress_every=args.progress_every,
     )
-    _write_parquet_atomic(args.refits_output, vine_refits)
-    _write_parquet_atomic(args.forecasts_output, forecasts)
+    _write_parquet_atomic(refits_output, vine_refits)
+    _write_parquet_atomic(forecasts_output, forecasts)
+    output_prefix = "vine" if audit["analysis_role"] == "primary" else "full_vine"
     audit.update(
         {
             "reporting_scope": scope,
@@ -1158,26 +1222,26 @@ def main() -> int:
                 },
             },
             "outputs": {
-                "vine_copula_refits": {
-                    "path": _project_path(args.refits_output),
-                    "sha256": _sha256(args.refits_output),
+                f"{output_prefix}_copula_refits": {
+                    "path": _project_path(refits_output),
+                    "sha256": _sha256(refits_output),
                     "rows": len(vine_refits),
                 },
-                "vine_risk_forecasts": {
-                    "path": _project_path(args.forecasts_output),
-                    "sha256": _sha256(args.forecasts_output),
+                f"{output_prefix}_risk_forecasts": {
+                    "path": _project_path(forecasts_output),
+                    "sha256": _sha256(forecasts_output),
                     "rows": len(forecasts),
                 },
             },
         }
     )
-    _write_json_atomic(args.audit_output, audit)
+    _write_json_atomic(audit_output, audit)
     print(
         f"vine_copula_quality={audit['status']} truncation={truncation} "
         f"refits={len(vine_refits)} forecasts={len(forecasts)} "
         f"whole_fallbacks={audit['whole_vine_fallback_refit_count']}"
     )
-    print(f"Audit: {args.audit_output}")
+    print(f"Audit: {audit_output}")
     return 0 if audit["status"] == "pass" else 1
 
 

@@ -9,9 +9,12 @@ import pyvinecopulib as pv
 
 from scripts.build_gaussian_copula import build_gaussian_outputs
 from scripts.build_vine_copula import (
+    PRIMARY_OUTPUTS,
+    ROBUSTNESS_OUTPUTS,
     VineFitError,
     build_vine_outputs,
     fit_vine_copula,
+    resolve_output_paths,
     validate_vine_protocol,
     vine_dependence_uniforms,
     vine_log_density,
@@ -187,6 +190,31 @@ def miniature_frames() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.Dat
 
 
 class VineMethodTests(unittest.TestCase):
+    def test_full_vine_defaults_cannot_overwrite_primary_artifacts(self):
+        vine = {"primary_truncation_tree": 3, "robustness_truncation_tree": 10}
+        self.assertEqual(
+            resolve_output_paths(
+                vine,
+                10,
+                refits_output=None,
+                forecasts_output=None,
+                audit_output=None,
+            ),
+            (
+                ROBUSTNESS_OUTPUTS["refits"],
+                ROBUSTNESS_OUTPUTS["forecasts"],
+                ROBUSTNESS_OUTPUTS["audit"],
+            ),
+        )
+        with self.assertRaisesRegex(ValueError, "cannot overwrite primary"):
+            resolve_output_paths(
+                vine,
+                10,
+                refits_output=PRIMARY_OUTPUTS["refits"],
+                forecasts_output=None,
+                audit_output=None,
+            )
+
     def test_fit_simulation_density_and_serialization_are_valid(self):
         config = miniature_config()
         base = common_uniforms(2020, 1, draws=300, dimension=2)
@@ -237,6 +265,7 @@ class VinePipelineTests(unittest.TestCase):
             progress_every=0,
         )
         self.assertEqual(audit["status"], "pass")
+        self.assertEqual(audit["analysis_role"], "primary")
         self.assertEqual((len(refits), len(forecasts)), (2, 4))
         self.assertEqual(set(refits["model_id"]), {"M2", "M4"})
         self.assertFalse(refits["whole_vine_fallback"].any())

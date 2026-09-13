@@ -1,5 +1,5 @@
 {
-  "analysis_role": "primary",
+  "analysis_role": "robustness",
   "best_model_restrictions": [],
   "dimension": 11,
   "draws_per_month": 100000,
@@ -7,15 +7,15 @@
   "evaluation_date_count": 1508,
   "failed_pair_count": 0,
   "family_counts": {
-    "clayton": 175,
-    "frank": 983,
-    "gaussian": 252,
-    "gumbel": 372,
-    "indep": 80,
-    "student": 2026
+    "clayton": 881,
+    "frank": 1834,
+    "gaussian": 563,
+    "gumbel": 1040,
+    "indep": 993,
+    "student": 2609
   },
   "forecast_count": 3016,
-  "gate_name": "vine_copula_quality_v1",
+  "gate_name": "full_vine_robustness_quality_v1",
   "inputs": {
     "annual_group_returns": {
       "path": "data/processed/annual_group_returns.parquet",
@@ -83,7 +83,7 @@
       270
     ],
     "structure_selection": "dissmann_abs_kendall_tau_mst",
-    "truncation_level": 3
+    "truncation_level": 10
   },
   "model_date_counts": {
     "M2": 1508,
@@ -102,24 +102,24 @@
     "M4": 0.0
   },
   "outputs": {
-    "vine_copula_refits": {
-      "path": "data/processed/vine_copula_refits.parquet",
+    "full_vine_copula_refits": {
+      "path": "data/processed/full_vine_copula_refits.parquet",
       "rows": 144,
-      "sha256": "7dbf0d5ad4b098c7acf56057853d6fd165515ef80c3321de880739fda4ac7b15"
+      "sha256": "29b783834baff0f4c4ff780930e93f068ce7677c4459c8c326d58b81bb5231cd"
     },
-    "vine_risk_forecasts": {
-      "path": "data/processed/vine_risk_forecasts.parquet",
+    "full_vine_risk_forecasts": {
+      "path": "data/processed/full_vine_risk_forecasts.parquet",
       "rows": 3016,
-      "sha256": "a012b305bb8943caa33f6f06e651da69b64a39e211f9b322e2501082e4c80422"
+      "sha256": "366b6ededc0a23d83e1f00db8565265040be50ae9f0190a96d0e7cfbda7fc778"
     }
   },
-  "pair_count": 3888,
+  "pair_count": 7920,
   "portfolio_identity_tolerance": 1e-12,
   "refit_count": 144,
   "reporting_scope": "provisional_research_results",
   "schema_version": 1,
   "status": "pass",
-  "truncation_level": 3,
+  "truncation_level": 10,
   "universe_variant": "security_primary",
   "whole_vine_fallback_date_count": 0,
   "whole_vine_fallback_date_fraction": 0.0,

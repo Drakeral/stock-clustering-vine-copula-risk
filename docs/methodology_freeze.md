@@ -185,6 +185,16 @@ complete frozen training innovation sample using the inverted empirical CDF.
 Copula log scores are comparable only between Gaussian and vine models using the
 same grouping.
 
+The full-vine robustness analysis refits M2 and M4 through tree 10 on the exact
+monthly information sets used by their primary tree-3 versions. Refit dates,
+training bounds, group order, marginal states, realised losses, and stored
+common-random-number hashes must match before comparison. Its loss differential
+is `tree 10 - tree 3`; six two-sided DM tests use Newey-West/Bartlett lag 7 and
+one 5% Holm family. A separate 16-test Holm family covers four variants, two VaR
+levels, and the Kupiec and Christoffersen independence tests. Log-score
+comparisons remain descriptive and within grouping. This is an exploratory
+robustness analysis and cannot revise the preregistered H1-H3 decisions.
+
 ## Inference and interpretation
 
 Confirmatory Diebold-Mariano loss differences are `vine - Gaussian`. Tests are

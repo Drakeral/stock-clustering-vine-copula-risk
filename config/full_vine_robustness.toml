@@ -1,0 +1,40 @@
+schema_version = 1
+protocol_status = "frozen_before_full_vine_robustness_results"
+analysis_role = "exploratory_robustness"
+
+[evaluation]
+model_ids = ["M2", "M4"]
+primary_truncation_level = 3
+full_truncation_level = 10
+required_forecast_statuses = ["ok", "fallback"]
+realised_loss_identity_tolerance = 1e-12
+primary_score_columns = ["quantile_loss_95", "quantile_loss_99", "fz0_975"]
+copula_log_score_direction = "higher_is_better"
+
+[dm]
+loss_difference = "full_vine_minus_truncated_vine"
+comparisons = [
+  { model_id = "M2", grouping_id = "gics" },
+  { model_id = "M4", grouping_id = "hierarchical" },
+]
+score_columns = ["quantile_loss_95", "quantile_loss_99", "fz0_975"]
+test = "diebold_mariano_two_sided_then_direction_check"
+hac = "newey_west_bartlett"
+hac_lag = 7
+multiplicity = "holm_familywise"
+family_size = 6
+familywise_alpha = 0.05
+
+[calibration]
+confidence_levels = [0.95, 0.99]
+tests = ["kupiec_unconditional_coverage", "christoffersen_independence"]
+variants = ["M2_t3", "M2_t10", "M4_t3", "M4_t10"]
+multiplicity = "holm_familywise"
+family_size = 16
+familywise_alpha = 0.05
+
+[interpretation]
+role = "robustness_not_new_confirmatory_hypothesis"
+decision_rule = "report_adjusted_pairwise_loss_directions_without_changing_H1_H3"
+h2_rule = "primary_tree_3_confirmatory_results_remain_authoritative"
+log_score_comparison = "descriptive_within_matched_grouping_only"
