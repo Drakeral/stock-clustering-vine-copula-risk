@@ -20,6 +20,12 @@
       "status": "present"
     },
     {
+      "bytes": 1373,
+      "path": "config/full_vine_robustness.toml",
+      "sha256": "6f7e3d8ef341d6ec52c85742a0ca9674e3a6a26cbe7626b7f13b55c13a965020",
+      "status": "present"
+    },
+    {
       "bytes": 1109,
       "path": "config/licensed_universe_schema.json",
       "sha256": "7ed8d2a6fc834e5216428cba060c7e0ca3975adca538c112737aabeb8aaef9f9",
@@ -65,6 +71,12 @@
       "bytes": 2616,
       "path": "config/schemas/forecast_record.schema.json",
       "sha256": "1a603c00c11ddcd4f7cc89cec4d1431e928aa5da3aff1b944b531257bf0b97c3",
+      "status": "present"
+    },
+    {
+      "bytes": 1705,
+      "path": "config/schemas/full_vine_robustness_daily_record.schema.json",
+      "sha256": "39a043c5fb343dfd0cd3735e983c35b6f608fa2df61e9786b491ca64c6ecf55e",
       "status": "present"
     },
     {
@@ -135,9 +147,9 @@
     "run_scope": "provisional_research_results",
     "status": "provisional_pass"
   },
-  "generated_at_utc": "2026-09-12T01:45:21.006511+00:00",
+  "generated_at_utc": "2026-09-13T15:05:58.967730+00:00",
   "git": {
-    "commit": "acab1820607e37e4b06b96f96a0576133c31c367",
+    "commit": "413abd552dcb67b741b04c791b637232d8833ddd",
     "commit_present": true,
     "repository_initialized": true,
     "worktree_clean": true
@@ -209,6 +221,18 @@
       "status": "present"
     },
     {
+      "bytes": 18900,
+      "path": "data/audit/full_vine_robustness_evaluation.json",
+      "sha256": "7b0a07d71dbcf4a73404c9fbee05381cc35d161262714af5a8ed55dcfc9315ea",
+      "status": "present"
+    },
+    {
+      "bytes": 3997,
+      "path": "data/audit/full_vine_robustness_quality.json",
+      "sha256": "d3adfc97f14d975cf3bc9e4328e01c31253039b62467c721a2fd10feadb57cde",
+      "status": "present"
+    },
+    {
       "bytes": 2979,
       "path": "data/audit/gaussian_copula_quality.json",
       "sha256": "ea43f423c2b960615a82ec3fe82593ac7ff6ad9accbaa3b2aae58058707f2e75",
@@ -251,9 +275,9 @@
       "status": "present"
     },
     {
-      "bytes": 3930,
+      "bytes": 3960,
       "path": "data/audit/vine_copula_quality.json",
-      "sha256": "6066e9439dc3c70b847b6e4d9e90ba4510b95905477db8c24eccea14e7c368a7",
+      "sha256": "a5882fa7940d876cef1567bc28e7b45f47268662c55ee568229078104214efca",
       "status": "present"
     },
     {
@@ -302,6 +326,24 @@
       "bytes": 69294,
       "path": "data/processed/final_universe.json",
       "sha256": "9409bbfbc4fc567ad4da0841c46266818af129e9e0ef9431af29e2740c352943",
+      "status": "present"
+    },
+    {
+      "bytes": 442042,
+      "path": "data/processed/full_vine_copula_refits.parquet",
+      "sha256": "29b783834baff0f4c4ff780930e93f068ce7677c4459c8c326d58b81bb5231cd",
+      "status": "present"
+    },
+    {
+      "bytes": 211184,
+      "path": "data/processed/full_vine_risk_forecasts.parquet",
+      "sha256": "366b6ededc0a23d83e1f00db8565265040be50ae9f0190a96d0e7cfbda7fc778",
+      "status": "present"
+    },
+    {
+      "bytes": 519709,
+      "path": "data/processed/full_vine_robustness_daily.parquet",
+      "sha256": "0e14b369e9d73287096881bb43b5718944f6e1a7a3c2de40933650d18acf92bc",
       "status": "present"
     },
     {
