@@ -94,8 +94,16 @@ quality limit. All 144 primary vine refits completed without whole-vine
 fallback. The full tree-10 run also completed all 144 refits and 3,016 forecasts
 without failed pairs or whole-vine fallback. Its 7,920 pair positions and 6,032
 matched robustness score rows pass their production artifact checks. The full
-local suite contains 121 passing tests, including all seven artifact-bound
+local suite contains 131 passing tests, including all eight artifact-bound
 production classes.
+
+The post-audit exploratory ML-grouping checkpoint adds 12 deterministic annual
+fits: spectral clustering and PCA-plus-k-means for each year from 2020 through
+2025. Both methods produce exactly 11 non-empty groups per year and 132,704
+long-form training/evaluation group-return rows. The largest independently
+reconstructed stock-versus-group portfolio discrepancy is `6.94e-17`. A second
+complete build reproduced the assignment, Parquet, seed-manifest, and audit
+hashes byte for byte.
 
 ## Interpretation and remaining boundaries
 
@@ -128,6 +136,11 @@ production classes.
   forecasts remain future stages. The spectral and PCA-plus-k-means grouping
   implementation is an exploratory extension; its assignments and diagnostics
   must not be described as completed VaR/ES evidence.
+- Descriptively, spectral grouping's mean annual out-of-sample pair-weighted
+  dependence gap is 0.0273 above GICS and 0.0329 above hierarchical grouping.
+  PCA-plus-k-means is 0.0051 and 0.0107 above those baselines, respectively.
+  These are separation diagnostics, not adjusted inference, return-prediction
+  evidence, or a risk-model ranking; the core H1-H3 conclusions are unchanged.
 - Several mature ingestion and orchestration functions remain long and complex.
   Their behavior is well covered at important boundaries, but further
   decomposition should be incremental and paired with characterization tests to

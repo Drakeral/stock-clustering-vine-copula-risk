@@ -1,0 +1,215 @@
+{
+  "analysis_role": "exploratory_unsupervised_robustness",
+  "bit_generator": "PCG64DXSM",
+  "manifest_type": "ml_clustering_seed_manifest",
+  "records": [
+    {
+      "bit_generator": "PCG64DXSM",
+      "embedding_sha256": "e2085e9d2e1f819f478059d3cda13ca9707baba8c69ea2c218cde8242b5c8ada",
+      "grouping_id": "spectral_cluster",
+      "inertia": 22.241799542176253,
+      "iterations": 11,
+      "labels_sha256": "ab5876acb40891b482521a70836be1cbd0c85324d72dd2c7ba687aea94293b2c",
+      "method_code": 1,
+      "n_init": 100,
+      "seed_components": [
+        5110,
+        2020,
+        1
+      ],
+      "selected_initialization_zero_based": 14,
+      "year": 2020
+    },
+    {
+      "bit_generator": "PCG64DXSM",
+      "embedding_sha256": "af3255484d585c52dd0a66880db3fb2d67f75deb424fa9088fd829daff9d1b92",
+      "grouping_id": "pca_kmeans_cluster",
+      "inertia": 9.647704987392235,
+      "iterations": 8,
+      "labels_sha256": "5f38810165a14045e1c914c8cf22de48ee3ac2d0087b443b6e874ffa3300507d",
+      "method_code": 2,
+      "n_init": 100,
+      "seed_components": [
+        5110,
+        2020,
+        2
+      ],
+      "selected_initialization_zero_based": 98,
+      "year": 2020
+    },
+    {
+      "bit_generator": "PCG64DXSM",
+      "embedding_sha256": "1ba965d46bab009c66a2d9a5baf328ddfbd4fc1f8ba9c5039b441a3775e9c71c",
+      "grouping_id": "spectral_cluster",
+      "inertia": 24.82331897320943,
+      "iterations": 7,
+      "labels_sha256": "99d2845b2fdafafb6703e74a62f7a33a5f3d007a9de34944cd1dadff4c88259f",
+      "method_code": 1,
+      "n_init": 100,
+      "seed_components": [
+        5110,
+        2021,
+        1
+      ],
+      "selected_initialization_zero_based": 58,
+      "year": 2021
+    },
+    {
+      "bit_generator": "PCG64DXSM",
+      "embedding_sha256": "7fa6152771036839424964c9833fb0278057451b659ff9800a4969061355e6ad",
+      "grouping_id": "pca_kmeans_cluster",
+      "inertia": 11.292903624408464,
+      "iterations": 6,
+      "labels_sha256": "1e22c61c7b8fdeaf681e07f7f69ad5372f43c6e58dc23431e3fdfb9bc6c36413",
+      "method_code": 2,
+      "n_init": 100,
+      "seed_components": [
+        5110,
+        2021,
+        2
+      ],
+      "selected_initialization_zero_based": 81,
+      "year": 2021
+    },
+    {
+      "bit_generator": "PCG64DXSM",
+      "embedding_sha256": "fc7deec85efc612417acbccf2b7e4baef186f7e0f7a1423c6e7d6fc3c2857023",
+      "grouping_id": "spectral_cluster",
+      "inertia": 28.34703019523771,
+      "iterations": 5,
+      "labels_sha256": "bb863c723d3866c1c1a45b928b1ed191b3611aeb9115e3ff56c8475ab0051d8d",
+      "method_code": 1,
+      "n_init": 100,
+      "seed_components": [
+        5110,
+        2022,
+        1
+      ],
+      "selected_initialization_zero_based": 38,
+      "year": 2022
+    },
+    {
+      "bit_generator": "PCG64DXSM",
+      "embedding_sha256": "04f7ef1eda0868f001fd78238930f2f5dd5d24128d815ae0bd506d6168123d41",
+      "grouping_id": "pca_kmeans_cluster",
+      "inertia": 13.530072601296425,
+      "iterations": 5,
+      "labels_sha256": "6df9a973509b3e745d5472cb4f14d62114b627ed94aba6c24376b2f918ac2a7d",
+      "method_code": 2,
+      "n_init": 100,
+      "seed_components": [
+        5110,
+        2022,
+        2
+      ],
+      "selected_initialization_zero_based": 74,
+      "year": 2022
+    },
+    {
+      "bit_generator": "PCG64DXSM",
+      "embedding_sha256": "42816b663a4c263a9ba64adff420f333476dc09844997d33458c528958b3b138",
+      "grouping_id": "spectral_cluster",
+      "inertia": 27.906853698137674,
+      "iterations": 4,
+      "labels_sha256": "487056bc5e87a0fd0490e1452e7d177e3fcb99d3ec20c99e5f98c9a83371a3f4",
+      "method_code": 1,
+      "n_init": 100,
+      "seed_components": [
+        5110,
+        2023,
+        1
+      ],
+      "selected_initialization_zero_based": 10,
+      "year": 2023
+    },
+    {
+      "bit_generator": "PCG64DXSM",
+      "embedding_sha256": "5a25cf175f01c1195ce70f56be2109d0305c4f6e7ec5b140f575a240fd01b4cd",
+      "grouping_id": "pca_kmeans_cluster",
+      "inertia": 14.196304316570064,
+      "iterations": 3,
+      "labels_sha256": "e76607d0dc4551430a2f9693fe74ef1ed5a61d957b9b4599756a48841361f4ed",
+      "method_code": 2,
+      "n_init": 100,
+      "seed_components": [
+        5110,
+        2023,
+        2
+      ],
+      "selected_initialization_zero_based": 15,
+      "year": 2023
+    },
+    {
+      "bit_generator": "PCG64DXSM",
+      "embedding_sha256": "76795c464da43821a5bd0274485045b58de42c422e572e4c722bd045871c26fe",
+      "grouping_id": "spectral_cluster",
+      "inertia": 27.847274091649865,
+      "iterations": 12,
+      "labels_sha256": "939e3221100048f7502c03898f52d52f4d57802431948ebc5aefefdab5ec7862",
+      "method_code": 1,
+      "n_init": 100,
+      "seed_components": [
+        5110,
+        2024,
+        1
+      ],
+      "selected_initialization_zero_based": 30,
+      "year": 2024
+    },
+    {
+      "bit_generator": "PCG64DXSM",
+      "embedding_sha256": "49cdb949adadcde7b3bd1b3d366f572b5b6ec911af952cde1e835c8ba5d54b11",
+      "grouping_id": "pca_kmeans_cluster",
+      "inertia": 12.956682132464653,
+      "iterations": 4,
+      "labels_sha256": "c54e118513d61909ef40bd230af8fb1b875ebc61f30809cab846ed2f4182b660",
+      "method_code": 2,
+      "n_init": 100,
+      "seed_components": [
+        5110,
+        2024,
+        2
+      ],
+      "selected_initialization_zero_based": 94,
+      "year": 2024
+    },
+    {
+      "bit_generator": "PCG64DXSM",
+      "embedding_sha256": "3c457c279b44e322b89c978189ea20aa91d6ad44e3f0507898c5b0a2a7dae823",
+      "grouping_id": "spectral_cluster",
+      "inertia": 26.43215593339322,
+      "iterations": 5,
+      "labels_sha256": "8d32225be2a65e60b04a441bcf348a6f63d6c3f3222d1e60c99f4de4b1e6e3aa",
+      "method_code": 1,
+      "n_init": 100,
+      "seed_components": [
+        5110,
+        2025,
+        1
+      ],
+      "selected_initialization_zero_based": 19,
+      "year": 2025
+    },
+    {
+      "bit_generator": "PCG64DXSM",
+      "embedding_sha256": "9c3d6d028e7decf81287769d21338065d88e2858ac250e99794344a5e08acd37",
+      "grouping_id": "pca_kmeans_cluster",
+      "inertia": 10.591212857524837,
+      "iterations": 10,
+      "labels_sha256": "341a6ae1402c1d9bdb25c0d86b90701bd275713b91ccfb9f51d46fcf2dca6514",
+      "method_code": 2,
+      "n_init": 100,
+      "seed_components": [
+        5110,
+        2025,
+        2
+      ],
+      "selected_initialization_zero_based": 25,
+      "year": 2025
+    }
+  ],
+  "reporting_scope": "provisional_research_results",
+  "schema_version": 1,
+  "seed_sequence": "SeedSequence([5110, year, method_code])",
+  "status": "pass"
+}

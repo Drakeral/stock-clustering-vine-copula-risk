@@ -195,6 +195,49 @@ def _partition_signature(labels: np.ndarray) -> tuple[tuple[int, ...], ...]:
     )
 
 
+def _fit_kmeans_initialization(
+    values: np.ndarray,
+    cluster_count: int,
+    generator: np.random.Generator,
+    initialization: int,
+    maximum_iterations: int,
+    convergence_tolerance: float,
+) -> KMeansResult | None:
+    centers = _kmeans_plus_plus(values, cluster_count, generator)
+    previous_labels: np.ndarray | None = None
+    for iteration in range(1, maximum_iterations + 1):
+        distances = _squared_distances(values, centers)
+        labels = _repair_empty_clusters(np.argmin(distances, axis=1), distances, cluster_count)
+        updated = np.vstack(
+            [values[labels == cluster].mean(axis=0) for cluster in range(cluster_count)]
+        )
+        shift = float(np.max(np.linalg.norm(updated - centers, axis=1)))
+        stable = previous_labels is not None and np.array_equal(labels, previous_labels)
+        centers = updated
+        previous_labels = labels.copy()
+        if stable or shift <= convergence_tolerance:
+            inertia = float(np.sum((values - centers[labels]) ** 2))
+            return KMeansResult(labels, centers, inertia, iteration, initialization)
+    return None
+
+
+def _candidate_is_better(
+    candidate: KMeansResult,
+    signature: tuple[tuple[int, ...], ...],
+    best: KMeansResult | None,
+    best_signature: tuple[tuple[int, ...], ...] | None,
+) -> bool:
+    if best is None:
+        return True
+    if candidate.inertia < best.inertia - 1e-12:
+        return True
+    return bool(
+        abs(candidate.inertia - best.inertia) <= 1e-12
+        and best_signature is not None
+        and signature < best_signature
+    )
+
+
 def deterministic_kmeans(
     features: np.ndarray,
     cluster_count: int,
@@ -220,39 +263,18 @@ def deterministic_kmeans(
     best: KMeansResult | None = None
     best_signature: tuple[tuple[int, ...], ...] | None = None
     for initialization in range(n_init):
-        centers = _kmeans_plus_plus(values, cluster_count, generator)
-        previous_labels: np.ndarray | None = None
-        converged = False
-        iteration_count = 0
-        for _iteration in range(1, maximum_iterations + 1):
-            iteration_count = _iteration
-            distances = _squared_distances(values, centers)
-            labels = _repair_empty_clusters(np.argmin(distances, axis=1), distances, cluster_count)
-            updated = np.vstack(
-                [values[labels == cluster].mean(axis=0) for cluster in range(cluster_count)]
-            )
-            shift = float(np.max(np.linalg.norm(updated - centers, axis=1)))
-            stable = previous_labels is not None and np.array_equal(labels, previous_labels)
-            centers = updated
-            previous_labels = labels.copy()
-            if stable or shift <= convergence_tolerance:
-                converged = True
-                break
-        if not converged or previous_labels is None:
+        candidate = _fit_kmeans_initialization(
+            values,
+            cluster_count,
+            generator,
+            initialization,
+            maximum_iterations,
+            convergence_tolerance,
+        )
+        if candidate is None:
             continue
-        labels = previous_labels
-        inertia = float(np.sum((values - centers[labels]) ** 2))
-        signature = _partition_signature(labels)
-        candidate = KMeansResult(labels, centers, inertia, iteration_count, initialization)
-        if (
-            best is None
-            or inertia < best.inertia - 1e-12
-            or (
-                abs(inertia - best.inertia) <= 1e-12
-                and best_signature is not None
-                and signature < best_signature
-            )
-        ):
+        signature = _partition_signature(candidate.labels)
+        if _candidate_is_better(candidate, signature, best, best_signature):
             best = candidate
             best_signature = signature
     if best is None:

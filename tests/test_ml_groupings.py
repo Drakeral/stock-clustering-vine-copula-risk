@@ -20,6 +20,7 @@ from scripts.build_ml_groupings import (
 from scripts.ml_clustering_methods import (
     canonical_cluster_labels,
     deterministic_kmeans,
+    labels_sha256,
     pca_correlation_profile_embedding,
     spectral_embedding,
 )
@@ -212,13 +213,29 @@ class CurrentMLGroupingArtifactTests(unittest.TestCase):
         self.assertEqual([row["year"] for row in audit["years"]], list(range(2020, 2026)))
         self.assertEqual(assignments["grouping_ids"], list(GROUPING_IDS))
         self.assertEqual(len(seeds["records"]), 12)
+        assignment_years = {int(row["year"]): row for row in assignments["years"]}
+        method_codes = {"spectral_cluster": 1, "pca_kmeans_cluster": 2}
+        seed_schema = json.loads(
+            (ROOT / "config/schemas/ml_clustering_seed_record.schema.json").read_text()
+        )
+        for record in seeds["records"]:
+            self.assertEqual(set(record), set(seed_schema["properties"]))
+            self.assertEqual(
+                record["seed_components"],
+                [5110, record["year"], method_codes[record["grouping_id"]]],
+            )
+            labels = {
+                row["ticker"]: row[record["grouping_id"]]
+                for row in assignment_years[record["year"]]["assignments"]
+            }
+            self.assertEqual(record["labels_sha256"], labels_sha256(labels))
         for row in audit["years"]:
             self.assertEqual(row["group_count"], 11)
             for grouping_id in GROUPING_IDS:
                 method = row["methods"][grouping_id]
                 self.assertEqual(len(method["cluster_sizes"]), 11)
                 self.assertLessEqual(method["maximum_portfolio_identity_error"], 1e-12)
-        for record in audit["outputs"].values():
+        for record in [*audit["inputs"].values(), *audit["outputs"].values()]:
             path = ROOT / record["path"]
             self.assertTrue(path.is_file())
             self.assertEqual(record["sha256"], sha256(path))
@@ -229,6 +246,33 @@ class CurrentMLGroupingArtifactTests(unittest.TestCase):
         self.assertEqual(set(returns.columns), set(schema["properties"]))
         keys = ["date", "year", "sample_role", "grouping_id", "group_id"]
         self.assertFalse(returns.duplicated(keys).any())
+
+        stock_returns = pd.read_parquet(
+            ROOT / "data/processed/portfolio_constituent_simple_returns.parquet"
+        )
+        schedule = json.loads((ROOT / "data/processed/active_universe_by_year.json").read_text())
+        active_by_year = {
+            int(row["year"]): list(row["active_tickers"]) for row in schedule["years"]
+        }
+        for year in range(2020, 2026):
+            direct = stock_returns.loc[stock_returns.index.year == year, active_by_year[year]].mean(
+                axis=1
+            )
+            for grouping_id in GROUPING_IDS:
+                rows = returns.loc[
+                    (returns["year"] == year)
+                    & (returns["sample_role"] == "evaluation")
+                    & (returns["grouping_id"] == grouping_id)
+                ]
+                grouped = rows.pivot(index="date", columns="group_id", values="simple_return")
+                weights = (
+                    rows[["group_id", "portfolio_weight"]]
+                    .drop_duplicates()
+                    .set_index("group_id")["portfolio_weight"]
+                )
+                reconstructed = grouped.mul(weights, axis="columns").sum(axis=1)
+                error = float((direct - reconstructed).abs().max())
+                self.assertLessEqual(error, 1e-12)
 
 
 if __name__ == "__main__":

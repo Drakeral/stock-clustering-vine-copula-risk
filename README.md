@@ -20,6 +20,12 @@ modelling may proceed, but every downstream result must be labelled
 `provisional_research_results`; neither `foundation_v2=pass` nor licensed or
 confirmatory provenance may be claimed.
 
+The exploratory ML grouping gate also passes. Annual spectral clustering and
+PCA-plus-k-means assignments and return panels have been generated under the
+same leakage-free windows and 11-group portfolio arithmetic as the core study.
+The reserved M5-M8 Gaussian/vine forecasts have not yet been implemented, so
+these artifacts are clustering diagnostics rather than portfolio-risk results.
+
 The machine-readable authorization and its narrow conditions are frozen in
 `config/provenance_amendment.json`. A licensed point-in-time extract can still
 supersede the amendment and obtain the strict provenance pass later.

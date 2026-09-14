@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 from collections.abc import Mapping
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -88,6 +89,23 @@ except ModuleNotFoundError:  # Support direct execution as ``python scripts/...`
 
 GROUPING_IDS = ("spectral_cluster", "pca_kmeans_cluster")
 METHOD_CODES = {"spectral_cluster": 1, "pca_kmeans_cluster": 2}
+
+
+@dataclass(frozen=True)
+class AnnualMLContext:
+    year: int
+    rebalance_date: pd.Timestamp
+    training_start: pd.Timestamp
+    active: list[str]
+    annual_gics: dict[str, str]
+    hierarchical: dict[str, str]
+    group_count: int
+    training: pd.DataFrame
+    training_complete: pd.DataFrame
+    training_finite: np.ndarray
+    annual: pd.DataFrame
+    training_correlation: pd.DataFrame
+    evaluation_correlation: pd.DataFrame
 
 
 def _require_values(section: Mapping[str, Any], expected: Mapping[str, Any], name: str) -> None:
@@ -263,6 +281,254 @@ def _portfolio_identity_error(annual: pd.DataFrame, labels: Mapping[str, str]) -
     return float((annual.mean(axis=1) - reconstructed).abs().max())
 
 
+def _prepare_annual_context(
+    panel: pd.DataFrame,
+    schedule: Mapping[int, Mapping[str, Any]],
+    gics_labels: Mapping[str, str],
+    hierarchical_assignments: Mapping[int, Mapping[str, str]],
+    *,
+    year: int,
+    training_years: int,
+    minimum_observations: int,
+    paired_fraction: float,
+) -> AnnualMLContext:
+    if year not in schedule or year not in hierarchical_assignments:
+        raise ValueError(f"required active or hierarchical assignment year is missing: {year}")
+    schedule_row = schedule[year]
+    active = sorted(str(value) for value in schedule_row["active_tickers"])
+    if len(active) != len(set(active)) or len(active) != int(schedule_row["security_count"]):
+        raise ValueError(f"invalid active set for {year}")
+    missing_panel = sorted(set(active) - set(panel.columns))
+    missing_gics = sorted(set(active) - set(gics_labels))
+    missing_hierarchical = sorted(set(active) - set(hierarchical_assignments[year]))
+    if missing_panel or missing_gics or missing_hierarchical:
+        raise ValueError(
+            f"active set is not represented for {year}; panel={missing_panel}, "
+            f"gics={missing_gics}, hierarchical={missing_hierarchical}"
+        )
+    annual_gics = {ticker: str(gics_labels[ticker]) for ticker in active}
+    hierarchical = {ticker: str(hierarchical_assignments[year][ticker]) for ticker in active}
+    group_count = len(set(annual_gics.values()))
+    if not 1 < group_count < len(active):
+        raise ValueError(f"invalid group count for {year}: {group_count}")
+
+    rebalance_date = pd.Timestamp(str(schedule_row["rebalance_date"]))
+    training_start = rebalance_date - pd.DateOffset(years=training_years)
+    training = panel.loc[(panel.index >= training_start) & (panel.index < rebalance_date), active]
+    if len(training) < minimum_observations:
+        raise ValueError(
+            f"training window for {year} has {len(training)} rows; "
+            f"minimum is {minimum_observations}"
+        )
+    training_finite = np.isfinite(training.to_numpy(dtype=float)).all(axis=1)
+    training_complete = training.loc[training_finite]
+    if len(training_complete) < minimum_observations:
+        raise ValueError(
+            f"complete training window for {year} has {len(training_complete)} rows; "
+            f"minimum is {minimum_observations}"
+        )
+    annual = panel.loc[(panel.index >= rebalance_date) & (panel.index.year == year), active]
+    if annual.empty or not np.isfinite(annual.to_numpy(dtype=float)).all():
+        raise ValueError(f"evaluation window for {year} is empty or non-finite")
+    return AnnualMLContext(
+        year=year,
+        rebalance_date=rebalance_date,
+        training_start=training_start,
+        active=active,
+        annual_gics=annual_gics,
+        hierarchical=hierarchical,
+        group_count=group_count,
+        training=training,
+        training_complete=training_complete,
+        training_finite=training_finite,
+        annual=annual,
+        training_correlation=pairwise_spearman(training, minimum_paired_fraction=paired_fraction),
+        evaluation_correlation=pairwise_spearman(annual, minimum_paired_fraction=paired_fraction),
+    )
+
+
+def _fit_annual_methods(
+    context: AnnualMLContext,
+    kmeans: Mapping[str, Any],
+    pca_config: Mapping[str, Any],
+) -> tuple[dict[str, dict[str, str]], dict[str, dict[str, Any]], list[dict[str, Any]]]:
+    correlation = context.training_correlation.to_numpy(dtype=float)
+    spectral = spectral_embedding(correlation, context.group_count)
+    pca = pca_correlation_profile_embedding(
+        correlation,
+        explained_variance_threshold=float(pca_config["explained_variance_threshold"]),
+        minimum_components=int(pca_config["minimum_components"]),
+    )
+    embeddings = {
+        "spectral_cluster": spectral.values,
+        "pca_kmeans_cluster": pca.values,
+    }
+    prefixes = {"spectral_cluster": "spectral", "pca_kmeans_cluster": "pca_kmeans"}
+    extras = {
+        "spectral_cluster": {
+            "affinity_bandwidth": spectral.bandwidth,
+            "laplacian_eigenvalues": spectral.laplacian_eigenvalues.tolist(),
+        },
+        "pca_kmeans_cluster": {
+            "pca_component_count": pca.component_count,
+            "pca_cumulative_explained_variance": pca.cumulative_explained_variance,
+            "pca_explained_variance_ratios": pca.explained_variance_ratios.tolist(),
+        },
+    }
+    labels_by_method: dict[str, dict[str, str]] = {}
+    method_details: dict[str, dict[str, Any]] = {}
+    seed_records: list[dict[str, Any]] = []
+    for grouping_id, values in embeddings.items():
+        method_code = METHOD_CODES[grouping_id]
+        seed_components = [int(kmeans["base_seed"]), context.year, method_code]
+        result = deterministic_kmeans(
+            values,
+            context.group_count,
+            seed_components=seed_components,
+            n_init=int(kmeans["n_init"]),
+            maximum_iterations=int(kmeans["maximum_iterations"]),
+            convergence_tolerance=float(kmeans["convergence_tolerance"]),
+        )
+        labels = canonical_cluster_labels(
+            context.active, result.labels, prefix=prefixes[grouping_id]
+        )
+        if len(set(labels.values())) != context.group_count:
+            raise AssertionError(f"{grouping_id} returned the wrong group count for {context.year}")
+        embedding_hash = array_sha256(values)
+        labels_by_method[grouping_id] = labels
+        method_details[grouping_id] = {
+            "embedding_sha256": embedding_hash,
+            "embedding_dimension": int(values.shape[1]),
+            "selected_initialization_zero_based": result.selected_initialization,
+            "iterations": result.iterations,
+            "inertia": result.inertia,
+            **extras[grouping_id],
+        }
+        seed_records.append(
+            {
+                "year": context.year,
+                "grouping_id": grouping_id,
+                "method_code": method_code,
+                "bit_generator": str(kmeans["bit_generator"]),
+                "seed_components": seed_components,
+                "n_init": int(kmeans["n_init"]),
+                "selected_initialization_zero_based": result.selected_initialization,
+                "iterations": result.iterations,
+                "inertia": result.inertia,
+                "embedding_sha256": embedding_hash,
+                "labels_sha256": labels_sha256(labels),
+            }
+        )
+    return labels_by_method, method_details, seed_records
+
+
+def _method_diagnostics(
+    context: AnnualMLContext,
+    labels: Mapping[str, str],
+    details: Mapping[str, Any],
+    previous_labels: Mapping[str, str] | None,
+    previous_year: int | None,
+    identity_tolerance: float,
+) -> dict[str, Any]:
+    identity_error = _portfolio_identity_error(context.annual, labels)
+    if identity_error > identity_tolerance:
+        raise AssertionError(f"ML portfolio identity failed in {context.year}: {identity_error}")
+    common_previous = sorted(set(previous_labels or {}) & set(labels))
+    ari = None
+    if previous_labels is not None:
+        ari = adjusted_rand_index(
+            {ticker: previous_labels[ticker] for ticker in common_previous},
+            {ticker: labels[ticker] for ticker in common_previous},
+        )
+    gap = dependence_gap(context.evaluation_correlation, labels)
+    gics_gap = dependence_gap(context.evaluation_correlation, context.annual_gics)
+    hierarchical_gap = dependence_gap(context.evaluation_correlation, context.hierarchical)
+    return {
+        **details,
+        "cluster_sizes": _cluster_sizes(labels),
+        "dependence_gap": _gap_record(gap),
+        "gap_minus_gics_pair_weighted": gap.gap - gics_gap.gap,
+        "gap_minus_hierarchical_pair_weighted": gap.gap - hierarchical_gap.gap,
+        "nmi_vs_gics": normalized_mutual_information(labels, context.annual_gics),
+        "nmi_vs_hierarchical": normalized_mutual_information(labels, context.hierarchical),
+        "ari_vs_previous_year": ari,
+        "ari_previous_year": previous_year,
+        "ari_active_intersection_count": (
+            len(common_previous) if previous_labels is not None else None
+        ),
+        "maximum_portfolio_identity_error": identity_error,
+    }
+
+
+def _year_assignment_record(
+    context: AnnualMLContext, labels_by_method: Mapping[str, Mapping[str, str]]
+) -> dict[str, Any]:
+    assignments = [
+        {
+            "ticker": ticker,
+            "gics_sector": context.annual_gics[ticker],
+            "hierarchical_cluster": context.hierarchical[ticker],
+            "spectral_cluster": labels_by_method["spectral_cluster"][ticker],
+            "pca_kmeans_cluster": labels_by_method["pca_kmeans_cluster"][ticker],
+        }
+        for ticker in context.active
+    ]
+    return {
+        "year": context.year,
+        "rebalance_date": context.rebalance_date.date().isoformat(),
+        "training_start_inclusive": context.training_start.date().isoformat(),
+        "training_end_exclusive": context.rebalance_date.date().isoformat(),
+        "training_observations": len(context.training),
+        "training_group_return_observations": len(context.training_complete),
+        "training_incomplete_dates_excluded_from_group_returns": [
+            date.date().isoformat() for date in context.training.index[~context.training_finite]
+        ],
+        "active_security_count": len(context.active),
+        "group_count": context.group_count,
+        "assignments": assignments,
+    }
+
+
+def _base_year_diagnostics(context: AnnualMLContext) -> dict[str, Any]:
+    return {
+        "year": context.year,
+        "rebalance_date": context.rebalance_date.date().isoformat(),
+        "training_start_inclusive": context.training_start.date().isoformat(),
+        "training_end_exclusive": context.rebalance_date.date().isoformat(),
+        "training_observations": len(context.training),
+        "training_group_return_observations": len(context.training_complete),
+        "training_incomplete_date_count": int((~context.training_finite).sum()),
+        "evaluation_observations": len(context.annual),
+        "active_security_count": len(context.active),
+        "group_count": context.group_count,
+        "methods": {},
+    }
+
+
+def _method_return_frames(
+    context: AnnualMLContext, grouping_id: str, labels: Mapping[str, str]
+) -> list[pd.DataFrame]:
+    common = {
+        "year": context.year,
+        "grouping_id": grouping_id,
+        "universe_variant": "security_primary",
+    }
+    return [
+        _group_return_records(
+            context.training_complete,
+            labels,
+            sample_role="training",
+            **common,
+        ),
+        _group_return_records(
+            context.annual,
+            labels,
+            sample_role="evaluation",
+            **common,
+        ),
+    ]
+
+
 def build_ml_groupings(
     stock_simple_returns: pd.DataFrame,
     active_schedule: Mapping[str, Any],
@@ -301,208 +567,34 @@ def build_ml_groupings(
     previous_year: int | None = None
 
     for year in range(start_year, end_year + 1):
-        if year not in schedule or year not in hierarchical_assignments:
-            raise ValueError(f"required active or hierarchical assignment year is missing: {year}")
-        schedule_row = schedule[year]
-        active = sorted(str(value) for value in schedule_row["active_tickers"])
-        if len(active) != len(set(active)) or len(active) != int(schedule_row["security_count"]):
-            raise ValueError(f"invalid active set for {year}")
-        missing = sorted(set(active) - set(panel.columns))
-        missing_gics = sorted(set(active) - set(gics_labels))
-        if missing or missing_gics:
-            raise ValueError(
-                f"active set is not represented for {year}; panel={missing}, gics={missing_gics}"
-            )
-        annual_gics = {ticker: str(gics_labels[ticker]) for ticker in active}
-        hierarchical = {ticker: str(hierarchical_assignments[year][ticker]) for ticker in active}
-        group_count = len(set(annual_gics.values()))
-        if not 1 < group_count < len(active):
-            raise ValueError(f"invalid group count for {year}: {group_count}")
-
-        rebalance_date = pd.Timestamp(str(schedule_row["rebalance_date"]))
-        training_start = rebalance_date - pd.DateOffset(years=training_years)
-        training = panel.loc[
-            (panel.index >= training_start) & (panel.index < rebalance_date), active
-        ]
-        if len(training) < minimum_observations:
-            raise ValueError(
-                f"training window for {year} has {len(training)} rows; "
-                f"minimum is {minimum_observations}"
-            )
-        training_finite = np.isfinite(training.to_numpy(dtype=float)).all(axis=1)
-        training_complete = training.loc[training_finite]
-        if len(training_complete) < minimum_observations:
-            raise ValueError(
-                f"complete training window for {year} has {len(training_complete)} rows; "
-                f"minimum is {minimum_observations}"
-            )
-        correlation = pairwise_spearman(training, minimum_paired_fraction=paired_fraction)
-
-        spectral = spectral_embedding(correlation.to_numpy(dtype=float), group_count)
-        pca = pca_correlation_profile_embedding(
-            correlation.to_numpy(dtype=float),
-            explained_variance_threshold=float(pca_config["explained_variance_threshold"]),
-            minimum_components=int(pca_config["minimum_components"]),
+        context = _prepare_annual_context(
+            panel,
+            schedule,
+            gics_labels,
+            hierarchical_assignments,
+            year=year,
+            training_years=training_years,
+            minimum_observations=minimum_observations,
+            paired_fraction=paired_fraction,
         )
-        embeddings = {
-            "spectral_cluster": spectral.values,
-            "pca_kmeans_cluster": pca.values,
-        }
-        labels_by_method: dict[str, dict[str, str]] = {}
-        method_details: dict[str, dict[str, Any]] = {}
-        for grouping_id, values in embeddings.items():
-            method_code = METHOD_CODES[grouping_id]
-            seed_components = [int(kmeans["base_seed"]), year, method_code]
-            result = deterministic_kmeans(
-                values,
-                group_count,
-                seed_components=seed_components,
-                n_init=int(kmeans["n_init"]),
-                maximum_iterations=int(kmeans["maximum_iterations"]),
-                convergence_tolerance=float(kmeans["convergence_tolerance"]),
-            )
-            prefix = "spectral" if grouping_id == "spectral_cluster" else "pca_kmeans"
-            labels = canonical_cluster_labels(active, result.labels, prefix=prefix)
-            if len(set(labels.values())) != group_count:
-                raise AssertionError(f"{grouping_id} returned the wrong group count for {year}")
-            labels_by_method[grouping_id] = labels
-            detail: dict[str, Any] = {
-                "embedding_sha256": array_sha256(values),
-                "embedding_dimension": int(values.shape[1]),
-                "selected_initialization_zero_based": result.selected_initialization,
-                "iterations": result.iterations,
-                "inertia": result.inertia,
-            }
-            if grouping_id == "spectral_cluster":
-                detail.update(
-                    {
-                        "affinity_bandwidth": spectral.bandwidth,
-                        "laplacian_eigenvalues": spectral.laplacian_eigenvalues.tolist(),
-                    }
-                )
-            else:
-                detail.update(
-                    {
-                        "pca_component_count": pca.component_count,
-                        "pca_cumulative_explained_variance": (pca.cumulative_explained_variance),
-                        "pca_explained_variance_ratios": (pca.explained_variance_ratios.tolist()),
-                    }
-                )
-            method_details[grouping_id] = detail
-            seed_records.append(
-                {
-                    "year": year,
-                    "grouping_id": grouping_id,
-                    "method_code": method_code,
-                    "bit_generator": str(kmeans["bit_generator"]),
-                    "seed_components": seed_components,
-                    "n_init": int(kmeans["n_init"]),
-                    "selected_initialization_zero_based": result.selected_initialization,
-                    "iterations": result.iterations,
-                    "inertia": result.inertia,
-                    "embedding_sha256": array_sha256(values),
-                    "labels_sha256": labels_sha256(labels),
-                }
-            )
-
-        annual = panel.loc[(panel.index >= rebalance_date) & (panel.index.year == year), active]
-        if annual.empty or not np.isfinite(annual.to_numpy(dtype=float)).all():
-            raise ValueError(f"evaluation window for {year} is empty or non-finite")
-        evaluation_correlation = pairwise_spearman(annual, minimum_paired_fraction=paired_fraction)
-
-        year_diagnostics: dict[str, Any] = {
-            "year": year,
-            "rebalance_date": rebalance_date.date().isoformat(),
-            "training_start_inclusive": training_start.date().isoformat(),
-            "training_end_exclusive": rebalance_date.date().isoformat(),
-            "training_observations": len(training),
-            "training_group_return_observations": len(training_complete),
-            "training_incomplete_date_count": int((~training_finite).sum()),
-            "evaluation_observations": len(annual),
-            "active_security_count": len(active),
-            "group_count": group_count,
-            "methods": {},
-        }
-        assignment_rows: list[dict[str, str]] = []
-        for ticker in active:
-            assignment_rows.append(
-                {
-                    "ticker": ticker,
-                    "gics_sector": annual_gics[ticker],
-                    "hierarchical_cluster": hierarchical[ticker],
-                    "spectral_cluster": labels_by_method["spectral_cluster"][ticker],
-                    "pca_kmeans_cluster": labels_by_method["pca_kmeans_cluster"][ticker],
-                }
-            )
+        labels_by_method, method_details, year_seed_records = _fit_annual_methods(
+            context, kmeans, pca_config
+        )
+        year_diagnostics = _base_year_diagnostics(context)
         for grouping_id, labels in labels_by_method.items():
-            identity_error = _portfolio_identity_error(annual, labels)
-            if identity_error > identity_tolerance:
-                raise AssertionError(
-                    f"{grouping_id} portfolio identity failed in {year}: {identity_error}"
-                )
-            common_previous = sorted(set(previous.get(grouping_id, {})) & set(labels))
-            ari = None
-            if previous_year is not None:
-                ari = adjusted_rand_index(
-                    {ticker: previous[grouping_id][ticker] for ticker in common_previous},
-                    {ticker: labels[ticker] for ticker in common_previous},
-                )
-            gap = dependence_gap(evaluation_correlation, labels)
-            gics_gap = dependence_gap(evaluation_correlation, annual_gics)
-            hierarchical_gap = dependence_gap(evaluation_correlation, hierarchical)
-            year_diagnostics["methods"][grouping_id] = {
-                **method_details[grouping_id],
-                "cluster_sizes": _cluster_sizes(labels),
-                "dependence_gap": _gap_record(gap),
-                "gap_minus_gics_pair_weighted": gap.gap - gics_gap.gap,
-                "gap_minus_hierarchical_pair_weighted": gap.gap - hierarchical_gap.gap,
-                "nmi_vs_gics": normalized_mutual_information(labels, annual_gics),
-                "nmi_vs_hierarchical": normalized_mutual_information(labels, hierarchical),
-                "ari_vs_previous_year": ari,
-                "ari_previous_year": previous_year,
-                "ari_active_intersection_count": (
-                    len(common_previous) if previous_year is not None else None
-                ),
-                "maximum_portfolio_identity_error": identity_error,
-            }
-            group_return_frames.extend(
-                [
-                    _group_return_records(
-                        training_complete,
-                        labels,
-                        year=year,
-                        grouping_id=grouping_id,
-                        universe_variant="security_primary",
-                        sample_role="training",
-                    ),
-                    _group_return_records(
-                        annual,
-                        labels,
-                        year=year,
-                        grouping_id=grouping_id,
-                        universe_variant="security_primary",
-                        sample_role="evaluation",
-                    ),
-                ]
+            year_diagnostics["methods"][grouping_id] = _method_diagnostics(
+                context,
+                labels,
+                method_details[grouping_id],
+                previous.get(grouping_id),
+                previous_year,
+                identity_tolerance,
             )
+            group_return_frames.extend(_method_return_frames(context, grouping_id, labels))
 
-        assignment_years.append(
-            {
-                "year": year,
-                "rebalance_date": rebalance_date.date().isoformat(),
-                "training_start_inclusive": training_start.date().isoformat(),
-                "training_end_exclusive": rebalance_date.date().isoformat(),
-                "training_observations": len(training),
-                "training_group_return_observations": len(training_complete),
-                "training_incomplete_dates_excluded_from_group_returns": [
-                    date.date().isoformat() for date in training.index[~training_finite]
-                ],
-                "active_security_count": len(active),
-                "group_count": group_count,
-                "assignments": assignment_rows,
-            }
-        )
+        assignment_years.append(_year_assignment_record(context, labels_by_method))
         diagnostic_years.append(year_diagnostics)
+        seed_records.extend(year_seed_records)
         previous = labels_by_method
         previous_year = year
 
