@@ -148,6 +148,7 @@ uv run python scripts/build_vine_copula.py
 uv run python scripts/evaluate_risk_models.py
 uv run python scripts/build_vine_copula.py --truncation-level 10
 uv run python scripts/evaluate_full_vine_robustness.py
+uv run python scripts/build_ml_groupings.py
 uv run ruff check scripts tests
 uv run ruff format --check scripts tests
 uv run python -m unittest discover -s tests -v
@@ -226,6 +227,12 @@ added later.
   group sizes, and portfolio weights across both training and evaluation windows
   for the security-level primary universe and GOOG/GOOGL issuer-deduplicated
   robustness variant;
+- `data/processed/ml_annual_group_assignments.json`: leakage-free annual
+  spectral-cluster and PCA-plus-k-means memberships for 2020–2025;
+- `data/processed/ml_annual_group_returns.parquet`: training and evaluation
+  group returns for both exploratory ML groupings, using the same annual active
+  sets, 11-group rule, and daily-rebalanced group-size arithmetic as the core
+  analysis;
 - `data/processed/marginal_refits.parquet`: one record per primary-universe
   group-month, including its leakage-free training bounds, selected marginal
   specification, parameters, convergence diagnostics, and complete fallback log;
@@ -255,8 +262,13 @@ added later.
   random-number seeds and uniform-matrix hashes; and
 - `data/manifests/inference_seed_manifest.json`: the H1 block-bootstrap seed,
   accepted-index hash, and deterministic degenerate-resample dispositions;
+- `data/manifests/ml_clustering_seed_manifest.json`: deterministic annual
+  k-means seeds, selected restarts, embedding hashes, and assignment hashes;
 - `data/audit/clustering_diagnostics.json`: dependence gaps, ARI, NMI, pair
   counts, portfolio-identity errors, and hashes of the grouping artifacts;
+- `data/audit/ml_clustering_diagnostics.json`: exploratory out-of-sample
+  separation and stability diagnostics, dimensionality choices, portfolio
+  identities, and bound ML-grouping output hashes;
 - `data/audit/historical_simulation_quality.json`: M0 window, forecast coverage,
   arithmetic, upstream lineage, and output-hash checks;
 - `data/audit/marginal_model_quality.json`: marginal coverage, fallback incidence,

@@ -1,0 +1,71 @@
+schema_version = 1
+protocol_status = "frozen_before_ml_grouping_results"
+analysis_role = "exploratory_unsupervised_robustness"
+reporting_scope_rule = "inherit_foundation_gate"
+
+[grouping]
+methods = ["spectral_cluster", "pca_kmeans_cluster"]
+evaluation_start_year = 2020
+evaluation_end_year = 2025
+training_window_calendar_years = 3
+minimum_training_observations = 700
+correlation = "spearman_average_ranks"
+distance = "sqrt((1-rho)/2)"
+minimum_paired_fraction = 0.80
+group_count_rule = "annual_nonempty_gics_sector_count"
+universe_variant = "security_primary"
+portfolio_return_scale = "simple"
+portfolio_rebalancing = "daily"
+group_weighting = "group_size"
+cluster_label_order = "lexicographic_sorted_member_tuples"
+portfolio_identity_tolerance = 1e-12
+
+[kmeans]
+algorithm = "lloyd_kmeans_plus_plus"
+n_init = 100
+maximum_iterations = 500
+convergence_tolerance = 1e-10
+bit_generator = "PCG64DXSM"
+base_seed = 5110
+seed_components = ["base_seed", "year", "method_code"]
+empty_cluster_rule = "move_farthest_point_from_cluster_with_more_than_one_member"
+best_run_rule = "minimum_inertia_then_lexicographic_partition"
+
+[spectral]
+method_code = 1
+affinity = "rbf_of_spearman_correlation_distance"
+bandwidth = "median_positive_off_diagonal_training_distance"
+affinity_diagonal = 0.0
+laplacian = "symmetric_normalized"
+embedding = "eigenvectors_of_smallest_laplacian_eigenvalues"
+row_normalize_embedding = true
+
+[pca_kmeans]
+method_code = 2
+input_features = "annual_training_spearman_correlation_profiles"
+self_correlation_treatment = "replace_diagonal_with_column_off_diagonal_mean"
+feature_preprocessing = "column_center_only"
+decomposition = "full_svd"
+component_rule = "minimum_components_reaching_cumulative_explained_variance"
+explained_variance_threshold = 0.80
+minimum_components = 2
+embedding = "left_singular_vectors_times_singular_values"
+
+[downstream_risk_models]
+status = "reserved_not_yet_implemented"
+models = [
+  { model_id = "M5", grouping_id = "spectral", dependence = "gaussian" },
+  { model_id = "M6", grouping_id = "spectral", dependence = "vine_tree_3" },
+  { model_id = "M7", grouping_id = "pca_kmeans", dependence = "gaussian" },
+  { model_id = "M8", grouping_id = "pca_kmeans", dependence = "vine_tree_3" },
+]
+inherit_marginal_copula_simulation_protocol_from = "config/model_config.toml"
+
+[exploratory_inference]
+loss_scores = ["quantile_loss_95", "quantile_loss_99", "fz0_975"]
+matched_baselines = ["gics", "hierarchical"]
+dm_hac_lag = 7
+multiplicity = "benjamini_hochberg"
+family_size = 24
+false_discovery_rate = 0.05
+calibration_role = "descriptive"

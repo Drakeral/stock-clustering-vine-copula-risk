@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Exploratory ML annual group return record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "date",
+    "year",
+    "universe_variant",
+    "sample_role",
+    "grouping_id",
+    "group_id",
+    "group_size",
+    "portfolio_weight",
+    "simple_return",
+    "log_return"
+  ],
+  "properties": {
+    "date": {"type": "string", "format": "date"},
+    "year": {"type": "integer", "minimum": 2020, "maximum": 2025},
+    "universe_variant": {"const": "security_primary"},
+    "sample_role": {"enum": ["training", "evaluation"]},
+    "grouping_id": {"enum": ["spectral_cluster", "pca_kmeans_cluster"]},
+    "group_id": {"type": "string", "minLength": 1},
+    "group_size": {"type": "integer", "minimum": 1},
+    "portfolio_weight": {"type": "number", "exclusiveMinimum": 0, "maximum": 1},
+    "simple_return": {"type": "number", "exclusiveMinimum": -1},
+    "log_return": {"type": "number"}
+  }
+}

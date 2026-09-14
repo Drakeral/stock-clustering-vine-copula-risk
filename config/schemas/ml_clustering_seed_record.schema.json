@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Exploratory ML clustering seed record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "year",
+    "grouping_id",
+    "method_code",
+    "bit_generator",
+    "seed_components",
+    "n_init",
+    "selected_initialization_zero_based",
+    "iterations",
+    "inertia",
+    "embedding_sha256",
+    "labels_sha256"
+  ],
+  "properties": {
+    "year": {"type": "integer", "minimum": 2020, "maximum": 2025},
+    "grouping_id": {"enum": ["spectral_cluster", "pca_kmeans_cluster"]},
+    "method_code": {"enum": [1, 2]},
+    "bit_generator": {"const": "PCG64DXSM"},
+    "seed_components": {
+      "type": "array",
+      "prefixItems": [
+        {"const": 5110},
+        {"type": "integer", "minimum": 2020, "maximum": 2025},
+        {"enum": [1, 2]}
+      ],
+      "items": false,
+      "minItems": 3,
+      "maxItems": 3
+    },
+    "n_init": {"const": 100},
+    "selected_initialization_zero_based": {"type": "integer", "minimum": 0, "maximum": 99},
+    "iterations": {"type": "integer", "minimum": 1, "maximum": 500},
+    "inertia": {"type": "number", "minimum": 0},
+    "embedding_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "labels_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

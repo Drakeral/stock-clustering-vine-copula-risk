@@ -135,6 +135,7 @@ def default_output_paths() -> list[Path]:
         Path("data/audit/portfolio_arithmetic.json"),
         Path("data/audit/current_gate_status.json"),
         Path("data/audit/clustering_diagnostics.json"),
+        Path("data/audit/ml_clustering_diagnostics.json"),
         Path("data/audit/historical_simulation_quality.json"),
         Path("data/audit/marginal_model_quality.json"),
         Path("data/audit/gaussian_copula_quality.json"),
@@ -151,6 +152,8 @@ def default_output_paths() -> list[Path]:
         Path("data/processed/active_universe_by_year.json"),
         Path("data/processed/annual_group_assignments.json"),
         Path("data/processed/annual_group_returns.parquet"),
+        Path("data/processed/ml_annual_group_assignments.json"),
+        Path("data/processed/ml_annual_group_returns.parquet"),
         Path("data/processed/historical_simulation_risk_forecasts.parquet"),
         Path("data/processed/historical_simulation_windows.parquet"),
         Path("data/processed/marginal_refits.parquet"),
@@ -166,6 +169,7 @@ def default_output_paths() -> list[Path]:
         Path("data/processed/full_vine_robustness_daily.parquet"),
         Path("data/manifests/simulation_seed_manifest.json"),
         Path("data/manifests/inference_seed_manifest.json"),
+        Path("data/manifests/ml_clustering_seed_manifest.json"),
     ]
 
 

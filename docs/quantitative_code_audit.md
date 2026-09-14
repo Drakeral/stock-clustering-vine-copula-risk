@@ -124,9 +124,10 @@ production classes.
   their trailing estimation window. This is the frozen implemented design, not
   a coding error, but a current-composition historical-simulation backcast would
   be a useful explicitly labelled robustness check before final submission.
-- Secondary group-balanced portfolios, spectral clustering, and the
-  PCA-plus-k-means extension remain future stages. They must not be described as
-  implemented results.
+- Secondary group-balanced portfolios and the matched M5-M8 Gaussian/vine risk
+  forecasts remain future stages. The spectral and PCA-plus-k-means grouping
+  implementation is an exploratory extension; its assignments and diagnostics
+  must not be described as completed VaR/ES evidence.
 - Several mature ingestion and orchestration functions remain long and complex.
   Their behavior is well covered at important boundaries, but further
   decomposition should be incremental and paired with characterization tests to

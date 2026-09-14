@@ -225,5 +225,33 @@ under the vine-quality gate, and have no Holm-adjusted Kupiec or Christoffersen
 independence rejection at either primary VaR level. Any such rejection is the
 operational definition of systematic calibration failure.
 
-The later spectral-clustering and PCA-plus-k-means comparisons are exploratory and
-use Benjamini-Hochberg FDR at 5%.
+## Exploratory unsupervised-learning extension
+
+The ML grouping protocol is frozen separately in
+`config/ml_extension_config.toml` before its annual assignments are generated.
+It changes only the grouping algorithm: the annual active universe, three-year
+right-open training window, annual non-empty GICS group count, 80% pairwise-data
+requirement, daily-rebalanced group-size portfolio arithmetic, and provisional
+reporting scope are inherited from the core analysis.
+
+Spectral clustering converts the annual training Spearman matrix to the frozen
+correlation distance, uses an RBF affinity whose bandwidth is the median positive
+off-diagonal distance, forms the symmetric normalized Laplacian, and clusters its
+11 smallest-eigenvalue eigenvectors after row normalization. PCA-plus-k-means
+uses each security's training correlation profile, replaces its self-correlation
+with that feature's off-diagonal mean, column-centres the profiles, and retains
+the minimum number of full-SVD scores explaining at least 80% of variance, with
+at least two components.
+
+Both embeddings use 100 deterministic k-means++ starts under PCG64DXSM
+`SeedSequence([5110, year, method_code])`. The retained run has minimum inertia,
+with lexicographic partition tie-breaking; cluster IDs are canonicalized from
+sorted member tuples. Annual artifacts report out-of-sample dependence gaps, NMI
+against GICS and hierarchical groups, consecutive-year ARI, group sizes, exact
+portfolio reconstruction, embedding diagnostics, and seed/output hashes.
+
+This grouping stage does not revise H1-H3 and does not itself produce VaR or ES.
+M5-M8 are reserved for matched Gaussian and tree-3 vine risk models on the two ML
+groupings. Those later loss comparisons are exploratory and use
+Benjamini-Hochberg FDR at 5% across the frozen 24-test family; calibration is
+descriptive.
