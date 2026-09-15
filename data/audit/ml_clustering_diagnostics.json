@@ -28,7 +28,7 @@
     },
     "primary_grouping_audit": {
       "path": "data/audit/clustering_diagnostics.json",
-      "sha256": "c44d3a82f4cb99d8c0e4e1ae1bc6027259a790166599904e15f054dfb186e91f"
+      "sha256": "c493560dab94e45b8e0eb5b2e07951a01022b5c5563bed9d775dec1011f40915"
     },
     "simple_return_panel": {
       "path": "data/processed/portfolio_constituent_simple_returns.parquet",

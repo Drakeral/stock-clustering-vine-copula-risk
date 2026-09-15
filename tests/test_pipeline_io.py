@@ -11,8 +11,10 @@ import scripts.build_marginal_models as marginal
 import scripts.build_vine_copula as vine
 from scripts.pipeline_io import (
     PROJECT_ROOT,
+    artifact_hash_issues,
     project_path,
     reporting_scope,
+    require_current_hash_records,
     sha256_file,
     temporary_sibling,
     write_csv_atomic,
@@ -29,6 +31,7 @@ class PipelineIoTests(unittest.TestCase):
                 self.assertIs(module._sha256, sha256_file)
                 self.assertIs(module._project_path, project_path)
                 self.assertIs(module._reporting_scope, reporting_scope)
+                self.assertIs(module._require_current_hash_records, require_current_hash_records)
                 self.assertIs(module._write_json_atomic, write_json_atomic)
                 self.assertIs(module._write_parquet_atomic, write_parquet_atomic)
                 self.assertEqual(module.PROJECT_ROOT, PROJECT_ROOT)
@@ -139,6 +142,40 @@ class PipelineIoTests(unittest.TestCase):
         inconsistent["gates"] = {"modelling_readiness": {"status": "pass"}}
         with self.assertRaisesRegex(RuntimeError, "inconsistent"):
             reporting_scope(inconsistent)
+
+    def test_hash_record_validation_detects_stale_missing_and_invalid_records(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            artifact = root / "artifact.bin"
+            artifact.write_bytes(b"version-one")
+            record = {
+                "inputs": {
+                    "artifact": {
+                        "path": "artifact.bin",
+                        "sha256": sha256_file(artifact),
+                    }
+                }
+            }
+            self.assertEqual(artifact_hash_issues(record, project_root=root), [])
+            require_current_hash_records(record, project_root=root)
+
+            artifact.write_bytes(b"version-two")
+            issues = artifact_hash_issues(record, project_root=root, source_name="audit.json")
+            self.assertEqual(len(issues), 1)
+            self.assertIn("stale:artifact.bin", issues[0])
+            with self.assertRaisesRegex(RuntimeError, "artifact lineage check failed"):
+                require_current_hash_records(record, project_root=root)
+
+            invalid = {"path": "artifact.bin", "sha256": "not-a-digest"}
+            missing = {"path": "missing.bin", "sha256": "0" * 64}
+            self.assertIn(
+                "payload:$:invalid_sha256",
+                artifact_hash_issues(invalid, project_root=root),
+            )
+            self.assertIn(
+                "payload:$:missing:missing.bin",
+                artifact_hash_issues(missing, project_root=root),
+            )
 
 
 if __name__ == "__main__":

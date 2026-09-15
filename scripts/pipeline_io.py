@@ -27,6 +27,64 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def artifact_hash_issues(
+    payload: object,
+    *,
+    project_root: Path = PROJECT_ROOT,
+    source_name: str = "payload",
+) -> list[str]:
+    """Return missing or stale ``path``/``sha256`` record issues in a payload."""
+
+    issues: list[str] = []
+
+    def visit(value: object, location: str) -> None:
+        if isinstance(value, Mapping):
+            if "path" in value and "sha256" in value:
+                recorded_path = value["path"]
+                recorded_hash = value["sha256"]
+                if not isinstance(recorded_path, str) or not recorded_path:
+                    issues.append(f"{source_name}:{location}:invalid_path")
+                elif (
+                    not isinstance(recorded_hash, str)
+                    or len(recorded_hash) != 64
+                    or any(character not in "0123456789abcdef" for character in recorded_hash)
+                ):
+                    issues.append(f"{source_name}:{location}:invalid_sha256")
+                else:
+                    target = Path(recorded_path)
+                    if not target.is_absolute():
+                        target = project_root / target
+                    if not target.is_file():
+                        issues.append(f"{source_name}:{location}:missing:{recorded_path}")
+                    elif sha256_file(target) != recorded_hash:
+                        issues.append(f"{source_name}:{location}:stale:{recorded_path}")
+            for key, child in value.items():
+                visit(child, f"{location}.{key}")
+        elif isinstance(value, list):
+            for index, child in enumerate(value):
+                visit(child, f"{location}[{index}]")
+
+    visit(payload, "$")
+    return issues
+
+
+def require_current_hash_records(
+    payload: object,
+    *,
+    project_root: Path = PROJECT_ROOT,
+    source_name: str = "payload",
+) -> None:
+    """Fail when any recorded artifact path is missing or has a stale digest."""
+
+    issues = artifact_hash_issues(
+        payload,
+        project_root=project_root,
+        source_name=source_name,
+    )
+    if issues:
+        raise RuntimeError("artifact lineage check failed: " + "; ".join(issues))
+
+
 def project_path(path: Path) -> str:
     """Return a portable project-relative path when possible."""
 

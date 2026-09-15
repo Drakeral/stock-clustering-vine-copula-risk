@@ -15,7 +15,7 @@
     },
     "model_config": {
       "path": "config/model_config.toml",
-      "sha256": "dda38e2a9c91bbac07fae6310e4b6500d0eb87b01c64d565e7b526183e2a91fc"
+      "sha256": "d6d0cd9a53cce7bfaf0e19b2c973648ff10dcb20d48e67b53c0e5c8367a509fc"
     },
     "portfolio_arithmetic_audit": {
       "path": "data/audit/portfolio_arithmetic.json",

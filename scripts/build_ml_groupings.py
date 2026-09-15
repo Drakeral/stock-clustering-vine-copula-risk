@@ -44,6 +44,7 @@ try:
         PROJECT_ROOT,
         project_path,
         reporting_scope,
+        require_current_hash_records,
         sha256_file,
         write_json_atomic,
         write_parquet_atomic,
@@ -75,6 +76,7 @@ except ModuleNotFoundError:  # Support direct execution as ``python scripts/...`
         PROJECT_ROOT,
         project_path,
         reporting_scope,
+        require_current_hash_records,
         sha256_file,
         write_json_atomic,
         write_parquet_atomic,
@@ -741,12 +743,24 @@ def main() -> int:
     with args.ml_config.open("rb") as handle:
         config = validate_ml_protocol(tomllib.load(handle))
     gate = json.loads(args.foundation_status.read_text(encoding="utf-8"))
+    require_current_hash_records(
+        gate,
+        source_name=project_path(args.foundation_status),
+    )
     scope = reporting_scope(gate)
     arithmetic_audit = json.loads(args.portfolio_arithmetic_audit.read_text(encoding="utf-8"))
+    require_current_hash_records(
+        arithmetic_audit,
+        source_name=project_path(args.portfolio_arithmetic_audit),
+    )
     _validate_arithmetic_binding(
         arithmetic_audit, args.returns, args.active_universe, args.universe
     )
     primary_audit = json.loads(args.primary_grouping_audit.read_text(encoding="utf-8"))
+    require_current_hash_records(
+        primary_audit,
+        source_name=project_path(args.primary_grouping_audit),
+    )
     _validate_primary_grouping_binding(primary_audit, args.primary_assignments, args.returns)
     primary_assignments = json.loads(args.primary_assignments.read_text(encoding="utf-8"))
     universe = json.loads(args.universe.read_text(encoding="utf-8"))

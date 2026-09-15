@@ -31,6 +31,7 @@ try:
         PROJECT_ROOT,
         project_path as _project_path,
         reporting_scope as _reporting_scope,
+        require_current_hash_records as _require_current_hash_records,
         sha256_file as _sha256,
         write_json_atomic as _write_json_atomic,
         write_parquet_atomic as _write_parquet_atomic,
@@ -44,6 +45,7 @@ except ModuleNotFoundError:  # Support direct execution as ``python scripts/...`
         PROJECT_ROOT,
         project_path as _project_path,
         reporting_scope as _reporting_scope,
+        require_current_hash_records as _require_current_hash_records,
         sha256_file as _sha256,
         write_json_atomic as _write_json_atomic,
         write_parquet_atomic as _write_parquet_atomic,
@@ -1046,8 +1048,13 @@ def main() -> int:
         model_config = tomllib.load(handle)
     marginal = _validate_protocol(model_config)
     gate = json.loads(args.foundation_status.read_text(encoding="utf-8"))
+    _require_current_hash_records(gate, source_name=_project_path(args.foundation_status))
     scope = _reporting_scope(gate)
     clustering_audit = json.loads(args.clustering_audit.read_text(encoding="utf-8"))
+    _require_current_hash_records(
+        clustering_audit,
+        source_name=_project_path(args.clustering_audit),
+    )
     _validate_grouping_binding(clustering_audit, args.group_returns)
     group_returns = pd.read_parquet(args.group_returns)
     refits, daily, training_pits, audit = build_marginal_outputs(

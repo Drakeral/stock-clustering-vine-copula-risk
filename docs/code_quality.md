@@ -16,7 +16,8 @@ uv run ruff format --check scripts tests
 uv run python -m compileall -q scripts tests
 uv run python -m unittest discover -s tests -v
 uv run python scripts/update_foundation_status.py --require-modelling-ready
-uv run python scripts/generate_run_manifest.py
+uv run python scripts/generate_run_manifest.py --require-complete
+uv run python scripts/verify_artifact_lineage.py
 git status --short
 ```
 
@@ -35,12 +36,18 @@ enforces Ruff's cyclomatic-complexity limit on the
 model-evaluation modules, where statistical validation and inference are most
 densely orchestrated.
 
-Seven acceptance-test classes bind the checked-in audit records to large generated
+Eight acceptance-test classes bind the checked-in audit records to large generated
 Parquet artifacts. Those files are intentionally excluded from Git, so the
 classes report as skipped in a clean public clone. They run automatically when
 the artifacts exist locally. The full checkpoint above additionally requires
 `foundation_v2` modelling readiness and therefore cannot pass merely because
 the artifact-bound tests were skipped.
+
+The lineage verifier recursively inspects every JSON object carrying both a
+`path` and `sha256` under `data/audit/` and `data/manifests/`. Missing files,
+invalid digests, or stale bindings fail the checkpoint. Run-manifest generation
+performs the same check while excluding the manifest being replaced, and records
+the result in its completeness decision.
 
 ## Repository boundaries
 

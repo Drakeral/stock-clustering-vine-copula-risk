@@ -25,6 +25,7 @@ try:
         PROJECT_ROOT,
         project_path,
         reporting_scope,
+        require_current_hash_records,
         sha256_file,
         write_json_atomic,
         write_parquet_atomic,
@@ -44,6 +45,7 @@ except ModuleNotFoundError:  # Support direct execution as ``python scripts/...`
         PROJECT_ROOT,
         project_path,
         reporting_scope,
+        require_current_hash_records,
         sha256_file,
         write_json_atomic,
         write_parquet_atomic,
@@ -1177,11 +1179,23 @@ def main() -> int:
         model_config = tomllib.load(handle)
     with args.evaluation_config.open("rb") as handle:
         evaluation_config = tomllib.load(handle)
-    scope = reporting_scope(json.loads(args.foundation_status.read_text(encoding="utf-8")))
+    foundation = json.loads(args.foundation_status.read_text(encoding="utf-8"))
+    require_current_hash_records(
+        foundation,
+        source_name=project_path(args.foundation_status),
+    )
+    scope = reporting_scope(foundation)
     historical_audit = json.loads(args.historical_audit.read_text(encoding="utf-8"))
     gaussian_audit = json.loads(args.gaussian_audit.read_text(encoding="utf-8"))
     vine_audit = json.loads(args.vine_audit.read_text(encoding="utf-8"))
     clustering_audit = json.loads(args.clustering_audit.read_text(encoding="utf-8"))
+    for audit_path, audit in (
+        (args.historical_audit, historical_audit),
+        (args.gaussian_audit, gaussian_audit),
+        (args.vine_audit, vine_audit),
+        (args.clustering_audit, clustering_audit),
+    ):
+        require_current_hash_records(audit, source_name=project_path(audit_path))
     _validate_upstream_output(
         historical_audit,
         audit_name="historical audit",

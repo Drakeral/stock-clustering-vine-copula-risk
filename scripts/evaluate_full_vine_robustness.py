@@ -28,6 +28,7 @@ try:
         PROJECT_ROOT,
         project_path,
         reporting_scope,
+        require_current_hash_records,
         sha256_file,
         write_json_atomic,
         write_parquet_atomic,
@@ -50,6 +51,7 @@ except ModuleNotFoundError:  # Support direct execution as ``python scripts/...`
         PROJECT_ROOT,
         project_path,
         reporting_scope,
+        require_current_hash_records,
         sha256_file,
         write_json_atomic,
         write_parquet_atomic,
@@ -814,9 +816,22 @@ def main() -> int:
     evaluation = protocol["evaluation"]
     primary_level = int(evaluation["primary_truncation_level"])
     full_level = int(evaluation["full_truncation_level"])
-    scope = reporting_scope(json.loads(args.foundation_status.read_text(encoding="utf-8")))
+    foundation = json.loads(args.foundation_status.read_text(encoding="utf-8"))
+    require_current_hash_records(
+        foundation,
+        source_name=project_path(args.foundation_status),
+    )
+    scope = reporting_scope(foundation)
     primary_audit = json.loads(args.primary_audit.read_text(encoding="utf-8"))
     full_audit = json.loads(args.full_audit.read_text(encoding="utf-8"))
+    require_current_hash_records(
+        primary_audit,
+        source_name=project_path(args.primary_audit),
+    )
+    require_current_hash_records(
+        full_audit,
+        source_name=project_path(args.full_audit),
+    )
     _validate_upstream_output(
         primary_audit,
         audit_name="primary vine audit",

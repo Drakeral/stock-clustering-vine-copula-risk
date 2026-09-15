@@ -1,6 +1,6 @@
 # Quantitative Code Audit
 
-Audit date: 14 September 2026
+Audit date: 15 September 2026
 
 ## Conclusion
 
@@ -47,6 +47,14 @@ CI, dependency locking, secret boundaries, and repository hygiene.
 
 ## Remediations made during this audit
 
+- Two stale transitive bindings were identified despite all existing
+  production-artifact tests passing: the clustering audit referenced an older
+  model configuration, and the model-evaluation audit referenced an older
+  primary-vine audit. A recursive repository lineage verifier now checks every
+  `path`/`sha256` record in audit and manifest JSON documents. Modelling entry
+  points also reject stale hash records in each upstream audit before loading
+  numerical inputs, and run-manifest completeness now requires a clean lineage
+  result.
 - The GOOG/GOOGL issuer robustness portfolio now propagates a missing share-
   class return instead of silently reallocating the nominal 50/50 position to
   the observed class. Composite-name collisions are rejected.
@@ -94,8 +102,12 @@ quality limit. All 144 primary vine refits completed without whole-vine
 fallback. The full tree-10 run also completed all 144 refits and 3,016 forecasts
 without failed pairs or whole-vine fallback. Its 7,920 pair positions and 6,032
 matched robustness score rows pass their production artifact checks. The full
-local suite contains 131 passing tests, including all eight artifact-bound
-production classes.
+local suite contains 133 passing tests, including all eight artifact-bound
+production classes. After rebuilding the affected audit chain, the annual
+grouping, marginal, Gaussian, primary-vine, evaluation, full-vine, robustness,
+and exploratory ML numerical artifacts all reproduced their pre-audit SHA-256
+hashes exactly. The final lineage scan verifies 165 path-bound hash records
+across 24 audit and manifest documents.
 
 The post-audit exploratory ML-grouping checkpoint adds 12 deterministic annual
 fits: spectral clustering and PCA-plus-k-means for each year from 2020 through

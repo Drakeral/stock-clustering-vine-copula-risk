@@ -1510,7 +1510,7 @@
     },
     "clustering_audit": {
       "path": "data/audit/clustering_diagnostics.json",
-      "sha256": "c44d3a82f4cb99d8c0e4e1ae1bc6027259a790166599904e15f054dfb186e91f"
+      "sha256": "c493560dab94e45b8e0eb5b2e07951a01022b5c5563bed9d775dec1011f40915"
     },
     "evaluation_config": {
       "path": "config/evaluation_config.toml",
@@ -1522,7 +1522,7 @@
     },
     "gaussian_audit": {
       "path": "data/audit/gaussian_copula_quality.json",
-      "sha256": "ea43f423c2b960615a82ec3fe82593ac7ff6ad9accbaa3b2aae58058707f2e75"
+      "sha256": "1525a3a7e18e3c166f14a90f8cd322c34de997ef47bd288acd305f97551fe910"
     },
     "gaussian_forecasts": {
       "path": "data/processed/gaussian_risk_forecasts.parquet",
@@ -1546,7 +1546,7 @@
     },
     "vine_audit": {
       "path": "data/audit/vine_copula_quality.json",
-      "sha256": "6066e9439dc3c70b847b6e4d9e90ba4510b95905477db8c24eccea14e7c368a7"
+      "sha256": "27bd79230a42cbbaa967f654a99092443af08856a36cdf6d1d25cf413ac3bc0a"
     },
     "vine_forecasts": {
       "path": "data/processed/vine_risk_forecasts.parquet",

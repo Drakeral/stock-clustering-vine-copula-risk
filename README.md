@@ -184,7 +184,8 @@ absent.
 Finally capture the exact code/environment/configuration/input/output identity:
 
 ```zsh
-uv run python scripts/generate_run_manifest.py
+uv run python scripts/generate_run_manifest.py --require-complete
+uv run python scripts/verify_artifact_lineage.py
 ```
 
 ## Reproducibility and licensing boundary

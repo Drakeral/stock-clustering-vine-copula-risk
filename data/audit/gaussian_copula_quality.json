@@ -20,7 +20,7 @@
     },
     "marginal_model_quality": {
       "path": "data/audit/marginal_model_quality.json",
-      "sha256": "e5477b16f30a68a7701f1b5f0c04e7df8e3ebdc49a396fb3ba32f5692595952b"
+      "sha256": "7834d6b9b18ae86ac1ffec95834587af52a1ba4451305fa57547790ac44f3401"
     },
     "marginal_refits": {
       "path": "data/processed/marginal_refits.parquet",

@@ -22,6 +22,7 @@ try:
         PROJECT_ROOT,
         project_path,
         reporting_scope,
+        require_current_hash_records,
         sha256_file,
         write_json_atomic,
         write_parquet_atomic,
@@ -32,6 +33,7 @@ except ModuleNotFoundError:  # Support direct execution as ``python scripts/...`
         PROJECT_ROOT,
         project_path,
         reporting_scope,
+        require_current_hash_records,
         sha256_file,
         write_json_atomic,
         write_parquet_atomic,
@@ -474,8 +476,16 @@ def main() -> int:
         model_config = tomllib.load(handle)
     validate_historical_protocol(model_config)
     foundation = json.loads(args.foundation_status.read_text(encoding="utf-8"))
+    require_current_hash_records(
+        foundation,
+        source_name=project_path(args.foundation_status),
+    )
     scope = reporting_scope(foundation)
     portfolio_audit = json.loads(args.portfolio_audit.read_text(encoding="utf-8"))
+    require_current_hash_records(
+        portfolio_audit,
+        source_name=project_path(args.portfolio_audit),
+    )
     validate_portfolio_audit_binding(
         portfolio_audit,
         returns_path=args.returns,

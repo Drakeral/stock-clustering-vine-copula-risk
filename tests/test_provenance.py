@@ -25,6 +25,7 @@ from scripts.prepare_universe import (
     reconcile_licensed_universe,
     revision_record,
 )
+from scripts.verify_artifact_lineage import verify_repository_lineage
 from scripts.verify_foundation_inputs import (
     SPECIAL_CLOSURES,
     FrozenInputSpec,
@@ -401,6 +402,44 @@ class RunManifestTests(unittest.TestCase):
             (root / "uv.lock").write_text("fixture\n", encoding="utf-8")
             manifest = build_run_manifest(root, [], [], [Path("missing.parquet")])
             self.assertFalse(manifest["completeness"]["outputs"])
+            self.assertFalse(manifest["completeness"]["complete"])
+            self.assertTrue(manifest["completeness"]["artifact_lineage"])
+
+    def test_run_manifest_completeness_includes_repository_lineage(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            audit_dir = root / "data/audit"
+            audit_dir.mkdir(parents=True)
+            artifact = root / "artifact.bin"
+            artifact.write_bytes(b"current")
+            (audit_dir / "quality.json").write_text(
+                json.dumps(
+                    {
+                        "inputs": {
+                            "artifact": {
+                                "path": "artifact.bin",
+                                "sha256": "0" * 64,
+                            }
+                        }
+                    }
+                ),
+                encoding="utf-8",
+            )
+            result = verify_repository_lineage(root)
+            self.assertEqual(result["status"], "fail")
+            self.assertEqual(result["document_count"], 1)
+            self.assertEqual(result["hash_record_count"], 1)
+            self.assertEqual(len(result["issues"]), 1)
+
+            (root / "pyproject.toml").write_text(
+                '[project]\nname="fixture"\nversion="0"\ndependencies=[]\n',
+                encoding="utf-8",
+            )
+            (root / ".python-version").write_text("3.12\n", encoding="utf-8")
+            (root / "uv.lock").write_text("fixture\n", encoding="utf-8")
+            manifest = build_run_manifest(root, [], [], [])
+            self.assertEqual(manifest["schema_version"], 2)
+            self.assertFalse(manifest["completeness"]["artifact_lineage"])
             self.assertFalse(manifest["completeness"]["complete"])
 
 

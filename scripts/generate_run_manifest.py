@@ -23,8 +23,10 @@ except ModuleNotFoundError:  # pragma: no cover
 
 try:
     from scripts.pipeline_io import write_json_atomic
+    from scripts.verify_artifact_lineage import verify_repository_lineage
 except ModuleNotFoundError:  # Support direct execution as ``python scripts/...``.
     from pipeline_io import write_json_atomic
+    from verify_artifact_lineage import verify_repository_lineage
 
 
 def sha256_file(path: Path) -> str:
@@ -186,6 +188,10 @@ def build_run_manifest(
     inputs = file_records(project_root, input_paths)
     outputs = file_records(project_root, output_paths)
     git = git_state(project_root)
+    lineage = verify_repository_lineage(
+        project_root,
+        exclude_paths={project_root / "data/manifests/run_manifest.json"},
+    )
     configuration_complete = bool(configs) and all(item["status"] == "present" for item in configs)
     inputs_complete = bool(inputs) and all(item["status"] == "present" for item in inputs)
     outputs_complete = bool(outputs) and all(item["status"] == "present" for item in outputs)
@@ -219,7 +225,7 @@ def build_run_manifest(
             "run_scope": "provisional_diagnostics_only",
         }
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "manifest_type": "research_run_manifest",
         "generated_at_utc": dt.datetime.now(dt.UTC).isoformat(),
         "git": git,
@@ -241,13 +247,19 @@ def build_run_manifest(
             "bootstrap_seed_sequence": "SeedSequence([base_seed, 1])",
             "common_random_numbers": True,
         },
+        "artifact_lineage": lineage,
         "completeness": {
             "git_commit_and_clean_worktree_at_capture": git_complete,
             "configuration": configuration_complete,
             "inputs": inputs_complete,
             "outputs": outputs_complete,
+            "artifact_lineage": lineage["status"] == "pass",
             "complete": bool(
-                git_complete and configuration_complete and inputs_complete and outputs_complete
+                git_complete
+                and configuration_complete
+                and inputs_complete
+                and outputs_complete
+                and lineage["status"] == "pass"
             ),
         },
     }
@@ -260,6 +272,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--result", type=Path, action="append", default=[])
     parser.add_argument("--base-seed", type=int, default=5110)
     parser.add_argument(
+        "--require-complete",
+        action="store_true",
+        help="exit nonzero unless code, configuration, inputs, outputs, and lineage are complete",
+    )
+    parser.add_argument(
         "--output",
         type=Path,
         default=Path("data/manifests/run_manifest.json"),
@@ -267,7 +284,7 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main() -> None:
+def main() -> int:
     args = parse_args()
     project_root = Path(__file__).resolve().parents[1]
     configs = args.config or default_config_paths(project_root)
@@ -277,7 +294,11 @@ def main() -> None:
     output = args.output if args.output.is_absolute() else project_root / args.output
     write_json_atomic(output, manifest)
     print(f"Run manifest written: {output}")
+    if args.require_complete and not manifest["completeness"]["complete"]:
+        print("Run manifest is incomplete")
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

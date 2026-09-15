@@ -35,6 +35,7 @@ try:
         PROJECT_ROOT,
         project_path as _project_path,
         reporting_scope as _reporting_scope,
+        require_current_hash_records as _require_current_hash_records,
         sha256_file as _sha256,
         write_json_atomic as _write_json_atomic,
         write_parquet_atomic as _write_parquet_atomic,
@@ -55,6 +56,7 @@ except ModuleNotFoundError:  # Support direct execution as ``python scripts/...`
         PROJECT_ROOT,
         project_path as _project_path,
         reporting_scope as _reporting_scope,
+        require_current_hash_records as _require_current_hash_records,
         sha256_file as _sha256,
         write_json_atomic as _write_json_atomic,
         write_parquet_atomic as _write_parquet_atomic,
@@ -1134,8 +1136,17 @@ def main() -> int:
         forecasts_output=args.forecasts_output,
         audit_output=args.audit_output,
     )
-    scope = _reporting_scope(json.loads(args.foundation_status.read_text(encoding="utf-8")))
+    foundation = json.loads(args.foundation_status.read_text(encoding="utf-8"))
+    _require_current_hash_records(
+        foundation,
+        source_name=_project_path(args.foundation_status),
+    )
+    scope = _reporting_scope(foundation)
     marginal_audit = json.loads(args.marginal_audit.read_text(encoding="utf-8"))
+    _require_current_hash_records(
+        marginal_audit,
+        source_name=_project_path(args.marginal_audit),
+    )
     _validate_marginal_binding(
         marginal_audit,
         training_pits=args.training_pits,
@@ -1145,6 +1156,10 @@ def main() -> int:
         model_config=args.model_config,
     )
     gaussian_audit = json.loads(args.gaussian_audit.read_text(encoding="utf-8"))
+    _require_current_hash_records(
+        gaussian_audit,
+        source_name=_project_path(args.gaussian_audit),
+    )
     _validate_upstream_audits(
         gaussian_audit=gaussian_audit,
         gaussian_refits=args.gaussian_refits,
