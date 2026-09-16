@@ -27,6 +27,13 @@ M5-M8 then apply the same marginal, Gaussian/vine, simulation, and risk-scoring
 protocol to those groupings. Their comparisons remain exploratory and cannot
 revise the core H1-H3 conclusions or model ranking.
 
+The frozen WBA DAP valuation sensitivity also passes. Valuing the right at zero
+or its `$3` cap leaves the primary H2/H3 decisions, M4's first-place rank, all
+95%/97.5%/99% exception counts, and the exploratory ML evidence classification
+unchanged. H1 is deliberately not retested because annual assignments are held
+fixed. Exact scenario diagnostics and hashes are in
+`data/audit/wba_dap_sensitivity.json`.
+
 The machine-readable authorization and its narrow conditions are frozen in
 `config/provenance_amendment.json`. A licensed point-in-time extract can still
 supersede the amendment and obtain the strict provenance pass later.

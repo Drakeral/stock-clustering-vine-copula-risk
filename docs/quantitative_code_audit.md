@@ -130,6 +130,20 @@ these log-score comparisons are not cross-grouping inference. A second complete
 M5-M8 marginal, Gaussian, vine, and evaluation build reproduced all 12 derived
 Parquet and audit SHA-256 hashes byte for byte.
 
+The WBA DAP valuation checkpoint reruns M0-M8 with the right valued at zero and
+at its `$3` cap, without overwriting the `$0.53` primary artifacts. The scenario
+WBA returns are -4.4240% and +20.6177%, respectively. Each scenario changes
+exactly one stock-return cell, holds every annual assignment fixed, and
+reconstructs the direct equal-stock-weighted event-date portfolio from all four
+groupings with maximum error below `6.51e-19`. Both runs complete 3,168 marginal,
+288 Gaussian, and 288 tree-3 vine refits. They have no failed pair fits or
+whole-vine fallbacks; their five and two EWMA fits remain well below the one-
+percent limit. All 95%, 97.5%, and 99% exception counts remain unchanged. M4
+remains uniquely first, H2 remains unsupported, H3 remains supported under its
+frozen operational rule, and none of the 24 exploratory ML comparisons is
+significant after BH adjustment. H1 is unchanged and not retested in this
+fixed-assignment corporate-action valuation sensitivity.
+
 ## Interpretation and remaining boundaries
 
 - Licensed point-in-time S&P 100 membership, historical GICS, and permanent
@@ -161,6 +175,10 @@ Parquet and audit SHA-256 hashes byte for byte.
   Gaussian/vine risk forecasts are implemented, but remain an exploratory
   extension: none of their 24 adjusted loss comparisons is significant, and
   they do not revise H1-H3 or the core M0-M4 ranking.
+- The WBA sensitivity brackets the DAP at zero and its contractual cap; it does
+  not model a stochastic payoff distribution or dependence between that payoff
+  and market returns. Its conclusion is narrowly that these two endpoint
+  valuations do not change the implemented risk-model conclusions.
 - Descriptively, spectral grouping's mean annual out-of-sample pair-weighted
   dependence gap is 0.0273 above GICS and 0.0329 above hierarchical grouping.
   PCA-plus-k-means is 0.0051 and 0.0107 above those baselines, respectively.
