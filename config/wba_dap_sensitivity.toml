@@ -1,0 +1,43 @@
+schema_version = 1
+protocol_status = "frozen_before_sensitivity_results"
+analysis_role = "corporate_action_valuation_sensitivity"
+reporting_scope_rule = "inherit_foundation_gate"
+
+[event]
+action_id = "WBA_2025_SYCAMORE_CASH_DAP_ACQUISITION"
+ticker = "WBA"
+effective_date = "2025-08-28"
+cash_per_old_share = 11.45
+primary_dap_value_per_old_share = 0.53
+return_formula = "(cash_per_old_share + dap_value_per_old_share) / previous_close - 1"
+
+[[scenarios]]
+scenario_id = "dap_zero"
+dap_value_per_old_share = 0.0
+
+[[scenarios]]
+scenario_id = "dap_cap"
+dap_value_per_old_share = 3.0
+
+[execution]
+model_ids = ["M0", "M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8"]
+grouping_ids = [
+  "gics_sector",
+  "hierarchical_cluster",
+  "spectral_cluster",
+  "pca_kmeans_cluster",
+]
+universe_variant = "security_primary"
+vine_truncation_tree = 3
+common_random_numbers = "reuse_primary_simulation_seed_manifest"
+annual_assignments = "hold_primary_assignments_fixed"
+affected_group_return_rule = "primary_group_simple_return_plus_stock_return_delta_divided_by_group_size"
+full_vine_cross_sensitivity = false
+
+[evaluation]
+primary_reference_dap_value_per_old_share = 0.53
+core_inference = "rerun_frozen_calibration_dm_and_ranking_without_retesting_h1"
+ml_inference = "rerun_frozen_exploratory_bh_dm_and_descriptive_calibration"
+h1_treatment = "unchanged_not_retested_because_annual_assignments_are_held_fixed"
+comparison = "scenario_minus_primary"
+result_role = "robustness_not_new_confirmatory_hypothesis"

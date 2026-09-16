@@ -160,6 +160,7 @@ uv run python scripts/build_ml_marginal_models.py
 uv run python scripts/build_ml_gaussian_copula.py
 uv run python scripts/build_ml_vine_copula.py
 uv run python scripts/evaluate_ml_risk_models.py
+uv run python scripts/evaluate_wba_dap_sensitivity.py
 uv run ruff check scripts tests
 uv run ruff format --check scripts tests
 uv run python -m unittest discover -s tests -v
@@ -257,6 +258,10 @@ added later.
   forecasts with explicit pair and whole-vine fallback records;
 - `data/processed/ml_risk_evaluation_daily.parquet`: matched exploratory M5-M8
   quantile losses, FZ0 scores, VaR exceptions, and diagnostics;
+- `data/processed/wba_dap_sensitivity/{dap_zero,dap_cap}/`: isolated M0-M8
+  daily scores and marginal, Gaussian, and tree-3 vine refits after valuing the
+  WBA DAP right at zero or its `$3` cap; the `$0.53` primary artifacts are never
+  overwritten;
 - `data/processed/marginal_refits.parquet`: one record per primary-universe
   group-month, including its leakage-free training bounds, selected marginal
   specification, parameters, convergence diagnostics, and complete fallback log;
@@ -299,6 +304,10 @@ added later.
 - `data/audit/ml_model_evaluation.json`: the frozen 24-test exploratory DM
   family with Benjamini-Hochberg adjustment, descriptive calibration, matched
   log scores, and the explicit boundary that core H1-H3 are unchanged;
+- `data/audit/wba_dap_sensitivity.json`: formula and one-cell mutation checks,
+  four-group portfolio identities, model-quality diagnostics, primary-versus-
+  scenario forecast changes, and conclusion-stability results for both WBA DAP
+  values;
 - `data/audit/historical_simulation_quality.json`: M0 window, forecast coverage,
   arithmetic, upstream lineage, and output-hash checks;
 - `data/audit/marginal_model_quality.json`: marginal coverage, fallback incidence,

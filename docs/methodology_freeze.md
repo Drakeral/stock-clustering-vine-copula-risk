@@ -225,6 +225,28 @@ under the vine-quality gate, and have no Holm-adjusted Kupiec or Christoffersen
 independence rejection at either primary VaR level. Any such rejection is the
 operational definition of systematic calibration failure.
 
+## WBA DAP valuation sensitivity
+
+The primary WBA terminal value on 28 August 2025 remains `$11.45 cash + $0.53`
+for the non-transferable DAP right. Before inspecting sensitivity results,
+`config/wba_dap_sensitivity.toml` freezes two counterfactual DAP values: zero and
+the contractual `$3.00` cap. Each scenario changes exactly one stock-level simple
+return using `(11.45 + DAP) / previous_close - 1`; subsequent terminal-cash
+returns remain zero.
+
+Annual GICS, hierarchical, spectral, and PCA-plus-k-means assignments are held
+fixed because every 2025 assignment was estimated using information ending in
+2024. The affected group return is changed by the WBA return difference divided
+by its frozen group size, and group-size-weighted returns must continue to equal
+the direct equal-stock-weighted portfolio within `1e-12` for all four groupings.
+
+M0-M8 are rerun under both values with the primary seed manifest and tree-3 vine
+specification. The frozen core calibration, DM, and ranking calculations and the
+exploratory ML BH comparisons are repeated. H1 is not retested because this is a
+corporate-action valuation sensitivity with fixed annual assignments. The full
+tree-10 depth robustness is not crossed with the DAP sensitivity. Results are
+reported as robustness evidence, not as a new confirmatory hypothesis family.
+
 ## Exploratory unsupervised-learning extension
 
 The ML grouping protocol is frozen separately in
