@@ -10,23 +10,17 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 from pathlib import Path
-from typing import Any
 
 try:
     from scripts.download_market_data import inspect_reference_file
+    from scripts.pipeline_io import write_json_atomic as _write_json_atomic
 except ModuleNotFoundError:  # Support direct execution as ``python scripts/...``.
     from download_market_data import inspect_reference_file
+    from pipeline_io import write_json_atomic as _write_json_atomic
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-
-
-def _write_json_atomic(path: Path, payload: dict[str, Any]) -> None:
-    temporary = path.with_suffix(path.suffix + ".part")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    os.replace(temporary, path)
 
 
 def normalize_reference_inputs(reference_root: Path, manifest_path: Path) -> tuple[int, int]:

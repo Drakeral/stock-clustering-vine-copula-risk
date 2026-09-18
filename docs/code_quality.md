@@ -28,9 +28,10 @@ tracked changes after the manifest is committed.
 ## Automated clean-clone checks
 
 GitHub Actions runs the portable lint, format, compilation and unit-test checks
-on every push to `main` and on every pull request. The workflow installs the
-pinned uv version, then reconstructs the environment from `uv.lock` with
-`uv sync --frozen`. It also enforces Ruff's cyclomatic-complexity limit on the
+on every push to `main` and on every pull request under both supported Python
+3.12 and 3.13 versions. The workflow installs the pinned uv version, then
+reconstructs each environment from `uv.lock` with `uv sync --frozen`. It also
+enforces Ruff's cyclomatic-complexity limit on the
 model-evaluation modules, where statistical validation and inference are most
 densely orchestrated.
 

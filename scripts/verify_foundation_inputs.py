@@ -14,7 +14,6 @@ import datetime as dt
 import gzip
 import hashlib
 import json
-import os
 import re
 from collections import Counter
 from dataclasses import dataclass
@@ -25,6 +24,11 @@ try:
     import tomllib
 except ModuleNotFoundError:  # pragma: no cover - Python 3.10 compatibility
     import tomli as tomllib
+
+try:
+    from scripts.pipeline_io import write_json_atomic
+except ModuleNotFoundError:  # Support direct execution as ``python scripts/...``.
+    from pipeline_io import write_json_atomic
 
 
 EXPECTED_DAILY_COLUMNS = {
@@ -635,13 +639,6 @@ def verify_foundation_inputs(
 def load_config(path: Path) -> dict[str, Any]:
     with path.open("rb") as handle:
         return tomllib.load(handle)
-
-
-def write_json_atomic(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".part")
-    temporary.write_bytes(canonical_json_bytes(payload))
-    os.replace(temporary, path)
 
 
 def parse_args() -> argparse.Namespace:

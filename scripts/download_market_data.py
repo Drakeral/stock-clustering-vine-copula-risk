@@ -32,6 +32,11 @@ try:
 except ModuleNotFoundError:  # Python 3.9-3.10
     import tomli as tomllib
 
+try:
+    from scripts.pipeline_io import temporary_sibling, write_json_atomic
+except ModuleNotFoundError:  # Support direct execution as ``python scripts/...``.
+    from pipeline_io import temporary_sibling, write_json_atomic
+
 
 KEY_DATE = re.compile(r"(?P<date>\d{4}-\d{2}-\d{2})\.csv\.gz$")
 EXPECTED_HEADER = {
@@ -157,12 +162,10 @@ def download_one(
     destination.parent.mkdir(parents=True, exist_ok=True)
     status = "existing"
     if overwrite or not destination.exists() or destination.stat().st_size != item["size"]:
-        temporary = destination.with_suffix(destination.suffix + ".part")
-        if temporary.exists():
-            temporary.unlink()
-        client.download_file(bucket, item["key"], str(temporary))
-        file_metadata = inspect_daily_file(temporary)
-        os.replace(temporary, destination)
+        with temporary_sibling(destination) as temporary:
+            client.download_file(bucket, item["key"], str(temporary))
+            file_metadata = inspect_daily_file(temporary)
+            temporary.replace(destination)
         status = "downloaded"
     else:
         file_metadata = inspect_daily_file(destination)
@@ -295,10 +298,7 @@ def download_reference_type(
         "sample_end": end,
         "results": results,
     }
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    temporary = destination.with_suffix(".json.part")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    os.replace(temporary, destination)
+    write_json_atomic(destination, payload)
     return {
         "ticker": ticker,
         "event_type": event_type,
@@ -398,13 +398,6 @@ def public_input_manifest(manifest: dict[str, Any]) -> dict[str, Any]:
         "reference_status": "complete" if reference_complete else "incomplete",
         "reference_files": references,
     }
-
-
-def write_json_atomic(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".part")
-    temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    os.replace(temporary, path)
 
 
 def parse_args() -> argparse.Namespace:

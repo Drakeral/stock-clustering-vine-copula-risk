@@ -14,6 +14,8 @@ from scripts.pipeline_io import (
     project_path,
     reporting_scope,
     sha256_file,
+    temporary_sibling,
+    write_csv_atomic,
     write_json_atomic,
     write_parquet_atomic,
     write_text_atomic,
@@ -71,6 +73,25 @@ class PipelineIoTests(unittest.TestCase):
             pd.testing.assert_frame_equal(pd.read_parquet(parquet_path), frame)
             self.assertEqual(list(root.glob(".*.part")), [])
 
+    def test_atomic_csv_preserves_column_order_and_replaces_content(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            path = root / "licensed.csv"
+            write_csv_atomic(
+                path,
+                [{"ticker": "OLD", "sector": "Old"}],
+                fieldnames=("ticker", "sector"),
+            )
+            write_csv_atomic(
+                path,
+                [{"ticker": "ABC", "sector": "Industrials"}],
+                fieldnames=("ticker", "sector"),
+            )
+
+            self.assertEqual(path.read_text(encoding="utf-8"), "ticker,sector\nABC,Industrials\n")
+            self.assertEqual(path.stat().st_mode & 0o777, 0o644)
+            self.assertEqual(list(root.glob(".*.part")), [])
+
     def test_atomic_writer_cleans_up_after_serialization_failure(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -78,6 +99,25 @@ class PipelineIoTests(unittest.TestCase):
                 write_json_atomic(root / "audit.json", {"invalid": object()})
             with self.assertRaises(ValueError):
                 write_json_atomic(root / "audit.json", {"invalid": float("nan")})
+            with self.assertRaises(ValueError):
+                write_csv_atomic(
+                    root / "rows.csv",
+                    [{"expected": "value", "unexpected": "value"}],
+                    fieldnames=("expected",),
+                )
+            self.assertEqual(list(root.glob(".*.part")), [])
+
+    def test_temporary_sibling_cleans_up_failed_download_staging(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            destination = root / "daily.csv.gz"
+            with (
+                self.assertRaisesRegex(RuntimeError, "simulated download failure"),
+                temporary_sibling(destination) as staging,
+            ):
+                staging.write_bytes(b"partial")
+                raise RuntimeError("simulated download failure")
+            self.assertFalse(destination.exists())
             self.assertEqual(list(root.glob(".*.part")), [])
 
     def test_reporting_scope_requires_consistent_gate_states(self):

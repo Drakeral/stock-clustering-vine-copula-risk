@@ -1,6 +1,6 @@
 # Quantitative Code Audit
 
-Audit date: 13 September 2026
+Audit date: 14 September 2026
 
 ## Conclusion
 
@@ -63,6 +63,11 @@ CI, dependency locking, secret boundaries, and repository hygiene.
 - Foundation and modelling artifacts now share unique, atomic JSON, text, and
   Parquet writers. This prevents an interrupted build from replacing a valid
   output with a partial file while preserving the existing file formats.
+- Licensed-universe worksheets, validation copies, and final CSV gate inputs now
+  use the same atomic-write discipline; an interrupted population step cannot
+  partially replace a valid provenance input.
+- CI now tests both Python 3.12 and 3.13, matching the support interval declared
+  by the package metadata and lock file.
 - Evaluation loop variables were clarified to remove accidental reassignment
   without changing calculations.
 - Primary tree-3 and robustness tree-10 vine runs now resolve to distinct output
@@ -113,6 +118,12 @@ production classes.
 - With 1,508 evaluation dates, the 99% VaR analysis has only about 15 expected
   exceptions. Forecast losses and matched comparisons should carry more weight
   than annual 99% coverage p-values.
+- M0 deliberately estimates historical simulation from the realised primary
+  portfolio series, using the annual active set that applied on each historical
+  date. M1-M4 instead apply the evaluation year's active set and grouping to
+  their trailing estimation window. This is the frozen implemented design, not
+  a coding error, but a current-composition historical-simulation backcast would
+  be a useful explicitly labelled robustness check before final submission.
 - Secondary group-balanced portfolios, spectral clustering, and the
   PCA-plus-k-means extension remain future stages. They must not be described as
   implemented results.

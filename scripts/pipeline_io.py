@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import csv
 import hashlib
 import json
 import os
 import tempfile
-from collections.abc import Mapping
+from collections.abc import Iterable, Iterator, Mapping, Sequence
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -46,13 +48,26 @@ def write_json_atomic(path: Path, payload: Mapping[str, Any]) -> None:
 def write_text_atomic(path: Path, content: str, *, encoding: str = "utf-8") -> None:
     """Atomically replace a text artifact using a unique sibling temporary file."""
 
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = _temporary_path(path)
-    try:
+    with temporary_sibling(path) as temporary:
         temporary.write_text(content, encoding=encoding)
         temporary.replace(path)
-    finally:
-        temporary.unlink(missing_ok=True)
+
+
+def write_csv_atomic(
+    path: Path,
+    rows: Iterable[Mapping[str, Any]],
+    *,
+    fieldnames: Sequence[str],
+    encoding: str = "utf-8",
+) -> None:
+    """Atomically replace a headered CSV artifact from mapping records."""
+
+    with temporary_sibling(path) as temporary:
+        with temporary.open("w", encoding=encoding, newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(rows)
+        temporary.replace(path)
 
 
 def write_parquet_atomic(
@@ -64,9 +79,7 @@ def write_parquet_atomic(
 ) -> None:
     """Atomically replace a Parquet artifact."""
 
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = _temporary_path(path)
-    try:
+    with temporary_sibling(path) as temporary:
         frame.to_parquet(
             temporary,
             index=index,
@@ -74,6 +87,16 @@ def write_parquet_atomic(
             engine="pyarrow",
         )
         temporary.replace(path)
+
+
+@contextmanager
+def temporary_sibling(destination: Path) -> Iterator[Path]:
+    """Yield a unique sibling path and remove it unless it was atomically moved."""
+
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    temporary = _temporary_path(destination)
+    try:
+        yield temporary
     finally:
         temporary.unlink(missing_ok=True)
 

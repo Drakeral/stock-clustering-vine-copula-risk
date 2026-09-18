@@ -26,7 +26,9 @@ supersede the amendment and obtain the strict provenance pass later.
 
 ## Rebuild from a clean clone
 
-Python 3.12 and [uv](https://docs.astral.sh/uv/) are required.
+Python 3.12 or 3.13 and [uv](https://docs.astral.sh/uv/) are required. The
+checked-in `.python-version` selects Python 3.12 for the canonical local run,
+while CI exercises both supported minor versions.
 The repeatable lint, test and repository-hygiene checkpoint is documented in
 `docs/code_quality.md`. The latest holistic research-code review, remediations,
 and interpretation boundaries are recorded in `docs/quantitative_code_audit.md`.

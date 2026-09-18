@@ -18,12 +18,14 @@ from pathlib import Path
 from typing import Any
 
 try:
+    from scripts.pipeline_io import write_csv_atomic
     from scripts.prepare_universe import (
         LICENSED_COLUMNS,
         read_licensed_universe,
         reconcile_licensed_universe,
     )
 except ModuleNotFoundError:  # Direct execution: ``python scripts/<name>.py``.
+    from pipeline_io import write_csv_atomic
     from prepare_universe import (  # type: ignore[no-redef]
         LICENSED_COLUMNS,
         read_licensed_universe,
@@ -55,23 +57,20 @@ def read_candidate(path: Path) -> list[dict[str, Any]]:
 
 def create_worksheet(candidate_path: Path, output_path: Path) -> int:
     rows = read_candidate(candidate_path)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    with output_path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=WORKSHEET_COLUMNS)
-        writer.writeheader()
-        for row in rows:
-            writer.writerow(
-                {
-                    "reference_ticker": row["ticker"],
-                    "reference_company_name": row["company_name"],
-                    "reference_gics_sector": row["gics_sector"],
-                    "reference_gics_sub_industry": row["gics_sub_industry"],
-                    "reference_as_of_date": row["as_of_date"],
-                    **dict.fromkeys(ENTRY_COLUMNS, ""),
-                    "entry_status": "pending_authorized_source",
-                    "review_notes": "",
-                }
-            )
+    worksheet_rows = [
+        {
+            "reference_ticker": row["ticker"],
+            "reference_company_name": row["company_name"],
+            "reference_gics_sector": row["gics_sector"],
+            "reference_gics_sub_industry": row["gics_sub_industry"],
+            "reference_as_of_date": row["as_of_date"],
+            **dict.fromkeys(ENTRY_COLUMNS, ""),
+            "entry_status": "pending_authorized_source",
+            "review_notes": "",
+        }
+        for row in rows
+    ]
+    write_csv_atomic(output_path, worksheet_rows, fieldnames=WORKSHEET_COLUMNS)
     return len(rows)
 
 
@@ -137,10 +136,7 @@ def finalize_worksheet(candidate_path: Path, worksheet_path: Path, output_path: 
     # gate input. This checks dates, sectors, required values, and identifiers.
     with tempfile.TemporaryDirectory() as temporary:
         validation_path = Path(temporary) / "licensed.csv"
-        with validation_path.open("w", encoding="utf-8", newline="") as handle:
-            writer = csv.DictWriter(handle, fieldnames=LICENSED_COLUMNS)
-            writer.writeheader()
-            writer.writerows(licensed_rows)
+        write_csv_atomic(validation_path, licensed_rows, fieldnames=LICENSED_COLUMNS)
         validated = read_licensed_universe(validation_path)
 
     reconciliation = reconcile_licensed_universe(candidate, validated, "2020-01-02")
@@ -150,11 +146,7 @@ def finalize_worksheet(candidate_path: Path, worksheet_path: Path, output_path: 
             + json.dumps(reconciliation, sort_keys=True)
         )
 
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    with output_path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=LICENSED_COLUMNS)
-        writer.writeheader()
-        writer.writerows(validated)
+    write_csv_atomic(output_path, validated, fieldnames=LICENSED_COLUMNS)
     return len(validated)
 
 
