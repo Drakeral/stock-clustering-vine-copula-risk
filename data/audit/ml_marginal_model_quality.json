@@ -1,0 +1,90 @@
+{
+  "alignment_dropped_record_count": 0,
+  "analysis_role": "exploratory_unsupervised_risk_extension",
+  "copula_dimension": 11,
+  "copula_training_block_count": 144,
+  "daily_forecast_count": 33176,
+  "ewma_fit_count": 0,
+  "ewma_fit_fraction": 0.0,
+  "fallback_fit_count": 7,
+  "gate_name": "ml_marginal_model_quality_v1",
+  "inputs": {
+    "annual_group_returns": {
+      "path": "data/processed/ml_annual_group_returns.parquet",
+      "sha256": "a069f77e216a9abb3332b3d837056233128552f417d5e61a65a1e787fd34254a"
+    },
+    "foundation_status": {
+      "path": "data/audit/current_gate_status.json",
+      "sha256": "66df582e2ba6255c8f2e975c0739480562203fd85de06fa24dea0e58b3dd98b9"
+    },
+    "ml_config": {
+      "path": "config/ml_extension_config.toml",
+      "sha256": "95d7e0d50190e3ff7702c933276e5b4b56a3b33b65990cd80ad8055ad8374939"
+    },
+    "ml_grouping_audit": {
+      "path": "data/audit/ml_clustering_diagnostics.json",
+      "sha256": "523534c461bf3c0deeaa0b7c0dd8cded46aee4760024329ffd1fd724e9646515"
+    },
+    "model_config": {
+      "path": "config/model_config.toml",
+      "sha256": "d6d0cd9a53cce7bfaf0e19b2c973648ff10dcb20d48e67b53c0e5c8367a509fc"
+    }
+  },
+  "issues": [],
+  "maximum_aligned_training_dates": 757,
+  "maximum_ewma_fit_fraction": 0.01,
+  "method": {
+    "estimation_return_scale": 100.0,
+    "ewma_lambda": 0.94,
+    "fallback_order": [
+      "retry_ar_garch_t",
+      "constant_mean_garch_t",
+      "ewma_empirical"
+    ],
+    "pit_clip_lower": 1e-06,
+    "pit_clip_upper": 0.999999,
+    "primary": "AR(1)-GARCH(1,1)-Student-t"
+  },
+  "minimum_aligned_training_dates": 749,
+  "minimum_required_aligned_training_dates": 700,
+  "model_ids": [
+    "M5",
+    "M6",
+    "M7",
+    "M8"
+  ],
+  "outputs": {
+    "marginal_daily_forecasts": {
+      "path": "data/processed/ml_marginal_daily_forecasts.parquet",
+      "rows": 33176,
+      "sha256": "22c16514f8f5a5a1c56411b6266473872c8a2c7998b52d8e54d5fe1a4cf2b015"
+    },
+    "marginal_refits": {
+      "path": "data/processed/ml_marginal_refits.parquet",
+      "rows": 1584,
+      "sha256": "e1a3e8aed71815c7432a35c211111153cb5f3edc60f4287b626e678c5ddc21f2"
+    },
+    "monthly_copula_training_pits": {
+      "path": "data/processed/ml_monthly_copula_training_pits.parquet",
+      "rows": 1192730,
+      "sha256": "9908d6ae7e11c61c8ba591d2f85d05b039881b8adc2349d8fecfba2fcfe7d1b2"
+    }
+  },
+  "pit_clipped_count": 1,
+  "pit_maximum": 0.9999981151081501,
+  "pit_minimum": 1e-06,
+  "raw_training_pit_record_count": 1192730,
+  "refit_count": 1584,
+  "reporting_scope": "provisional_research_results",
+  "schema_version": 2,
+  "selected_method_counts": {
+    "ar_garch_t": 1577,
+    "ar_garch_t_retry": 7
+  },
+  "status": "pass",
+  "training_pit_clipped_count": 0,
+  "training_pit_maximum": 0.9999890968725665,
+  "training_pit_minimum": 4.108113690696662e-06,
+  "training_pit_record_count": 1192730,
+  "universe_variant": "security_primary"
+}

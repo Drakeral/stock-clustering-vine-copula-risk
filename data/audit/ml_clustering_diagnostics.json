@@ -16,7 +16,7 @@
     },
     "ml_config": {
       "path": "config/ml_extension_config.toml",
-      "sha256": "b253abbf7896e8e212602ef4833d007d808238a6c4affb448abb24c84a21caae"
+      "sha256": "95d7e0d50190e3ff7702c933276e5b4b56a3b33b65990cd80ad8055ad8374939"
     },
     "portfolio_arithmetic_audit": {
       "path": "data/audit/portfolio_arithmetic.json",
@@ -72,7 +72,7 @@
   "schema_version": 1,
   "status": "pass",
   "summary": {
-    "downstream_risk_models_status": "reserved_not_yet_implemented",
+    "downstream_risk_models_status": "implementation_authorized_before_risk_results",
     "evaluation_year_count": 6,
     "method_summaries": {
       "pca_kmeans_cluster": {

@@ -4,6 +4,24 @@
   "title": "FE5110 monthly vine copula refit record",
   "type": "object",
   "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {"properties": {"model_id": {"const": "M2"}}, "required": ["model_id"]},
+      "then": {"properties": {"grouping_id": {"const": "gics"}}}
+    },
+    {
+      "if": {"properties": {"model_id": {"const": "M4"}}, "required": ["model_id"]},
+      "then": {"properties": {"grouping_id": {"const": "hierarchical"}}}
+    },
+    {
+      "if": {"properties": {"model_id": {"const": "M6"}}, "required": ["model_id"]},
+      "then": {"properties": {"grouping_id": {"const": "spectral"}}}
+    },
+    {
+      "if": {"properties": {"model_id": {"const": "M8"}}, "required": ["model_id"]},
+      "then": {"properties": {"grouping_id": {"const": "pca_kmeans"}}}
+    }
+  ],
   "required": [
     "vine_refit_id",
     "source_copula_refit_id",
@@ -48,8 +66,8 @@
     "year": {"type": "integer", "minimum": 2020, "maximum": 2025},
     "month": {"type": "integer", "minimum": 1, "maximum": 12},
     "universe_variant": {"enum": ["security_primary", "issuer_deduplicated_robustness"]},
-    "model_id": {"enum": ["M2", "M4"]},
-    "grouping_id": {"enum": ["gics", "hierarchical"]},
+    "model_id": {"enum": ["M2", "M4", "M6", "M8"]},
+    "grouping_id": {"enum": ["gics", "hierarchical", "spectral", "pca_kmeans"]},
     "training_start": {"type": "string", "format": "date"},
     "training_end": {"type": "string", "format": "date"},
     "training_observations": {"type": "integer", "minimum": 3},

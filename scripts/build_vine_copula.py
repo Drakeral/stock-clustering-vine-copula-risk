@@ -487,6 +487,7 @@ def _prepare_frames(
     gaussian_refits: pd.DataFrame,
     *,
     universe_variant: str,
+    supported_groupings: set[str],
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     _validate_input_frames(training_pits, marginal_refits, daily_margins, group_returns)
     required_gaussian = {
@@ -525,7 +526,7 @@ def _prepare_frames(
                 raise ValueError(f"invalid date in {column}")
     if any(frame.empty for frame in (training, refits, daily, gaussian)):
         raise ValueError(f"missing modelling rows for universe variant {universe_variant}")
-    if not set(training["grouping_id"]).issubset(VINE_MODEL_BY_GROUPING):
+    if not set(training["grouping_id"]).issubset(supported_groupings):
         raise ValueError("training PIT panel contains an unsupported grouping")
     training_key = [
         "year",
@@ -694,9 +695,34 @@ def build_vine_outputs(
     truncation_level: int | None = None,
     progress_every: int = 12,
     vine_fitter: VineFitFunction = fit_vine_copula,
+    model_by_grouping: Mapping[str, tuple[str, str, str]] | None = None,
+    analysis_role: str | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
     """Build monthly vine fits, daily risk forecasts, and quality checks."""
 
+    model_registry = dict(
+        VINE_MODEL_BY_GROUPING if model_by_grouping is None else model_by_grouping
+    )
+    if not model_registry or any(
+        not isinstance(input_grouping, str)
+        or not input_grouping
+        or not isinstance(value, tuple)
+        or len(value) != 3
+        or any(not isinstance(item, str) or not item for item in value)
+        for input_grouping, value in model_registry.items()
+    ):
+        raise ValueError(
+            "vine model registry must map groupings to model/grouping/baseline triples"
+        )
+    expected_models = {model_id for model_id, _, _ in model_registry.values()}
+    if len(expected_models) != len(model_registry):
+        raise ValueError("vine model registry contains duplicate model IDs")
+    output_groupings = {grouping_id for _, grouping_id, _ in model_registry.values()}
+    if len(output_groupings) != len(model_registry):
+        raise ValueError("vine model registry contains duplicate output groupings")
+    baseline_models = {baseline_id for _, _, baseline_id in model_registry.values()}
+    if len(baseline_models) != len(model_registry):
+        raise ValueError("vine model registry contains duplicate Gaussian baselines")
     vine, simulation, forecast, marginal, truncation = validate_vine_protocol(
         model_config, truncation_level=truncation_level
     )
@@ -707,6 +733,7 @@ def build_vine_outputs(
         group_returns,
         gaussian_refits,
         universe_variant=universe_variant,
+        supported_groupings=set(model_registry),
     )
     seed_records = _validated_seed_records(seed_manifest, simulation)
     dimension = int(vine["dimension"])
@@ -725,7 +752,7 @@ def build_vine_outputs(
     for block_index, (identifiers, block) in enumerate(grouped, start=1):
         year, month, _, input_grouping = identifiers
         year, month = int(year), int(month)
-        model_id, output_grouping, baseline_model_id = VINE_MODEL_BY_GROUPING[str(input_grouping)]
+        model_id, output_grouping, baseline_model_id = model_registry[str(input_grouping)]
         group_order = sorted(str(value) for value in block["group_id"].unique())
         if len(group_order) != dimension:
             raise ValueError(f"{identifiers} has {len(group_order)} groups; expected {dimension}")
@@ -956,7 +983,6 @@ def build_vine_outputs(
         str(key): int(value)
         for key, value in forecast_frame.groupby("model_id")["date"].nunique().items()
     }
-    expected_models = {"M2", "M4"}
     if set(date_counts) != expected_models or len(set(date_counts.values())) != 1:
         issues.append("incomplete_matched_model_coverage")
     realised_wide = forecast_frame.pivot(
@@ -966,7 +992,14 @@ def build_vine_outputs(
         issues.append("incomplete_realised_portfolio_identity")
         maximum_identity_error = float("inf")
     else:
-        maximum_identity_error = float(np.max(np.abs(realised_wide["M2"] - realised_wide["M4"])))
+        reference_model = sorted(expected_models)[0]
+        maximum_identity_error = float(
+            realised_wide.loc[:, sorted(expected_models)]
+            .sub(realised_wide[reference_model], axis="index")
+            .abs()
+            .to_numpy(dtype=float)
+            .max()
+        )
         if maximum_identity_error > float(model_config["portfolio"]["reconstruction_tolerance"]):
             issues.append("grouping_portfolio_identity_failed")
     evaluation_dates = int(forecast_frame["date"].nunique())
@@ -984,7 +1017,7 @@ def build_vine_outputs(
     )
     any_model_fallback_fraction = any_model_fallback_dates / evaluation_dates
     fallback_limit = float(vine["maximum_whole_vine_fallback_date_fraction"])
-    analysis_role = vine_analysis_role(vine, truncation)
+    resolved_analysis_role = analysis_role or vine_analysis_role(vine, truncation)
     restrictions = []
     if maximum_model_fallback_fraction > fallback_limit:
         restrictions.append("whole_vine_fallback_fraction_exceeded")
@@ -995,10 +1028,10 @@ def build_vine_outputs(
         "schema_version": 1,
         "gate_name": (
             "vine_copula_quality_v1"
-            if analysis_role == "primary"
+            if resolved_analysis_role == "primary"
             else "full_vine_robustness_quality_v1"
         ),
-        "analysis_role": analysis_role,
+        "analysis_role": resolved_analysis_role,
         "status": "pass" if not issues else "fail",
         "universe_variant": universe_variant,
         "model_ids": sorted(expected_models),

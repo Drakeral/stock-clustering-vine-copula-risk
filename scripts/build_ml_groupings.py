@@ -128,6 +128,7 @@ def validate_ml_protocol(config: Mapping[str, Any]) -> Mapping[str, Any]:
         {
             "schema_version": 1,
             "protocol_status": "frozen_before_ml_grouping_results",
+            "risk_protocol_status": "frozen_before_ml_risk_results",
             "analysis_role": "exploratory_unsupervised_robustness",
             "reporting_scope_rule": "inherit_foundation_gate",
         },
@@ -211,8 +212,10 @@ def validate_ml_protocol(config: Mapping[str, Any]) -> Mapping[str, Any]:
     _require_values(
         downstream,
         {
-            "status": "reserved_not_yet_implemented",
+            "status": "implementation_authorized_before_risk_results",
+            "analysis_role": "exploratory_unsupervised_risk_extension",
             "inherit_marginal_copula_simulation_protocol_from": "config/model_config.toml",
+            "common_random_numbers": "reuse_primary_simulation_seed_manifest",
         },
         "downstream ML risk-model",
     )
@@ -230,14 +233,39 @@ def validate_ml_protocol(config: Mapping[str, Any]) -> Mapping[str, Any]:
         {
             "loss_scores": ["quantile_loss_95", "quantile_loss_99", "fz0_975"],
             "matched_baselines": ["gics", "hierarchical"],
+            "loss_difference": "ml_model_minus_matched_baseline",
             "dm_hac_lag": 7,
             "multiplicity": "benjamini_hochberg",
             "family_size": 24,
             "false_discovery_rate": 0.05,
             "calibration_role": "descriptive",
+            "calibration_tests": [
+                "kupiec_unconditional_coverage",
+                "christoffersen_independence",
+            ],
+            "calibration_confidence_levels": [0.95, 0.975, 0.99],
+            "calibration_periods": ["full_period", "annual"],
         },
         "exploratory ML inference",
     )
+    comparisons = inference.get("comparisons")
+    expected_comparisons = [
+        {
+            "ml_model": ml_model,
+            "baseline_model": baseline_model,
+            "baseline_grouping": baseline_grouping,
+            "dependence": dependence,
+        }
+        for ml_model, dependence, baselines in (
+            ("M5", "gaussian", (("M1", "gics"), ("M3", "hierarchical"))),
+            ("M6", "vine_tree_3", (("M2", "gics"), ("M4", "hierarchical"))),
+            ("M7", "gaussian", (("M1", "gics"), ("M3", "hierarchical"))),
+            ("M8", "vine_tree_3", (("M2", "gics"), ("M4", "hierarchical"))),
+        )
+        for baseline_model, baseline_grouping in baselines
+    ]
+    if comparisons != expected_comparisons:
+        raise ValueError("unsupported exploratory ML comparison registry")
     return config
 
 
@@ -553,6 +581,7 @@ def build_ml_groupings(
     kmeans = config["kmeans"]
     spectral_config = config["spectral"]
     pca_config = config["pca_kmeans"]
+    downstream = config["downstream_risk_models"]
     start_year = int(grouping["evaluation_start_year"])
     end_year = int(grouping["evaluation_end_year"])
     training_years = int(grouping["training_window_calendar_years"])
@@ -654,7 +683,7 @@ def build_ml_groupings(
         "summary": {
             "evaluation_year_count": len(diagnostic_years),
             "method_summaries": method_summaries,
-            "downstream_risk_models_status": "reserved_not_yet_implemented",
+            "downstream_risk_models_status": str(downstream["status"]),
         },
         "issues": [],
     }

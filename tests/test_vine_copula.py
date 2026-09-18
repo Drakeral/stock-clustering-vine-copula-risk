@@ -284,6 +284,55 @@ class VinePipelineTests(unittest.TestCase):
         self.assertEqual(set(refits.columns), set(schema["properties"]))
         self.assertEqual(set(forecasts.columns), set(forecast_schema["properties"]))
 
+    def test_pipeline_accepts_an_explicit_noncore_model_registry(self):
+        core_frames, config, _, _, _ = self._inputs()
+        frames = tuple(
+            frame.replace(
+                {"gics_sector": "spectral_cluster", "hierarchical_cluster": "pca_kmeans_cluster"}
+            )
+            for frame in core_frames
+        )
+        gaussian_refits, _, seeds, _ = build_gaussian_outputs(
+            *frames,
+            config,
+            progress_every=0,
+            model_by_grouping={
+                "spectral_cluster": ("M5", "spectral"),
+                "pca_kmeans_cluster": ("M7", "pca_kmeans"),
+            },
+        )
+        refits, forecasts, audit = build_vine_outputs(
+            *frames,
+            gaussian_refits,
+            seeds,
+            config,
+            progress_every=0,
+            model_by_grouping={
+                "spectral_cluster": ("M6", "spectral", "M5"),
+                "pca_kmeans_cluster": ("M8", "pca_kmeans", "M7"),
+            },
+            analysis_role="exploratory_unsupervised_risk_extension",
+        )
+        self.assertEqual(audit["model_ids"], ["M6", "M8"])
+        self.assertEqual(audit["analysis_role"], "exploratory_unsupervised_risk_extension")
+        self.assertEqual(set(refits["model_id"]), {"M6", "M8"})
+        self.assertEqual(set(forecasts["grouping_id"]), {"spectral", "pca_kmeans"})
+
+    def test_pipeline_rejects_duplicate_gaussian_baselines_in_registry(self):
+        frames, config, gaussian_refits, _, seeds = self._inputs()
+        with self.assertRaisesRegex(ValueError, "duplicate Gaussian baselines"):
+            build_vine_outputs(
+                *frames,
+                gaussian_refits,
+                seeds,
+                config,
+                progress_every=0,
+                model_by_grouping={
+                    "gics_sector": ("M6", "spectral", "M1"),
+                    "hierarchical_cluster": ("M8", "pca_kmeans", "M1"),
+                },
+            )
+
     def test_structure_failure_uses_the_exact_matched_gaussian(self):
         frames, config, gaussian_refits, gaussian_forecasts, seeds = self._inputs()
 

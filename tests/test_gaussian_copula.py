@@ -283,6 +283,47 @@ class GaussianPipelineTests(unittest.TestCase):
         self.assertTrue((forecasts["var_975"] <= forecasts["var_99"]).all())
         self.assertTrue((forecasts["es_975"] >= forecasts["var_975"]).all())
 
+    def test_pipeline_accepts_an_explicit_noncore_model_registry(self):
+        frames = tuple(
+            frame.replace(
+                {"gics_sector": "spectral_cluster", "hierarchical_cluster": "pca_kmeans_cluster"}
+            )
+            for frame in self._frames()
+        )
+        refits, forecasts, _, audit = build_gaussian_outputs(
+            *frames,
+            miniature_config(),
+            progress_every=0,
+            model_by_grouping={
+                "spectral_cluster": ("M5", "spectral"),
+                "pca_kmeans_cluster": ("M7", "pca_kmeans"),
+            },
+        )
+        self.assertEqual(audit["model_ids"], ["M5", "M7"])
+        self.assertEqual(set(refits["model_id"]), {"M5", "M7"})
+        self.assertEqual(set(forecasts["grouping_id"]), {"spectral", "pca_kmeans"})
+        self.assertLessEqual(audit["maximum_realised_portfolio_identity_error"], 1e-12)
+
+    def test_pipeline_rejects_ambiguous_or_malformed_model_registries(self):
+        frames = self._frames()
+        with self.assertRaisesRegex(ValueError, "duplicate model IDs"):
+            build_gaussian_outputs(
+                *frames,
+                miniature_config(),
+                progress_every=0,
+                model_by_grouping={
+                    "gics_sector": ("M5", "spectral"),
+                    "hierarchical_cluster": ("M5", "pca_kmeans"),
+                },
+            )
+        with self.assertRaisesRegex(ValueError, "model/grouping pairs"):
+            build_gaussian_outputs(
+                *frames,
+                miniature_config(),
+                progress_every=0,
+                model_by_grouping={"gics_sector": ("M5",)},
+            )
+
     def test_pipeline_rejects_training_lookahead(self):
         training, refits, daily, returns = self._frames()
         training.loc[0, "training_date"] = pd.Timestamp("2020-01-02")

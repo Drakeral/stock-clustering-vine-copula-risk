@@ -22,7 +22,7 @@
       },
       "else": {
         "properties": {
-          "grouping_id": {"enum": ["gics", "hierarchical"]},
+          "grouping_id": {"enum": ["gics", "hierarchical", "spectral", "pca_kmeans"]},
           "seed_components": {
             "type": "array",
             "prefixItems": [
@@ -36,6 +36,22 @@
           "copula_log_score": {"type": "number"}
         }
       }
+    },
+    {
+      "if": {"properties": {"model_id": {"enum": ["M1", "M2"]}}, "required": ["model_id"]},
+      "then": {"properties": {"grouping_id": {"const": "gics"}}}
+    },
+    {
+      "if": {"properties": {"model_id": {"enum": ["M3", "M4"]}}, "required": ["model_id"]},
+      "then": {"properties": {"grouping_id": {"const": "hierarchical"}}}
+    },
+    {
+      "if": {"properties": {"model_id": {"enum": ["M5", "M6"]}}, "required": ["model_id"]},
+      "then": {"properties": {"grouping_id": {"const": "spectral"}}}
+    },
+    {
+      "if": {"properties": {"model_id": {"enum": ["M7", "M8"]}}, "required": ["model_id"]},
+      "then": {"properties": {"grouping_id": {"const": "pca_kmeans"}}}
     }
   ],
   "required": [
@@ -57,8 +73,8 @@
   ],
   "properties": {
     "date": {"type": "string", "format": "date"},
-    "model_id": {"enum": ["M0", "M1", "M2", "M3", "M4"]},
-    "grouping_id": {"enum": ["none", "gics", "hierarchical"]},
+    "model_id": {"enum": ["M0", "M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8"]},
+    "grouping_id": {"enum": ["none", "gics", "hierarchical", "spectral", "pca_kmeans"]},
     "refit_id": {"type": "string", "minLength": 1},
     "var_95": {"type": "number"},
     "var_975": {"type": "number"},

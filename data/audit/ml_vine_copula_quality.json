@@ -1,0 +1,134 @@
+{
+  "analysis_role": "exploratory_unsupervised_risk_extension",
+  "best_model_restrictions": [
+    "exploratory_analysis_cannot_revise_core_model_ranking"
+  ],
+  "dimension": 11,
+  "draws_per_month": 100000,
+  "eligible_for_exploratory_comparison": true,
+  "eligible_to_be_declared_best": false,
+  "evaluation_date_count": 1508,
+  "failed_pair_count": 0,
+  "family_counts": {
+    "clayton": 153,
+    "frank": 550,
+    "gaussian": 159,
+    "gumbel": 461,
+    "indep": 83,
+    "student": 2482
+  },
+  "forecast_count": 3016,
+  "gate_name": "ml_vine_copula_quality_v1",
+  "inputs": {
+    "annual_group_returns": {
+      "path": "data/processed/ml_annual_group_returns.parquet",
+      "sha256": "a069f77e216a9abb3332b3d837056233128552f417d5e61a65a1e787fd34254a"
+    },
+    "foundation_status": {
+      "path": "data/audit/current_gate_status.json",
+      "sha256": "66df582e2ba6255c8f2e975c0739480562203fd85de06fa24dea0e58b3dd98b9"
+    },
+    "gaussian_copula_quality": {
+      "path": "data/audit/ml_gaussian_copula_quality.json",
+      "sha256": "ba2be41c13955a2cf6339cd7a6c9ce927ae48cae27dc3412f274ab1e36770a1a"
+    },
+    "gaussian_copula_refits": {
+      "path": "data/processed/ml_gaussian_copula_refits.parquet",
+      "sha256": "10950deef79ce29040335f04c01de6d453717315f9f8e182dd9fbc2276d87d67"
+    },
+    "marginal_daily_forecasts": {
+      "path": "data/processed/ml_marginal_daily_forecasts.parquet",
+      "sha256": "22c16514f8f5a5a1c56411b6266473872c8a2c7998b52d8e54d5fe1a4cf2b015"
+    },
+    "marginal_model_quality": {
+      "path": "data/audit/ml_marginal_model_quality.json",
+      "sha256": "60177654a2f248a05f8eefe0eb79c1b8cb1d3fd4a1fce46ab9e0e4f77579b588"
+    },
+    "marginal_refits": {
+      "path": "data/processed/ml_marginal_refits.parquet",
+      "sha256": "e1a3e8aed71815c7432a35c211111153cb5f3edc60f4287b626e678c5ddc21f2"
+    },
+    "ml_config": {
+      "path": "config/ml_extension_config.toml",
+      "sha256": "95d7e0d50190e3ff7702c933276e5b4b56a3b33b65990cd80ad8055ad8374939"
+    },
+    "model_config": {
+      "path": "config/model_config.toml",
+      "sha256": "d6d0cd9a53cce7bfaf0e19b2c973648ff10dcb20d48e67b53c0e5c8367a509fc"
+    },
+    "monthly_copula_training_pits": {
+      "path": "data/processed/ml_monthly_copula_training_pits.parquet",
+      "sha256": "9908d6ae7e11c61c8ba591d2f85d05b039881b8adc2349d8fecfba2fcfe7d1b2"
+    },
+    "simulation_seed_manifest": {
+      "path": "data/manifests/simulation_seed_manifest.json",
+      "sha256": "f0763b5e868329ebf55f6973abd74e9ec3f86940bea8c316d5b9e289cca2956d"
+    }
+  },
+  "issues": [],
+  "maximum_model_whole_vine_fallback_date_fraction": 0.0,
+  "maximum_monthly_failed_pair_fraction": 0.0,
+  "maximum_realised_portfolio_identity_error": 1.3877787807814457e-17,
+  "maximum_whole_vine_fallback_date_fraction": 0.01,
+  "method": {
+    "families": [
+      "independence",
+      "gaussian",
+      "student_t",
+      "frank",
+      "clayton",
+      "gumbel"
+    ],
+    "family_selection": "aic_sequential_mle",
+    "library": "pyvinecopulib",
+    "library_version": "0.7.6",
+    "num_threads": 1,
+    "rotations_degrees": [
+      0,
+      90,
+      180,
+      270
+    ],
+    "structure_selection": "dissmann_abs_kendall_tau_mst",
+    "truncation_level": 3
+  },
+  "model_date_counts": {
+    "M6": 1508,
+    "M8": 1508
+  },
+  "model_ids": [
+    "M6",
+    "M8"
+  ],
+  "model_whole_vine_fallback_date_counts": {
+    "M6": 0,
+    "M8": 0
+  },
+  "model_whole_vine_fallback_date_fractions": {
+    "M6": 0.0,
+    "M8": 0.0
+  },
+  "outputs": {
+    "vine_copula_refits": {
+      "path": "data/processed/ml_vine_copula_refits.parquet",
+      "rows": 144,
+      "sha256": "34559179bd3cce7715ec0a168219b4d7fe726bc5a60c891e746179fa9ce10102"
+    },
+    "vine_risk_forecasts": {
+      "path": "data/processed/ml_vine_risk_forecasts.parquet",
+      "rows": 3016,
+      "sha256": "96a7259de383cba0ebe4910a825e38764f8be9882771b0c27740fc04cd9e667b"
+    }
+  },
+  "pair_count": 3888,
+  "portfolio_identity_tolerance": 1e-12,
+  "refit_count": 144,
+  "reporting_scope": "provisional_research_results",
+  "schema_version": 1,
+  "status": "pass",
+  "truncation_level": 3,
+  "universe_variant": "security_primary",
+  "whole_vine_fallback_date_count": 0,
+  "whole_vine_fallback_date_fraction": 0.0,
+  "whole_vine_fallback_refit_count": 0
+}

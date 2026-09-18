@@ -4,6 +4,28 @@
   "title": "FE5110 daily risk-forecast evaluation record",
   "type": "object",
   "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {"properties": {"model_id": {"const": "M0"}}, "required": ["model_id"]},
+      "then": {"properties": {"grouping_id": {"const": "none"}}}
+    },
+    {
+      "if": {"properties": {"model_id": {"enum": ["M1", "M2"]}}, "required": ["model_id"]},
+      "then": {"properties": {"grouping_id": {"const": "gics"}}}
+    },
+    {
+      "if": {"properties": {"model_id": {"enum": ["M3", "M4"]}}, "required": ["model_id"]},
+      "then": {"properties": {"grouping_id": {"const": "hierarchical"}}}
+    },
+    {
+      "if": {"properties": {"model_id": {"enum": ["M5", "M6"]}}, "required": ["model_id"]},
+      "then": {"properties": {"grouping_id": {"const": "spectral"}}}
+    },
+    {
+      "if": {"properties": {"model_id": {"enum": ["M7", "M8"]}}, "required": ["model_id"]},
+      "then": {"properties": {"grouping_id": {"const": "pca_kmeans"}}}
+    }
+  ],
   "required": [
     "date",
     "year",
@@ -28,8 +50,8 @@
   "properties": {
     "date": {"type": "string", "format": "date"},
     "year": {"type": "integer", "minimum": 2020, "maximum": 2025},
-    "model_id": {"enum": ["M0", "M1", "M2", "M3", "M4"]},
-    "grouping_id": {"enum": ["none", "gics", "hierarchical"]},
+    "model_id": {"enum": ["M0", "M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8"]},
+    "grouping_id": {"enum": ["none", "gics", "hierarchical", "spectral", "pca_kmeans"]},
     "realised_loss": {"type": "number"},
     "var_95": {"type": "number"},
     "var_975": {"type": "number"},

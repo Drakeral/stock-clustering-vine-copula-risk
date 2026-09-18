@@ -250,8 +250,16 @@ sorted member tuples. Annual artifacts report out-of-sample dependence gaps, NMI
 against GICS and hierarchical groups, consecutive-year ARI, group sizes, exact
 portfolio reconstruction, embedding diagnostics, and seed/output hashes.
 
-This grouping stage does not revise H1-H3 and does not itself produce VaR or ES.
-M5-M8 are reserved for matched Gaussian and tree-3 vine risk models on the two ML
-groupings. Those later loss comparisons are exploratory and use
-Benjamini-Hochberg FDR at 5% across the frozen 24-test family; calibration is
-descriptive.
+This grouping stage does not revise H1-H3. M5-M8 apply the same frozen marginal,
+simulation, Gaussian, and tree-3 vine methods to the two ML groupings. M5/M6 use
+spectral groups and M7/M8 use PCA-plus-k-means groups, with the odd model in each
+pair Gaussian and the even model a matched vine. The models reuse the primary
+monthly common-random-number manifest.
+
+Each ML model is compared with the same-dependence GICS and hierarchical core
+models for 95% quantile loss, 99% quantile loss, and 97.5% FZ0: eight pairings
+times three scores form one frozen 24-test family. Two-sided DM p-values use HAC
+lag 7 and Benjamini-Hochberg FDR at 5%, followed by a direction check. Full-period
+and annual Kupiec and Christoffersen independence results at 95%, 97.5%, and 99%
+are unadjusted descriptive diagnostics. These results cannot revise H1-H3 or the
+core M0-M4 ranking.

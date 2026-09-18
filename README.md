@@ -23,8 +23,9 @@ confirmatory provenance may be claimed.
 The exploratory ML grouping gate also passes. Annual spectral clustering and
 PCA-plus-k-means assignments and return panels have been generated under the
 same leakage-free windows and 11-group portfolio arithmetic as the core study.
-The reserved M5-M8 Gaussian/vine forecasts have not yet been implemented, so
-these artifacts are clustering diagnostics rather than portfolio-risk results.
+M5-M8 then apply the same marginal, Gaussian/vine, simulation, and risk-scoring
+protocol to those groupings. Their comparisons remain exploratory and cannot
+revise the core H1-H3 conclusions or model ranking.
 
 The machine-readable authorization and its narrow conditions are frozen in
 `config/provenance_amendment.json`. A licensed point-in-time extract can still
@@ -155,6 +156,10 @@ uv run python scripts/evaluate_risk_models.py
 uv run python scripts/build_vine_copula.py --truncation-level 10
 uv run python scripts/evaluate_full_vine_robustness.py
 uv run python scripts/build_ml_groupings.py
+uv run python scripts/build_ml_marginal_models.py
+uv run python scripts/build_ml_gaussian_copula.py
+uv run python scripts/build_ml_vine_copula.py
+uv run python scripts/evaluate_ml_risk_models.py
 uv run ruff check scripts tests
 uv run ruff format --check scripts tests
 uv run python -m unittest discover -s tests -v
@@ -240,6 +245,18 @@ added later.
   group returns for both exploratory ML groupings, using the same annual active
   sets, 11-group rule, and daily-rebalanced group-size arithmetic as the core
   analysis;
+- `data/processed/ml_marginal_refits.parquet`,
+  `ml_marginal_daily_forecasts.parquet`, and
+  `ml_monthly_copula_training_pits.parquet`: isolated M5-M8 marginal fits,
+  daily states, and monthly copula-training PITs;
+- `data/processed/ml_gaussian_copula_refits.parquet` and
+  `ml_gaussian_risk_forecasts.parquet`: monthly M5/M7 Gaussian dependence fits
+  and daily risk forecasts using the primary common-random-number manifest;
+- `data/processed/ml_vine_copula_refits.parquet` and
+  `ml_vine_risk_forecasts.parquet`: monthly M6/M8 tree-3 vine fits and daily
+  forecasts with explicit pair and whole-vine fallback records;
+- `data/processed/ml_risk_evaluation_daily.parquet`: matched exploratory M5-M8
+  quantile losses, FZ0 scores, VaR exceptions, and diagnostics;
 - `data/processed/marginal_refits.parquet`: one record per primary-universe
   group-month, including its leakage-free training bounds, selected marginal
   specification, parameters, convergence diagnostics, and complete fallback log;
@@ -276,6 +293,12 @@ added later.
 - `data/audit/ml_clustering_diagnostics.json`: exploratory out-of-sample
   separation and stability diagnostics, dimensionality choices, portfolio
   identities, and bound ML-grouping output hashes;
+- `data/audit/ml_marginal_model_quality.json`,
+  `ml_gaussian_copula_quality.json`, and `ml_vine_copula_quality.json`: isolated
+  M5-M8 fit, fallback, simulation, coverage, and bound-output checks;
+- `data/audit/ml_model_evaluation.json`: the frozen 24-test exploratory DM
+  family with Benjamini-Hochberg adjustment, descriptive calibration, matched
+  log scores, and the explicit boundary that core H1-H3 are unchanged;
 - `data/audit/historical_simulation_quality.json`: M0 window, forecast coverage,
   arithmetic, upstream lineage, and output-hash checks;
 - `data/audit/marginal_model_quality.json`: marginal coverage, fallback incidence,

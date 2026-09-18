@@ -1,6 +1,6 @@
 # Quantitative Code Audit
 
-Audit date: 15 September 2026
+Audit date: 16 September 2026
 
 ## Conclusion
 
@@ -20,8 +20,9 @@ The review covered universe construction and provenance, market-input
 verification, lifecycle and corporate-action handling, return construction,
 portfolio arithmetic, annual grouping construction, marginal filtering,
 Gaussian and R-vine copulas, Monte Carlo risk forecasts, statistical inference,
-the full ten-tree vine robustness analysis, artifact schemas and hashes, tests,
-CI, dependency locking, secret boundaries, and repository hygiene.
+the full ten-tree vine robustness analysis, the spectral and PCA-plus-k-means
+M5-M8 risk extension, artifact schemas and hashes, tests, CI, dependency
+locking, secret boundaries, and repository hygiene.
 
 ## Quantitative invariants confirmed
 
@@ -102,12 +103,12 @@ quality limit. All 144 primary vine refits completed without whole-vine
 fallback. The full tree-10 run also completed all 144 refits and 3,016 forecasts
 without failed pairs or whole-vine fallback. Its 7,920 pair positions and 6,032
 matched robustness score rows pass their production artifact checks. The full
-local suite contains 133 passing tests, including all eight artifact-bound
+local suite contains 145 passing tests, including all nine artifact-bound
 production classes. After rebuilding the affected audit chain, the annual
 grouping, marginal, Gaussian, primary-vine, evaluation, full-vine, robustness,
 and exploratory ML numerical artifacts all reproduced their pre-audit SHA-256
-hashes exactly. The final lineage scan verifies 165 path-bound hash records
-across 24 audit and manifest documents.
+hashes exactly. The final lineage scan verifies 221 path-bound hash records
+across 28 audit and manifest documents.
 
 The post-audit exploratory ML-grouping checkpoint adds 12 deterministic annual
 fits: spectral clustering and PCA-plus-k-means for each year from 2020 through
@@ -116,6 +117,18 @@ long-form training/evaluation group-return rows. The largest independently
 reconstructed stock-versus-group portfolio discrepancy is `6.94e-17`. A second
 complete build reproduced the assignment, Parquet, seed-manifest, and audit
 hashes byte for byte.
+
+The downstream ML-risk checkpoint adds 1,584 monthly marginal refits, 144
+Gaussian refits, 144 truncated-vine refits, and 6,032 M5-M8 daily evaluation
+records. All marginal fits were accepted by a GARCH-family specification, all
+pair-copula fits succeeded, no whole-vine fallback was used, and the Gaussian
+stage reproduced the primary 72-record common-random-number manifest exactly.
+The frozen 24-test exploratory DM family produced no loss difference significant
+after Benjamini-Hochberg adjustment at 5%. Within each ML grouping, vine mean
+copula log scores are descriptively higher than the matched Gaussian scores;
+these log-score comparisons are not cross-grouping inference. A second complete
+M5-M8 marginal, Gaussian, vine, and evaluation build reproduced all 12 derived
+Parquet and audit SHA-256 hashes byte for byte.
 
 ## Interpretation and remaining boundaries
 
@@ -144,10 +157,10 @@ hashes byte for byte.
   their trailing estimation window. This is the frozen implemented design, not
   a coding error, but a current-composition historical-simulation backcast would
   be a useful explicitly labelled robustness check before final submission.
-- Secondary group-balanced portfolios and the matched M5-M8 Gaussian/vine risk
-  forecasts remain future stages. The spectral and PCA-plus-k-means grouping
-  implementation is an exploratory extension; its assignments and diagnostics
-  must not be described as completed VaR/ES evidence.
+- Secondary group-balanced portfolios remain a future stage. The matched M5-M8
+  Gaussian/vine risk forecasts are implemented, but remain an exploratory
+  extension: none of their 24 adjusted loss comparisons is significant, and
+  they do not revise H1-H3 or the core M0-M4 ranking.
 - Descriptively, spectral grouping's mean annual out-of-sample pair-weighted
   dependence gap is 0.0273 above GICS and 0.0329 above hierarchical grouping.
   PCA-plus-k-means is 0.0051 and 0.0107 above those baselines, respectively.

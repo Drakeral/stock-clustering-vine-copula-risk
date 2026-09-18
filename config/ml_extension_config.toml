@@ -1,5 +1,6 @@
 schema_version = 1
 protocol_status = "frozen_before_ml_grouping_results"
+risk_protocol_status = "frozen_before_ml_risk_results"
 analysis_role = "exploratory_unsupervised_robustness"
 reporting_scope_rule = "inherit_foundation_gate"
 
@@ -52,7 +53,8 @@ minimum_components = 2
 embedding = "left_singular_vectors_times_singular_values"
 
 [downstream_risk_models]
-status = "reserved_not_yet_implemented"
+status = "implementation_authorized_before_risk_results"
+analysis_role = "exploratory_unsupervised_risk_extension"
 models = [
   { model_id = "M5", grouping_id = "spectral", dependence = "gaussian" },
   { model_id = "M6", grouping_id = "spectral", dependence = "vine_tree_3" },
@@ -60,12 +62,27 @@ models = [
   { model_id = "M8", grouping_id = "pca_kmeans", dependence = "vine_tree_3" },
 ]
 inherit_marginal_copula_simulation_protocol_from = "config/model_config.toml"
+common_random_numbers = "reuse_primary_simulation_seed_manifest"
 
 [exploratory_inference]
 loss_scores = ["quantile_loss_95", "quantile_loss_99", "fz0_975"]
 matched_baselines = ["gics", "hierarchical"]
+loss_difference = "ml_model_minus_matched_baseline"
+comparisons = [
+  { ml_model = "M5", baseline_model = "M1", baseline_grouping = "gics", dependence = "gaussian" },
+  { ml_model = "M5", baseline_model = "M3", baseline_grouping = "hierarchical", dependence = "gaussian" },
+  { ml_model = "M6", baseline_model = "M2", baseline_grouping = "gics", dependence = "vine_tree_3" },
+  { ml_model = "M6", baseline_model = "M4", baseline_grouping = "hierarchical", dependence = "vine_tree_3" },
+  { ml_model = "M7", baseline_model = "M1", baseline_grouping = "gics", dependence = "gaussian" },
+  { ml_model = "M7", baseline_model = "M3", baseline_grouping = "hierarchical", dependence = "gaussian" },
+  { ml_model = "M8", baseline_model = "M2", baseline_grouping = "gics", dependence = "vine_tree_3" },
+  { ml_model = "M8", baseline_model = "M4", baseline_grouping = "hierarchical", dependence = "vine_tree_3" },
+]
 dm_hac_lag = 7
 multiplicity = "benjamini_hochberg"
 family_size = 24
 false_discovery_rate = 0.05
 calibration_role = "descriptive"
+calibration_tests = ["kupiec_unconditional_coverage", "christoffersen_independence"]
+calibration_confidence_levels = [0.95, 0.975, 0.99]
+calibration_periods = ["full_period", "annual"]

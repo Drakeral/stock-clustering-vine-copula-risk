@@ -533,9 +533,26 @@ def build_gaussian_outputs(
     *,
     universe_variant: str = "security_primary",
     progress_every: int = 12,
+    model_by_grouping: Mapping[str, tuple[str, str]] | None = None,
 ) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any], dict[str, Any]]:
     """Build all monthly Gaussian fits, daily forecasts, seeds, and quality checks."""
 
+    model_registry = dict(MODEL_BY_GROUPING if model_by_grouping is None else model_by_grouping)
+    if not model_registry or any(
+        not isinstance(input_grouping, str)
+        or not input_grouping
+        or not isinstance(value, tuple)
+        or len(value) != 2
+        or any(not isinstance(item, str) or not item for item in value)
+        for input_grouping, value in model_registry.items()
+    ):
+        raise ValueError("Gaussian model registry must map groupings to model/grouping pairs")
+    expected_models = {model_id for model_id, _ in model_registry.values()}
+    if len(expected_models) != len(model_registry):
+        raise ValueError("Gaussian model registry contains duplicate model IDs")
+    output_groupings = {grouping_id for _, grouping_id in model_registry.values()}
+    if len(output_groupings) != len(model_registry):
+        raise ValueError("Gaussian model registry contains duplicate output groupings")
     gaussian, simulation, forecast, marginal = _validate_protocol(model_config)
     _validate_input_frames(training_pits, marginal_refits, daily_margins, group_returns)
     dimension = int(simulation["dimension"])
@@ -565,7 +582,7 @@ def build_gaussian_outputs(
                 raise ValueError(f"invalid date in {column}")
     if training.empty or refits.empty or daily.empty:
         raise ValueError(f"no modelling rows for universe variant {universe_variant}")
-    if not set(training["grouping_id"]).issubset(MODEL_BY_GROUPING):
+    if not set(training["grouping_id"]).issubset(model_registry):
         raise ValueError("training PIT panel contains an unsupported grouping")
     training_key = [
         "year",
@@ -589,7 +606,7 @@ def build_gaussian_outputs(
     for block_index, (identifiers, block) in enumerate(grouped, start=1):
         year, month, _, input_grouping = identifiers
         year, month = int(year), int(month)
-        model_id, output_grouping = MODEL_BY_GROUPING[str(input_grouping)]
+        model_id, output_grouping = model_registry[str(input_grouping)]
         group_order = sorted(str(value) for value in block["group_id"].unique())
         if len(group_order) != dimension:
             raise ValueError(f"{identifiers} has {len(group_order)} groups; expected {dimension}")
@@ -765,7 +782,6 @@ def build_gaussian_outputs(
         str(key): int(value)
         for key, value in forecast_frame.groupby("model_id")["date"].nunique().items()
     }
-    expected_models = {"M1", "M3"}
     if set(date_counts) != expected_models or len(set(date_counts.values())) != 1:
         issues.append("incomplete_matched_model_coverage")
     realised_wide = forecast_frame.pivot(
@@ -775,7 +791,14 @@ def build_gaussian_outputs(
         issues.append("incomplete_realised_portfolio_identity")
         maximum_identity_error = float("inf")
     else:
-        maximum_identity_error = float(np.max(np.abs(realised_wide["M1"] - realised_wide["M3"])))
+        reference_model = sorted(expected_models)[0]
+        maximum_identity_error = float(
+            realised_wide.loc[:, sorted(expected_models)]
+            .sub(realised_wide[reference_model], axis="index")
+            .abs()
+            .to_numpy(dtype=float)
+            .max()
+        )
         if maximum_identity_error > float(model_config["portfolio"]["reconstruction_tolerance"]):
             issues.append("grouping_portfolio_identity_failed")
     repaired_count = int(fit_frame["correlation_repaired"].sum())
