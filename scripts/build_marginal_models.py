@@ -66,6 +66,7 @@ class MonthlyTask:
     requested_training_start: pd.Timestamp
     training: pd.Series
     evaluation: pd.Series
+    evaluation_weights: pd.Series | None = None
 
     @property
     def refit_id(self) -> str:
@@ -246,15 +247,50 @@ def _validate_grouping_binding(
         raise RuntimeError("group-return panel differs from the passed clustering audit")
 
 
-def _validate_group_metadata(frame: pd.DataFrame) -> None:
-    """Validate annual group sizes and their portfolio-weight identity."""
+def _validate_buy_and_hold_weights(frame: pd.DataFrame) -> None:
+    """Validate equal-group annual resets and exact pre-return weight drift."""
+
+    if "simple_return" not in frame:
+        raise ValueError("buy-and-hold group returns require simple_return")
+    if not np.isfinite(frame["simple_return"].to_numpy(dtype=float)).all() or bool(
+        (frame["simple_return"] <= -1.0).any()
+    ):
+        raise ValueError("buy-and-hold group simple returns must be finite and greater than -1")
+    block_columns = ["year", "universe_variant", "sample_role", "grouping_id"]
+    for identifiers, block in frame.groupby(block_columns, sort=False):
+        for calendar_year, segment in block.groupby(block["date"].dt.year, sort=True):
+            weights = segment.pivot(index="date", columns="group_id", values="portfolio_weight")
+            returns = segment.pivot(index="date", columns="group_id", values="simple_return")
+            weights = weights.sort_index().sort_index(axis="columns")
+            returns = returns.reindex(index=weights.index, columns=weights.columns)
+            if weights.isna().any().any() or returns.isna().any().any():
+                raise ValueError(f"incomplete buy-and-hold group panel: {identifiers}")
+            weight_values = weights.to_numpy(dtype=float)
+            return_values = returns.to_numpy(dtype=float)
+            if not np.allclose(weight_values.sum(axis=1), 1.0, rtol=0.0, atol=1e-12):
+                raise ValueError(f"buy-and-hold weights do not sum to one: {identifiers}")
+            expected_initial = np.full(weights.shape[1], 1.0 / weights.shape[1])
+            if not np.allclose(weight_values[0], expected_initial, rtol=0.0, atol=1e-12):
+                raise ValueError(
+                    f"buy-and-hold weights do not reset equally in {calendar_year}: {identifiers}"
+                )
+            if len(weights) > 1:
+                portfolio_returns = np.sum(weight_values[:-1] * return_values[:-1], axis=1)
+                expected_next = weight_values[:-1] * (1.0 + return_values[:-1])
+                expected_next /= (1.0 + portfolio_returns)[:, None]
+                if not np.allclose(weight_values[1:], expected_next, rtol=0.0, atol=1e-12):
+                    raise ValueError(
+                        f"buy-and-hold weights do not follow return drift: {identifiers}"
+                    )
+
+
+def _validate_group_metadata(frame: pd.DataFrame, portfolio_weight_rule: str) -> None:
+    """Validate annual group sizes and the selected portfolio-weight identity."""
 
     group_key = ["year", "universe_variant", "grouping_id", "group_id"]
-    variation = frame.groupby(group_key, sort=False)[["group_size", "portfolio_weight"]].nunique(
-        dropna=False
-    )
-    if bool((variation > 1).any().any()):
-        raise ValueError("group size or portfolio weight changes within an annual group")
+    size_variation = frame.groupby(group_key, sort=False)["group_size"].nunique(dropna=False)
+    if bool((size_variation > 1).any()):
+        raise ValueError("group size changes within an annual group")
     metadata = frame[group_key + ["group_size", "portfolio_weight"]].drop_duplicates()
     sizes = metadata["group_size"].to_numpy(dtype=float)
     weights = metadata["portfolio_weight"].to_numpy(dtype=float)
@@ -262,6 +298,16 @@ def _validate_group_metadata(frame: pd.DataFrame) -> None:
         raise ValueError("group sizes must be positive integers")
     if bool(((weights <= 0) | (weights > 1)).any()):
         raise ValueError("portfolio weights must lie in (0, 1]")
+    if portfolio_weight_rule == "annual_equal_group_buy_and_hold":
+        _validate_buy_and_hold_weights(frame)
+        return
+    if portfolio_weight_rule != "group_size_daily_rebalanced":
+        raise ValueError(f"unsupported portfolio weight rule: {portfolio_weight_rule}")
+    weight_variation = frame.groupby(group_key, sort=False)["portfolio_weight"].nunique(
+        dropna=False
+    )
+    if bool((weight_variation > 1).any()):
+        raise ValueError("portfolio weight changes within a primary annual group")
     for identifiers, annual_groups in metadata.groupby(
         ["year", "universe_variant", "grouping_id"], sort=False
     ):
@@ -282,6 +328,7 @@ def prepare_monthly_tasks(
     model_config: Mapping[str, Any],
     *,
     universe_variant: str = "security_primary",
+    portfolio_weight_rule: str = "group_size_daily_rebalanced",
 ) -> list[MonthlyTask]:
     """Validate the long panel and build leakage-free group-month tasks."""
 
@@ -296,6 +343,8 @@ def prepare_monthly_tasks(
         "portfolio_weight",
         "log_return",
     ]
+    if portfolio_weight_rule == "annual_equal_group_buy_and_hold":
+        required.append("simple_return")
     missing = sorted(set(required) - set(group_returns.columns))
     if missing:
         raise ValueError(f"group-return panel is missing columns: {missing}")
@@ -316,7 +365,7 @@ def prepare_monthly_tasks(
         frame[["group_size", "portfolio_weight", "log_return"]].to_numpy(dtype=float)
     ).all():
         raise ValueError("group-return panel contains non-finite required values")
-    _validate_group_metadata(frame)
+    _validate_group_metadata(frame, portfolio_weight_rule)
 
     calendar_years, minimum, start_year, end_year = _task_protocol(model_config)
     tasks: list[MonthlyTask] = []
@@ -336,7 +385,6 @@ def prepare_monthly_tasks(
                 f"overlapping sample roles for {year}/{grouping_id}/{group_id}: {dates[:5]}"
             )
         group_size = int(group["group_size"].iloc[0])
-        portfolio_weight = float(group["portfolio_weight"].iloc[0])
         evaluation = group.loc[group["sample_role"] == "evaluation"]
         if evaluation.empty or not (evaluation["date"].dt.year == year).all():
             raise ValueError(f"invalid evaluation rows for {year}/{grouping_id}/{group_id}")
@@ -355,6 +403,7 @@ def prepare_monthly_tasks(
                 )
             training_series = training.set_index("date")["log_return"].sort_index()
             evaluation_series = month_rows.set_index("date")["log_return"].sort_index()
+            evaluation_weights = month_rows.set_index("date")["portfolio_weight"].sort_index()
             if training_series.index.max() >= refit_date:
                 raise AssertionError("training window includes the refit date")
             tasks.append(
@@ -365,11 +414,12 @@ def prepare_monthly_tasks(
                     grouping_id=str(grouping_id),
                     group_id=str(group_id),
                     group_size=group_size,
-                    portfolio_weight=portfolio_weight,
+                    portfolio_weight=float(evaluation_weights.iloc[0]),
                     refit_date=refit_date,
                     requested_training_start=requested_start,
                     training=training_series,
                     evaluation=evaluation_series,
+                    evaluation_weights=evaluation_weights,
                 )
             )
     tasks.sort(key=lambda item: (item.year, item.month, item.grouping_id, item.group_id))
@@ -776,6 +826,11 @@ def filter_month(
     student = StudentsT() if state.student_t_df is not None else None
     rows: list[dict[str, Any]] = []
     for date, realised_decimal in task.evaluation.items():
+        portfolio_weight = (
+            task.portfolio_weight
+            if task.evaluation_weights is None
+            else float(task.evaluation_weights.loc[date])
+        )
         realised = float(realised_decimal) * scale
         mean = state.mean_constant + state.phi * previous_return
         if not np.isfinite(variance) or variance <= 0:
@@ -799,7 +854,7 @@ def filter_month(
                 "grouping_id": task.grouping_id,
                 "group_id": task.group_id,
                 "group_size": task.group_size,
-                "portfolio_weight": task.portfolio_weight,
+                "portfolio_weight": portfolio_weight,
                 "refit_id": task.refit_id,
                 "selected_method": state.selected_method,
                 "fallback_level": state.fallback_level,
@@ -870,13 +925,19 @@ def build_marginal_outputs(
     *,
     universe_variant: str = "security_primary",
     progress_every: int = 100,
+    portfolio_weight_rule: str = "group_size_daily_rebalanced",
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, dict[str, Any]]:
     marginal = _validate_protocol(model_config)
     vine = model_config.get("vine")
     if not isinstance(vine, Mapping):
         raise TypeError("model configuration must contain a vine table")
     expected_dimension = _positive_config_integer(vine, "dimension", section_name="vine")
-    tasks = prepare_monthly_tasks(group_returns, model_config, universe_variant=universe_variant)
+    tasks = prepare_monthly_tasks(
+        group_returns,
+        model_config,
+        universe_variant=universe_variant,
+        portfolio_weight_rule=portfolio_weight_rule,
+    )
     refits: list[dict[str, Any]] = []
     daily_rows: list[dict[str, Any]] = []
     training_frames: list[pd.DataFrame] = []
@@ -920,6 +981,11 @@ def build_marginal_outputs(
         for (year, _date, grouping_id), count in observed_group_counts.items()
     ):
         issues.append("incomplete_daily_group_coverage")
+    daily_weight_sums = daily_frame.groupby(["year", "date", "grouping_id"], sort=False)[
+        "portfolio_weight"
+    ].sum()
+    if not np.allclose(daily_weight_sums.to_numpy(dtype=float), 1.0, rtol=0.0, atol=1e-12):
+        issues.append("daily_portfolio_weights_do_not_sum_to_one")
     numeric_daily = daily_frame[
         [
             "conditional_mean_log_return",
@@ -964,6 +1030,7 @@ def build_marginal_outputs(
         "gate_name": "marginal_model_quality_v2",
         "status": "pass" if not issues else "fail",
         "universe_variant": universe_variant,
+        "portfolio_weight_rule": portfolio_weight_rule,
         "refit_count": len(refit_frame),
         "daily_forecast_count": len(daily_frame),
         "raw_training_pit_record_count": len(raw_training_pits),

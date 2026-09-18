@@ -121,6 +121,61 @@ class MonthlyTaskTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "normalized group sizes"):
             prepare_monthly_tasks(panel, config)
 
+    def test_buy_and_hold_tasks_preserve_daily_drifting_weights(self):
+        dates = pd.bdate_range("2017-01-03", "2020-12-31")
+        returns = np.column_stack(
+            [np.sin(np.arange(len(dates))) / 100, np.cos(np.arange(len(dates))) / 100]
+        )
+        weights = np.empty_like(returns)
+        current = np.asarray([0.5, 0.5])
+        previous_year = None
+        for row_number, (date, row) in enumerate(zip(dates, returns, strict=True)):
+            if date.year != previous_year:
+                current = np.asarray([0.5, 0.5])
+                previous_year = date.year
+            weights[row_number] = current
+            portfolio_return = float(current @ row)
+            current = current * (1.0 + row) / (1.0 + portfolio_return)
+        frames = []
+        for group_number, group_id in enumerate(["one", "two"]):
+            frames.append(
+                pd.DataFrame(
+                    {
+                        "date": dates,
+                        "year": 2020,
+                        "universe_variant": "security_primary",
+                        "sample_role": np.where(dates.year == 2020, "evaluation", "training"),
+                        "grouping_id": "balanced",
+                        "group_id": group_id,
+                        "group_size": 2 - group_number,
+                        "portfolio_weight": weights[:, group_number],
+                        "simple_return": returns[:, group_number],
+                        "log_return": np.log1p(returns[:, group_number]),
+                    }
+                )
+            )
+        panel = pd.concat(frames, ignore_index=True)
+        config = {
+            "forecast": {"training_window_calendar_years": 3, "minimum_training_observations": 700},
+            "clustering": {"evaluation_start_year": 2020, "evaluation_end_year": 2020},
+        }
+
+        tasks = prepare_monthly_tasks(
+            panel,
+            config,
+            portfolio_weight_rule="annual_equal_group_buy_and_hold",
+        )
+
+        self.assertEqual(len(tasks), 24)
+        first = next(task for task in tasks if task.month == 1 and task.group_id == "one")
+        expected = panel.loc[
+            panel["group_id"].eq("one")
+            & panel["date"].between(first.evaluation.index.min(), first.evaluation.index.max()),
+            "portfolio_weight",
+        ].to_numpy()
+        np.testing.assert_allclose(first.evaluation_weights.to_numpy(), expected)
+        self.assertGreater(first.evaluation_weights.nunique(), 1)
+
     def test_task_protocol_rejects_invalid_windows(self):
         config = {
             "forecast": {"training_window_calendar_years": 3, "minimum_training_observations": 2},

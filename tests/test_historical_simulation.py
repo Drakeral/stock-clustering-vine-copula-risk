@@ -136,7 +136,8 @@ class HistoricalSimulationPipelineTests(unittest.TestCase):
         self.assertFalse(window_schema["additionalProperties"])
         self.assertEqual(set(window_schema["required"]), set(window_schema["properties"]))
         self.assertEqual(
-            forecast_schema["allOf"][0]["if"]["properties"]["model_id"], {"const": "M0"}
+            forecast_schema["allOf"][0]["if"]["properties"]["model_id"],
+            {"enum": ["M0", "B_GICS_HS", "B_HIER_HS"]},
         )
         self.assertEqual(
             forecast_schema["allOf"][0]["then"]["properties"]["seed_components"],

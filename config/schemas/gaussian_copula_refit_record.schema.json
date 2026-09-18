@@ -20,6 +20,14 @@
     {
       "if": {"properties": {"model_id": {"const": "M7"}}, "required": ["model_id"]},
       "then": {"properties": {"grouping_id": {"const": "pca_kmeans"}}}
+    },
+    {
+      "if": {"properties": {"model_id": {"const": "B_GICS_GAUSSIAN"}}, "required": ["model_id"]},
+      "then": {"properties": {"grouping_id": {"const": "gics_balanced"}}}
+    },
+    {
+      "if": {"properties": {"model_id": {"const": "B_HIER_GAUSSIAN"}}, "required": ["model_id"]},
+      "then": {"properties": {"grouping_id": {"const": "hierarchical_balanced"}}}
     }
   ],
   "required": [
@@ -54,8 +62,8 @@
     "year": {"type": "integer", "minimum": 2020, "maximum": 2025},
     "month": {"type": "integer", "minimum": 1, "maximum": 12},
     "universe_variant": {"const": "security_primary"},
-    "model_id": {"enum": ["M1", "M3", "M5", "M7"]},
-    "grouping_id": {"enum": ["gics", "hierarchical", "spectral", "pca_kmeans"]},
+    "model_id": {"enum": ["M1", "M3", "M5", "M7", "B_GICS_GAUSSIAN", "B_HIER_GAUSSIAN"]},
+    "grouping_id": {"enum": ["gics", "hierarchical", "spectral", "pca_kmeans", "gics_balanced", "hierarchical_balanced"]},
     "training_start": {"type": "string", "format": "date"},
     "training_end": {"type": "string", "format": "date"},
     "training_observations": {"type": "integer", "minimum": 700},

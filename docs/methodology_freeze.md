@@ -54,6 +54,34 @@ The secondary group-balanced portfolios start each year with equal capital per
 group and equal capital per stock within a group. Their stock weights drift until
 the next annual rebalance.
 
+The two secondary targets are evaluated separately: one balances the 11 annual
+GICS sectors and the other balances the 11 annual hierarchical clusters. On the
+first trading day of each year, every non-empty group receives weight `1/11`, and
+each stock within group `g` receives weight `1/(11 n_g)`. Let `w_{i,t}` denote
+the pre-return stock weight. After observing simple total return `r_{i,t}`, the
+self-financing update is
+
+\[
+w_{i,t+1}=\frac{w_{i,t}(1+r_{i,t})}{1+R_{p,t}}.
+\]
+
+Group returns use the corresponding within-group pre-return weights; portfolio
+return is the sum of group return times pre-return group weight. Training
+backcasts retain the evaluation year's active set and labels but reset weights
+on the first available session of each calendar year in the three-year window.
+Verified-halt and terminal-cash positions earn zero and continue to drift as
+part of the self-financing portfolio. Transaction costs are zero.
+
+This portfolio-weighting robustness is frozen in
+`config/group_balanced_robustness.toml`. Each target receives rolling historical
+simulation, Gaussian-copula, and tree-3 vine forecasts under the core marginal,
+simulation, fallback, and common-random-number rules. Six within-target
+vine-minus-Gaussian DM comparisons form one 5% Holm family. The 24 calibration
+tests form a separate 5% Holm family. Models are ranked only within the same
+portfolio target because GICS-balanced and cluster-balanced realised losses are
+different. The exercise is exploratory, is not crossed with full-vine or ML
+grouping robustness, and cannot revise H1-H3.
+
 ## Clustering statistics
 
 For each 2020–2025 annual rebalance, Spearman correlations use the left-closed,

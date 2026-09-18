@@ -175,12 +175,20 @@ class MLRiskEvaluationTests(unittest.TestCase):
         )
         self.assertTrue(
             set(range(5, 9)).issubset(
-                {int(x[1:]) for x in forecast_schema["properties"]["model_id"]["enum"]}
+                {
+                    int(model_id[1:])
+                    for model_id in forecast_schema["properties"]["model_id"]["enum"]
+                    if model_id.startswith("M")
+                }
             )
         )
         self.assertTrue(
             set(range(5, 9)).issubset(
-                {int(x[1:]) for x in score_schema["properties"]["model_id"]["enum"]}
+                {
+                    int(model_id[1:])
+                    for model_id in score_schema["properties"]["model_id"]["enum"]
+                    if model_id.startswith("M")
+                }
             )
         )
         for schema in (forecast_schema, score_schema):
@@ -188,7 +196,7 @@ class MLRiskEvaluationTests(unittest.TestCase):
             for rule in schema["allOf"]:
                 model_rule = rule["if"]["properties"]["model_id"]
                 models = [model_rule["const"]] if "const" in model_rule else model_rule["enum"]
-                grouping = rule["then"]["properties"]["grouping_id"].get("const")
+                grouping = rule["then"]["properties"].get("grouping_id", {}).get("const")
                 if grouping is not None:
                     observed.update(dict.fromkeys(models, grouping))
             self.assertEqual(
@@ -203,6 +211,12 @@ class MLRiskEvaluationTests(unittest.TestCase):
                     "M6": "spectral",
                     "M7": "pca_kmeans",
                     "M8": "pca_kmeans",
+                    "B_GICS_HS": "gics_balanced",
+                    "B_GICS_GAUSSIAN": "gics_balanced",
+                    "B_GICS_VINE": "gics_balanced",
+                    "B_HIER_HS": "hierarchical_balanced",
+                    "B_HIER_GAUSSIAN": "hierarchical_balanced",
+                    "B_HIER_VINE": "hierarchical_balanced",
                 },
             )
 

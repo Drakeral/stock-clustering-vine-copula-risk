@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/fe5110/group_balanced_portfolio_return_record.schema.json",
+  "title": "FE5110 group-balanced portfolio return record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "date",
+    "year",
+    "universe_variant",
+    "sample_role",
+    "portfolio_id",
+    "grouping_id",
+    "active_security_count",
+    "group_count",
+    "simple_return",
+    "log_return"
+  ],
+  "properties": {
+    "date": {"type": "string", "format": "date"},
+    "year": {"type": "integer", "minimum": 2020, "maximum": 2025},
+    "universe_variant": {"const": "security_primary"},
+    "sample_role": {"enum": ["training", "evaluation"]},
+    "portfolio_id": {"enum": ["gics_balanced", "hierarchical_balanced"]},
+    "grouping_id": {"enum": ["gics_balanced", "hierarchical_balanced"]},
+    "active_security_count": {"type": "integer", "minimum": 1},
+    "group_count": {"const": 11},
+    "simple_return": {"type": "number", "exclusiveMinimum": -1},
+    "log_return": {"type": "number"}
+  }
+}

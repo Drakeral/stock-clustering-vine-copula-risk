@@ -168,6 +168,8 @@ uv run python scripts/build_ml_gaussian_copula.py
 uv run python scripts/build_ml_vine_copula.py
 uv run python scripts/evaluate_ml_risk_models.py
 uv run python scripts/evaluate_wba_dap_sensitivity.py
+uv run python scripts/build_group_balanced_portfolios.py
+uv run python scripts/evaluate_group_balanced_robustness.py
 uv run ruff check scripts tests
 uv run ruff format --check scripts tests
 uv run python -m unittest discover -s tests -v
@@ -294,6 +296,13 @@ added later.
   the primary tree-3 vines;
 - `data/processed/full_vine_robustness_daily.parquet`: matched tree-3/tree-10
   scores, exceptions, and diagnostics for all four vine variants;
+- `data/processed/group_balanced_group_returns.parquet` and
+  `group_balanced_portfolio_returns.parquet`: annually reset GICS-balanced and
+  hierarchical-cluster-balanced group and portfolio returns, with pre-return
+  weights drifting between annual rebalances;
+- `data/processed/group_balanced_robustness/`: isolated historical-simulation,
+  marginal, Gaussian, tree-3 vine, forecast, and daily-score artifacts for the
+  two group-balanced portfolio targets;
 - `data/manifests/simulation_seed_manifest.json`: reproducible monthly common-
   random-number seeds and uniform-matrix hashes; and
 - `data/manifests/inference_seed_manifest.json`: the H1 block-bootstrap seed,
@@ -331,5 +340,11 @@ added later.
 - `data/audit/full_vine_robustness_evaluation.json`: refit/forecast identity
   checks, complexity summaries, the frozen 16-test calibration family, six
   tree-10-minus-tree-3 DM comparisons, and matched descriptive log scores;
+- `data/audit/group_balanced_portfolio_construction.json`: annual reset dates,
+  drifting-weight bounds, exact stock-to-group portfolio identities, lineage,
+  and construction output hashes;
+- `data/audit/group_balanced_robustness.json`: six-model quality diagnostics,
+  a 24-test calibration family, six within-portfolio vine-minus-Gaussian DM
+  comparisons, and separate rankings for the two realised portfolio targets;
 - `data/audit/`: separate provenance, input-integrity, construction, and current
   readiness reports.

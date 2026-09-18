@@ -1,0 +1,58 @@
+schema_version = 1
+protocol_status = "frozen_before_group_balanced_results"
+analysis_role = "exploratory_portfolio_weighting_robustness"
+reporting_scope_rule = "inherit_foundation_gate"
+
+[portfolio]
+return_scale = "simple_total_return"
+rebalance_frequency = "annual_first_trading_day"
+initial_group_weight = "equal_one_over_nonempty_group_count"
+initial_within_group_weight = "equal_one_over_group_size"
+between_rebalance_rule = "buy_and_hold_total_return_weights_drift"
+daily_weight_timing = "pre_return"
+dividend_treatment = "inherited_total_return_reinvestment"
+verified_halt_and_terminal_cash_return = 0.0
+membership_and_labels = "hold_primary_annual_assignments_fixed"
+training_backcast = "evaluation_year_active_set_and_labels"
+training_weight_resets = "first_available_session_of_each_calendar_year"
+transaction_costs = 0.0
+portfolio_identity_tolerance = 1e-12
+
+[[portfolios]]
+portfolio_id = "gics_balanced"
+input_grouping_id = "gics_sector"
+model_grouping_id = "gics_balanced"
+historical_model_id = "B_GICS_HS"
+gaussian_model_id = "B_GICS_GAUSSIAN"
+vine_model_id = "B_GICS_VINE"
+
+[[portfolios]]
+portfolio_id = "hierarchical_balanced"
+input_grouping_id = "hierarchical_cluster"
+model_grouping_id = "hierarchical_balanced"
+historical_model_id = "B_HIER_HS"
+gaussian_model_id = "B_HIER_GAUSSIAN"
+vine_model_id = "B_HIER_VINE"
+
+[models]
+marginal_copula_simulation_protocol = "inherit_config/model_config.toml"
+historical_window_protocol = "inherit_config/model_config.toml"
+vine_truncation_tree = 3
+common_random_numbers = "reuse_primary_simulation_seed_manifest"
+full_vine_cross_robustness = false
+ml_grouping_cross_robustness = false
+
+[evaluation]
+loss_scores = ["quantile_loss_95", "quantile_loss_99", "fz0_975"]
+dm_comparison = "vine_minus_gaussian_within_same_portfolio"
+dm_hac_lag = 7
+dm_multiplicity = "holm_familywise"
+dm_family_size = 6
+calibration_confidence_levels = [0.95, 0.99]
+calibration_tests = ["kupiec_unconditional_coverage", "christoffersen_independence"]
+calibration_multiplicity = "holm_familywise"
+calibration_family_size = 24
+familywise_alpha = 0.05
+ranking = "separate_within_each_portfolio_equal_weight_average_primary_score_rank"
+hypothesis_treatment = "robustness_does_not_revise_core_H1_H2_H3"
+result_role = "exploratory_robustness"

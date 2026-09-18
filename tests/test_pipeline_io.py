@@ -7,8 +7,10 @@ import pandas as pd
 
 import scripts.build_annual_groupings as annual
 import scripts.build_gaussian_copula as gaussian
+import scripts.build_group_balanced_portfolios as balanced
 import scripts.build_marginal_models as marginal
 import scripts.build_vine_copula as vine
+import scripts.evaluate_group_balanced_robustness as balanced_risk
 from scripts.pipeline_io import (
     PROJECT_ROOT,
     artifact_hash_issues,
@@ -34,6 +36,14 @@ class PipelineIoTests(unittest.TestCase):
                 self.assertIs(module._require_current_hash_records, require_current_hash_records)
                 self.assertIs(module._write_json_atomic, write_json_atomic)
                 self.assertIs(module._write_parquet_atomic, write_parquet_atomic)
+                self.assertEqual(module.PROJECT_ROOT, PROJECT_ROOT)
+        for module in (balanced, balanced_risk):
+            with self.subTest(module=module.__name__):
+                self.assertIs(module.project_path, project_path)
+                self.assertIs(module.reporting_scope, reporting_scope)
+                self.assertIs(module.require_current_hash_records, require_current_hash_records)
+                self.assertIs(module.write_json_atomic, write_json_atomic)
+                self.assertIs(module.write_parquet_atomic, write_parquet_atomic)
                 self.assertEqual(module.PROJECT_ROOT, PROJECT_ROOT)
 
     def test_atomic_writers_replace_outputs_without_partial_files(self):

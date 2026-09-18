@@ -27,7 +27,7 @@
     "month": {"type": "integer", "minimum": 1, "maximum": 12},
     "refit_date": {"type": "string", "format": "date"},
     "universe_variant": {"enum": ["security_primary", "issuer_deduplicated_robustness"]},
-    "grouping_id": {"enum": ["gics_sector", "hierarchical_cluster", "spectral_cluster", "pca_kmeans_cluster"]},
+    "grouping_id": {"enum": ["gics_sector", "hierarchical_cluster", "spectral_cluster", "pca_kmeans_cluster", "gics_balanced", "hierarchical_balanced"]},
     "group_id": {"type": "string", "minLength": 1},
     "copula_refit_id": {"type": "string", "minLength": 1},
     "margin_refit_id": {"type": "string", "minLength": 1},

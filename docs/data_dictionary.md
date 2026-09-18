@@ -235,6 +235,38 @@ group-order, seed, margin-state, realised-return, and date identity before
 reporting the frozen calibration and DM test families. It explicitly leaves the
 primary H1-H3 decisions unchanged.
 
+## Group-balanced portfolio robustness outputs
+
+`data/processed/group_balanced_group_returns.parquet` contains training and
+evaluation group returns for `gics_balanced` and `hierarchical_balanced`. Its
+fields match the annual group-return panel, except that `portfolio_weight` is the
+date-specific pre-return group weight rather than `group_size / N`. The first
+session of every calendar-year segment has group weight `1/11`; weights then
+drift according to realised constituent total returns. Its schema is
+`config/schemas/group_balanced_group_return_record.schema.json`.
+
+`data/processed/group_balanced_portfolio_returns.parquet` contains the two
+distinct realised portfolio targets, with evaluation year, sample role, annual
+active-security count, group count, and simple/log portfolio return. Its schema
+is `config/schemas/group_balanced_portfolio_return_record.schema.json`.
+
+`data/processed/group_balanced_robustness/` contains ten isolated artifacts:
+historical forecasts and windows; marginal refits, daily states, and training
+PITs; Gaussian refits and forecasts; vine refits and forecasts; and daily
+evaluation scores. The refit and forecast records use the shared modelling
+schemas, extended with the balanced grouping and `B_*` model identifiers.
+Historical, Gaussian, and vine forecasts must share realised losses within each
+portfolio, but no realised-loss identity or rank comparison is imposed between
+the GICS-balanced and hierarchical-balanced portfolios.
+
+`data/audit/group_balanced_portfolio_construction.json` binds construction to
+the primary stock-return panel and annual assignments. It reports annual reset
+dates, group-weight ranges, and the maximum direct-stock versus grouped-return
+identity error. `data/audit/group_balanced_robustness.json` binds all ten risk
+artifacts and reports the frozen six-test DM and 24-test calibration families,
+quality/fallback diagnostics, and separate within-portfolio rankings. Both
+retain the foundation reporting scope and label the analysis exploratory.
+
 ## Lifecycle policy
 
 Every XNYS session between a security's explicit listing and removal dates is classified as `active_price`, `verified_halt`, `terminal_cash`, `removed`, or `unexplained_missing`; pre-listing dates are counted as `pre_inception`. A verified halt with no corporate action receives a stale synthetic price and zero return, while the cumulative price move remains on resumption as a `gap_bridge_return`. A corporate action on a missing price date requires review and cannot be stale-filled automatically.

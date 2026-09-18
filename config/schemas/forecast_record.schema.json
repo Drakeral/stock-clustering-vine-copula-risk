@@ -7,12 +7,11 @@
   "allOf": [
     {
       "if": {
-        "properties": {"model_id": {"const": "M0"}},
+        "properties": {"model_id": {"enum": ["M0", "B_GICS_HS", "B_HIER_HS"]}},
         "required": ["model_id"]
       },
       "then": {
         "properties": {
-          "grouping_id": {"const": "none"},
           "seed_components": {"type": "null"},
           "margin_fallback_count": {"const": 0},
           "whole_vine_fallback": {"const": false},
@@ -22,7 +21,7 @@
       },
       "else": {
         "properties": {
-          "grouping_id": {"enum": ["gics", "hierarchical", "spectral", "pca_kmeans"]},
+          "grouping_id": {"enum": ["gics", "hierarchical", "spectral", "pca_kmeans", "gics_balanced", "hierarchical_balanced"]},
           "seed_components": {
             "type": "array",
             "prefixItems": [
@@ -36,6 +35,10 @@
           "copula_log_score": {"type": "number"}
         }
       }
+    },
+    {
+      "if": {"properties": {"model_id": {"const": "M0"}}, "required": ["model_id"]},
+      "then": {"properties": {"grouping_id": {"const": "none"}}}
     },
     {
       "if": {"properties": {"model_id": {"enum": ["M1", "M2"]}}, "required": ["model_id"]},
@@ -52,6 +55,22 @@
     {
       "if": {"properties": {"model_id": {"enum": ["M7", "M8"]}}, "required": ["model_id"]},
       "then": {"properties": {"grouping_id": {"const": "pca_kmeans"}}}
+    },
+    {
+      "if": {"properties": {"model_id": {"const": "B_GICS_HS"}}, "required": ["model_id"]},
+      "then": {"properties": {"grouping_id": {"const": "gics_balanced"}}}
+    },
+    {
+      "if": {"properties": {"model_id": {"enum": ["B_GICS_GAUSSIAN", "B_GICS_VINE"]}}, "required": ["model_id"]},
+      "then": {"properties": {"grouping_id": {"const": "gics_balanced"}}}
+    },
+    {
+      "if": {"properties": {"model_id": {"const": "B_HIER_HS"}}, "required": ["model_id"]},
+      "then": {"properties": {"grouping_id": {"const": "hierarchical_balanced"}}}
+    },
+    {
+      "if": {"properties": {"model_id": {"enum": ["B_HIER_GAUSSIAN", "B_HIER_VINE"]}}, "required": ["model_id"]},
+      "then": {"properties": {"grouping_id": {"const": "hierarchical_balanced"}}}
     }
   ],
   "required": [
@@ -73,8 +92,8 @@
   ],
   "properties": {
     "date": {"type": "string", "format": "date"},
-    "model_id": {"enum": ["M0", "M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8"]},
-    "grouping_id": {"enum": ["none", "gics", "hierarchical", "spectral", "pca_kmeans"]},
+    "model_id": {"enum": ["M0", "M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "B_GICS_HS", "B_GICS_GAUSSIAN", "B_GICS_VINE", "B_HIER_HS", "B_HIER_GAUSSIAN", "B_HIER_VINE"]},
+    "grouping_id": {"enum": ["none", "gics", "hierarchical", "spectral", "pca_kmeans", "gics_balanced", "hierarchical_balanced"]},
     "refit_id": {"type": "string", "minLength": 1},
     "var_95": {"type": "number"},
     "var_975": {"type": "number"},
