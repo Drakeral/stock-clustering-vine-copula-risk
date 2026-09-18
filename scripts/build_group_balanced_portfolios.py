@@ -87,6 +87,16 @@ class BalancedSegment:
     maximum_identity_error: float
 
 
+@dataclass(frozen=True)
+class AnnualSample:
+    year: int
+    active: tuple[str, ...]
+    training: pd.DataFrame
+    evaluation: pd.DataFrame
+    assignments_by_ticker: Mapping[str, Mapping[str, Any]]
+    expected_group_count: int
+
+
 def _mapping(value: object, name: str) -> Mapping[str, Any]:
     if not isinstance(value, Mapping):
         raise TypeError(f"{name} must be a table")
@@ -191,6 +201,94 @@ def validate_group_balanced_protocol(config: Mapping[str, Any]) -> tuple[Portfol
     return specs
 
 
+def _validated_return_segment(
+    stock_simple_returns: pd.DataFrame,
+    labels: Mapping[str, str],
+    tolerance: float,
+) -> tuple[pd.DataFrame, np.ndarray, list[str]]:
+    if not np.isfinite(tolerance) or tolerance <= 0:
+        raise ValueError("portfolio identity tolerance must be finite and positive")
+    frame = stock_simple_returns.copy()
+    frame.index = pd.DatetimeIndex(pd.to_datetime(frame.index, errors="raise"), name="date")
+    if frame.empty or frame.index.has_duplicates or not frame.index.is_monotonic_increasing:
+        raise ValueError("stock return segment must have unique, sorted dates")
+    if frame.columns.has_duplicates or not all(isinstance(column, str) for column in frame.columns):
+        raise ValueError("stock return columns must be unique strings")
+    if set(frame.columns) != set(labels):
+        raise ValueError("group labels must match the stock return columns exactly")
+    values = frame.to_numpy(dtype=float)
+    if not np.isfinite(values).all() or bool((values <= -1.0).any()):
+        raise ValueError("buy-and-hold stock returns must be finite and greater than -1")
+    return frame, values, frame.columns.tolist()
+
+
+def _group_memberships(
+    columns: list[str], labels: Mapping[str, str]
+) -> tuple[list[str], dict[str, np.ndarray], pd.Series]:
+    normalized_labels = {ticker: str(labels[ticker]).strip() for ticker in columns}
+    if any(not group for group in normalized_labels.values()):
+        raise ValueError("group labels must be non-empty strings")
+    groups = sorted(set(normalized_labels.values()))
+    member_indices = {
+        group: np.asarray(
+            [index for index, ticker in enumerate(columns) if normalized_labels[ticker] == group],
+            dtype=int,
+        )
+        for group in groups
+    }
+    group_sizes = pd.Series(
+        {group: len(indices) for group, indices in member_indices.items()},
+        name="group_size",
+        dtype="int64",
+    )
+    return groups, member_indices, group_sizes
+
+
+def _equal_group_security_weights(
+    security_count: int, member_indices: Mapping[str, np.ndarray]
+) -> np.ndarray:
+    weights = np.empty(security_count, dtype=float)
+    for indices in member_indices.values():
+        weights[indices] = 1.0 / (len(member_indices) * len(indices))
+    return weights
+
+
+def _period_group_values(
+    row: np.ndarray,
+    weights: np.ndarray,
+    groups: list[str],
+    member_indices: Mapping[str, np.ndarray],
+) -> tuple[np.ndarray, np.ndarray, float]:
+    period_returns = np.empty(len(groups), dtype=float)
+    period_weights = np.empty(len(groups), dtype=float)
+    reconstructed = 0.0
+    for group_number, group in enumerate(groups):
+        indices = member_indices[group]
+        group_weight = float(weights[indices].sum())
+        group_return = float((weights[indices] / group_weight) @ row[indices])
+        period_weights[group_number] = group_weight
+        period_returns[group_number] = group_return
+        reconstructed += group_weight * group_return
+    return period_returns, period_weights, reconstructed
+
+
+def _advance_security_weights(
+    weights: np.ndarray,
+    row: np.ndarray,
+    portfolio_return: float,
+    tolerance: float,
+) -> np.ndarray:
+    wealth_multiplier = 1.0 + portfolio_return
+    if wealth_multiplier <= 0:
+        raise ValueError("buy-and-hold portfolio wealth became nonpositive")
+    updated = weights * (1.0 + row) / wealth_multiplier
+    if not np.isfinite(updated).all() or not np.isclose(
+        updated.sum(), 1.0, rtol=0.0, atol=tolerance
+    ):
+        raise ValueError("buy-and-hold security weights became invalid")
+    return updated
+
+
 def group_balanced_buy_and_hold(
     stock_simple_returns: pd.DataFrame,
     labels: Mapping[str, str],
@@ -199,33 +297,8 @@ def group_balanced_buy_and_hold(
 ) -> BalancedSegment:
     """Build a self-financing equal-group portfolio with annual weight resets."""
 
-    frame = stock_simple_returns.copy()
-    frame.index = pd.DatetimeIndex(pd.to_datetime(frame.index, errors="raise"), name="date")
-    if frame.empty or frame.index.has_duplicates or not frame.index.is_monotonic_increasing:
-        raise ValueError("stock return segment must have unique, sorted dates")
-    if frame.columns.has_duplicates or set(frame.columns) != set(labels):
-        raise ValueError("group labels must match the stock return columns exactly")
-    values = frame.to_numpy(dtype=float)
-    if not np.isfinite(values).all() or bool((values <= -1.0).any()):
-        raise ValueError("buy-and-hold stock returns must be finite and greater than -1")
-    columns = frame.columns.astype(str).tolist()
-    groups = sorted({str(labels[ticker]) for ticker in columns})
-    if not groups:
-        raise ValueError("buy-and-hold portfolio has no groups")
-    member_indices = {
-        group: np.asarray(
-            [index for index, ticker in enumerate(columns) if str(labels[ticker]) == group],
-            dtype=int,
-        )
-        for group in groups
-    }
-    if any(len(indices) == 0 for indices in member_indices.values()):
-        raise AssertionError("empty group survived group construction")
-    group_sizes = pd.Series(
-        {group: len(indices) for group, indices in member_indices.items()},
-        name="group_size",
-        dtype="int64",
-    )
+    frame, values, columns = _validated_return_segment(stock_simple_returns, labels, tolerance)
+    groups, member_indices, group_sizes = _group_memberships(columns, labels)
     group_returns = np.empty((len(frame), len(groups)), dtype=float)
     group_weights = np.empty((len(frame), len(groups)), dtype=float)
     portfolio_returns = np.empty(len(frame), dtype=float)
@@ -236,33 +309,21 @@ def group_balanced_buy_and_hold(
     for row_number, (date, row) in enumerate(zip(frame.index, values, strict=True)):
         calendar_year = int(date.year)
         if calendar_year != previous_calendar_year:
-            for indices in member_indices.values():
-                weights[indices] = 1.0 / (len(groups) * len(indices))
+            weights = _equal_group_security_weights(len(columns), member_indices)
             reset_dates.append(pd.Timestamp(date))
             previous_calendar_year = calendar_year
         portfolio_return = float(weights @ row)
         portfolio_returns[row_number] = portfolio_return
-        reconstructed = 0.0
-        for group_number, group in enumerate(groups):
-            indices = member_indices[group]
-            group_weight = float(weights[indices].sum())
-            within_weights = weights[indices] / group_weight
-            group_return = float(within_weights @ row[indices])
-            group_weights[row_number, group_number] = group_weight
-            group_returns[row_number, group_number] = group_return
-            reconstructed += group_weight * group_return
+        period_returns, period_weights, reconstructed = _period_group_values(
+            row, weights, groups, member_indices
+        )
+        group_returns[row_number] = period_returns
+        group_weights[row_number] = period_weights
         error = abs(reconstructed - portfolio_return)
         maximum_error = max(maximum_error, error)
         if error > tolerance:
             raise AssertionError(f"group-balanced portfolio identity error {error}")
-        wealth_multiplier = 1.0 + portfolio_return
-        if wealth_multiplier <= 0:
-            raise ValueError("buy-and-hold portfolio wealth became nonpositive")
-        weights = weights * (1.0 + row) / wealth_multiplier
-        if not np.isfinite(weights).all() or not np.isclose(
-            weights.sum(), 1.0, rtol=0.0, atol=tolerance
-        ):
-            raise ValueError("buy-and-hold security weights became invalid")
+        weights = _advance_security_weights(weights, row, portfolio_return, tolerance)
     return BalancedSegment(
         group_simple_returns=pd.DataFrame(group_returns, index=frame.index, columns=groups),
         group_pre_return_weights=pd.DataFrame(group_weights, index=frame.index, columns=groups),
@@ -339,6 +400,144 @@ def _assignment_years(assignments: Mapping[str, Any]) -> list[Mapping[str, Any]]
     return normalized
 
 
+def _annual_sample(panel: pd.DataFrame, annual: Mapping[str, Any]) -> AnnualSample:
+    year = int(annual["year"])
+    assignment_rows = annual.get("assignments")
+    if not isinstance(assignment_rows, list):
+        raise TypeError("annual record must contain assignments")
+    normalized = [_mapping(row, "security assignment") for row in assignment_rows]
+    active = tuple(sorted(str(row["ticker"]) for row in normalized))
+    if (
+        not active
+        or len(active) != len(set(active))
+        or len(active) != int(annual["active_security_count"])
+    ):
+        raise ValueError(f"invalid active assignment set for {year}")
+    missing = sorted(set(active) - set(panel.columns))
+    if missing:
+        raise ValueError(f"stock return panel is missing active securities for {year}: {missing}")
+    training_start = pd.Timestamp(str(annual["training_start_inclusive"]))
+    rebalance_date = pd.Timestamp(str(annual["rebalance_date"]))
+    if training_start >= rebalance_date or rebalance_date.year != year:
+        raise ValueError(f"invalid group-balanced date bounds for {year}")
+    training = panel.loc[
+        (panel.index >= training_start) & (panel.index < rebalance_date), list(active)
+    ]
+    training = training.loc[np.isfinite(training.to_numpy(dtype=float)).all(axis=1)]
+    evaluation = panel.loc[
+        (panel.index >= rebalance_date) & (panel.index.year == year), list(active)
+    ]
+    if training.empty or evaluation.empty or evaluation.index[0] != rebalance_date:
+        raise ValueError(f"empty or misaligned group-balanced sample for {year}")
+    if not np.isfinite(evaluation.to_numpy(dtype=float)).all():
+        raise ValueError(f"non-finite group-balanced evaluation return for {year}")
+    assignments_by_ticker = {str(row["ticker"]): row for row in normalized}
+    return AnnualSample(
+        year=year,
+        active=active,
+        training=training,
+        evaluation=evaluation,
+        assignments_by_ticker=assignments_by_ticker,
+        expected_group_count=int(annual["group_count"]),
+    )
+
+
+def _portfolio_spec_outputs(
+    sample: AnnualSample,
+    spec: PortfolioSpec,
+    tolerance: float,
+) -> tuple[list[pd.DataFrame], list[pd.DataFrame], dict[str, Any]]:
+    labels: dict[str, str] = {}
+    for ticker in sample.active:
+        value = sample.assignments_by_ticker[ticker].get(spec.input_grouping_id)
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(
+                f"{spec.portfolio_id} has an invalid group label for {ticker}/{sample.year}"
+            )
+        labels[ticker] = value.strip()
+    if len(set(labels.values())) != sample.expected_group_count:
+        raise ValueError(f"{spec.portfolio_id} has the wrong group count in {sample.year}")
+    training_segment = group_balanced_buy_and_hold(sample.training, labels, tolerance=tolerance)
+    evaluation_segment = group_balanced_buy_and_hold(sample.evaluation, labels, tolerance=tolerance)
+    group_frames = [
+        _group_records(
+            training_segment,
+            evaluation_year=sample.year,
+            sample_role="training",
+            grouping_id=spec.model_grouping_id,
+        ),
+        _group_records(
+            evaluation_segment,
+            evaluation_year=sample.year,
+            sample_role="evaluation",
+            grouping_id=spec.model_grouping_id,
+        ),
+    ]
+    portfolio_frames = [
+        _portfolio_records(
+            training_segment,
+            evaluation_year=sample.year,
+            sample_role="training",
+            spec=spec,
+        ),
+        _portfolio_records(
+            evaluation_segment,
+            evaluation_year=sample.year,
+            sample_role="evaluation",
+            spec=spec,
+        ),
+    ]
+    diagnostic = {
+        "year": sample.year,
+        "portfolio_id": spec.portfolio_id,
+        "active_security_count": len(sample.active),
+        "group_count": len(set(labels.values())),
+        "training_observations": len(sample.training),
+        "evaluation_observations": len(sample.evaluation),
+        "training_calendar_reset_dates": [
+            date.date().isoformat() for date in training_segment.reset_dates
+        ],
+        "evaluation_reset_date": evaluation_segment.reset_dates[0].date().isoformat(),
+        "maximum_portfolio_identity_error": max(
+            training_segment.maximum_identity_error,
+            evaluation_segment.maximum_identity_error,
+        ),
+        "evaluation_minimum_group_weight": float(
+            evaluation_segment.group_pre_return_weights.min().min()
+        ),
+        "evaluation_maximum_group_weight": float(
+            evaluation_segment.group_pre_return_weights.max().max()
+        ),
+    }
+    return group_frames, portfolio_frames, diagnostic
+
+
+def _construction_issues(
+    group_returns: pd.DataFrame,
+    portfolio_returns: pd.DataFrame,
+    maximum_identity: float,
+    tolerance: float,
+) -> list[str]:
+    issues: list[str] = []
+    group_key = ["date", "year", "sample_role", "grouping_id", "group_id"]
+    portfolio_key = ["date", "year", "sample_role", "portfolio_id"]
+    if group_returns.duplicated(group_key).any():
+        issues.append("duplicate_group_return")
+    if portfolio_returns.duplicated(portfolio_key).any():
+        issues.append("duplicate_portfolio_return")
+    group_numeric = group_returns[["portfolio_weight", "simple_return", "log_return"]].to_numpy(
+        dtype=float
+    )
+    if not np.isfinite(group_numeric).all():
+        issues.append("nonfinite_group_return")
+    portfolio_numeric = portfolio_returns[["simple_return", "log_return"]].to_numpy(dtype=float)
+    if not np.isfinite(portfolio_numeric).all():
+        issues.append("nonfinite_portfolio_return")
+    if maximum_identity > tolerance:
+        issues.append("portfolio_identity_failed")
+    return issues
+
+
 def build_group_balanced_outputs(
     stock_simple_returns: pd.DataFrame,
     assignments: Mapping[str, Any],
@@ -350,127 +549,33 @@ def build_group_balanced_outputs(
     tolerance = float(config["portfolio"]["portfolio_identity_tolerance"])
     panel = stock_simple_returns.copy()
     panel.index = pd.DatetimeIndex(pd.to_datetime(panel.index, errors="raise"), name="date")
-    if panel.empty or panel.index.has_duplicates or not panel.index.is_monotonic_increasing:
+    if (
+        panel.empty
+        or panel.index.has_duplicates
+        or panel.columns.has_duplicates
+        or not panel.index.is_monotonic_increasing
+    ):
         raise ValueError("stock return panel must have unique, sorted dates")
     group_frames: list[pd.DataFrame] = []
     portfolio_frames: list[pd.DataFrame] = []
     annual_audits: list[dict[str, Any]] = []
     for annual in _assignment_years(assignments):
-        year = int(annual["year"])
-        assignment_rows = annual.get("assignments")
-        if not isinstance(assignment_rows, list):
-            raise TypeError("annual record must contain assignments")
-        normalized = [_mapping(row, "security assignment") for row in assignment_rows]
-        active = [str(row["ticker"]) for row in normalized]
-        if len(active) != len(set(active)) or len(active) != int(annual["active_security_count"]):
-            raise ValueError(f"invalid active assignment set for {year}")
-        active = sorted(active)
-        training_start = pd.Timestamp(str(annual["training_start_inclusive"]))
-        rebalance_date = pd.Timestamp(str(annual["rebalance_date"]))
-        training = panel.loc[
-            (panel.index >= training_start) & (panel.index < rebalance_date), active
-        ]
-        training_complete = training.loc[np.isfinite(training.to_numpy(dtype=float)).all(axis=1)]
-        evaluation = panel.loc[(panel.index >= rebalance_date) & (panel.index.year == year), active]
-        if training_complete.empty or evaluation.empty:
-            raise ValueError(f"empty group-balanced sample for {year}")
-        if not np.isfinite(evaluation.to_numpy(dtype=float)).all():
-            raise ValueError(f"non-finite group-balanced evaluation return for {year}")
-        row_by_ticker = {str(row["ticker"]): row for row in normalized}
+        sample = _annual_sample(panel, annual)
         for spec in specs:
-            labels = {
-                ticker: str(row_by_ticker[ticker][spec.input_grouping_id]) for ticker in active
-            }
-            if len(set(labels.values())) != int(annual["group_count"]):
-                raise ValueError(f"{spec.portfolio_id} has the wrong group count in {year}")
-            training_segment = group_balanced_buy_and_hold(
-                training_complete, labels, tolerance=tolerance
-            )
-            evaluation_segment = group_balanced_buy_and_hold(
-                evaluation, labels, tolerance=tolerance
-            )
-            group_frames.extend(
-                [
-                    _group_records(
-                        training_segment,
-                        evaluation_year=year,
-                        sample_role="training",
-                        grouping_id=spec.model_grouping_id,
-                    ),
-                    _group_records(
-                        evaluation_segment,
-                        evaluation_year=year,
-                        sample_role="evaluation",
-                        grouping_id=spec.model_grouping_id,
-                    ),
-                ]
-            )
-            portfolio_frames.extend(
-                [
-                    _portfolio_records(
-                        training_segment,
-                        evaluation_year=year,
-                        sample_role="training",
-                        spec=spec,
-                    ),
-                    _portfolio_records(
-                        evaluation_segment,
-                        evaluation_year=year,
-                        sample_role="evaluation",
-                        spec=spec,
-                    ),
-                ]
-            )
-            annual_audits.append(
-                {
-                    "year": year,
-                    "portfolio_id": spec.portfolio_id,
-                    "active_security_count": len(active),
-                    "group_count": len(set(labels.values())),
-                    "training_observations": len(training_complete),
-                    "evaluation_observations": len(evaluation),
-                    "training_calendar_reset_dates": [
-                        date.date().isoformat() for date in training_segment.reset_dates
-                    ],
-                    "evaluation_reset_date": evaluation_segment.reset_dates[0].date().isoformat(),
-                    "maximum_portfolio_identity_error": max(
-                        training_segment.maximum_identity_error,
-                        evaluation_segment.maximum_identity_error,
-                    ),
-                    "evaluation_minimum_group_weight": float(
-                        evaluation_segment.group_pre_return_weights.min().min()
-                    ),
-                    "evaluation_maximum_group_weight": float(
-                        evaluation_segment.group_pre_return_weights.max().max()
-                    ),
-                }
-            )
+            groups, portfolios, diagnostic = _portfolio_spec_outputs(sample, spec, tolerance)
+            group_frames.extend(groups)
+            portfolio_frames.extend(portfolios)
+            annual_audits.append(diagnostic)
     group_returns = pd.concat(group_frames, ignore_index=True).loc[:, GROUP_RETURN_COLUMNS]
     group_returns = group_returns.sort_values(["year", "date", "grouping_id", "group_id"])
     portfolio_returns = pd.concat(portfolio_frames, ignore_index=True).loc[
         :, PORTFOLIO_RETURN_COLUMNS
     ]
     portfolio_returns = portfolio_returns.sort_values(["year", "date", "portfolio_id"])
-    group_key = ["date", "year", "sample_role", "grouping_id", "group_id"]
-    portfolio_key = ["date", "year", "sample_role", "portfolio_id"]
-    issues: list[str] = []
-    if group_returns.duplicated(group_key).any():
-        issues.append("duplicate_group_return")
-    if portfolio_returns.duplicated(portfolio_key).any():
-        issues.append("duplicate_portfolio_return")
-    if not np.isfinite(
-        group_returns[["portfolio_weight", "simple_return", "log_return"]].to_numpy(dtype=float)
-    ).all():
-        issues.append("nonfinite_group_return")
-    if not np.isfinite(
-        portfolio_returns[["simple_return", "log_return"]].to_numpy(dtype=float)
-    ).all():
-        issues.append("nonfinite_portfolio_return")
     maximum_identity = max(
         float(record["maximum_portfolio_identity_error"]) for record in annual_audits
     )
-    if maximum_identity > tolerance:
-        issues.append("portfolio_identity_failed")
+    issues = _construction_issues(group_returns, portfolio_returns, maximum_identity, tolerance)
     audit = {
         "schema_version": 1,
         "gate_name": "group_balanced_portfolio_construction_v1",

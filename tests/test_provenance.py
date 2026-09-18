@@ -461,6 +461,28 @@ class RunManifestTests(unittest.TestCase):
 
 
 class CredentialSafetyTests(unittest.TestCase):
+    def test_rest_request_rejects_untrusted_origin_before_attaching_key(self):
+        secret = "do-not-send-this-key"
+        for url in (
+            "http://api.massive.com/v3/reference/splits",
+            "https://attacker.example/v3/reference/splits",
+            "https://api.massive.com.attacker.example/v3/reference/splits",
+            "https://api.massive.com:444/v3/reference/splits",
+            "https://user@api.massive.com/v3/reference/splits",
+        ):
+            with (
+                self.subTest(url=url),
+                mock.patch("scripts.download_market_data.urllib.request.urlopen") as mocked_open,
+                self.assertRaises(ValueError) as raised,
+            ):
+                authenticated_json(url, secret, attempts=1)
+            mocked_open.assert_not_called()
+            self.assertNotIn(secret, str(raised.exception))
+
+    def test_rest_request_requires_a_positive_attempt_count(self):
+        with self.assertRaisesRegex(ValueError, "attempts must be at least one"):
+            authenticated_json("https://api.massive.com/v3/reference/splits", "key", attempts=0)
+
     def test_rest_failure_never_exposes_api_key(self):
         secret = "do-not-print-this-key"
         error = urllib.error.HTTPError(

@@ -86,6 +86,17 @@ locking, secret boundaries, and repository hygiene.
 - The tree-depth evaluator verifies identical monthly information sets, group
   order, marginal states, realised returns, dates, and common-random-number
   seeds before calculating any robustness comparison.
+- The annual group-balanced portfolio constructor was decomposed into focused
+  validation, weighting, return, and state-transition functions. New checks
+  reject invalid tolerances, duplicate or non-string security columns, blank
+  labels, inconsistent active sets, missing return columns, and misaligned
+  annual rebalance dates. Rebuilding the production artifacts after this
+  refactor reproduced all three output hashes exactly.
+- Credential-bearing Massive requests and Yahoo reference requests now require
+  an exact allowlisted HTTPS origin before network access. Provider pagination
+  is revalidated on every page, malformed page structures fail closed, and CI
+  runs an explicit security-rule scan. Git executable discovery in the run
+  manifest no longer relies on a partial executable path.
 
 ## Verification evidence
 
@@ -104,7 +115,7 @@ quality limit. All 144 primary vine refits completed without whole-vine
 fallback. The full tree-10 run also completed all 144 refits and 3,016 forecasts
 without failed pairs or whole-vine fallback. Its 7,920 pair positions and 6,032
 matched robustness score rows pass their production artifact checks. The full
-local suite contains 161 passing tests, including all eleven artifact-bound
+local suite contains 167 passing tests, including all eleven artifact-bound
 production classes. After rebuilding the affected audit chain, the annual
 grouping, marginal, Gaussian, primary-vine, evaluation, full-vine, robustness,
 and exploratory ML numerical artifacts all reproduced their pre-audit SHA-256

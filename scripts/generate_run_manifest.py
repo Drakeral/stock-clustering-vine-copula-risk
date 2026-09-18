@@ -10,6 +10,7 @@ import importlib.metadata
 import json
 import platform
 import re
+import shutil
 import subprocess
 import sys
 from collections.abc import Iterable
@@ -59,9 +60,19 @@ def file_records(project_root: Path, paths: Iterable[Path]) -> list[dict[str, An
 
 
 def git_state(project_root: Path) -> dict[str, Any]:
+    git_executable = shutil.which("git")
+    if git_executable is None:
+        return {
+            "repository_initialized": False,
+            "commit_present": False,
+            "commit": None,
+            "worktree_clean": None,
+        }
+
     def run(*arguments: str) -> subprocess.CompletedProcess[str]:
-        return subprocess.run(
-            ["git", *arguments],
+        # The executable is resolved explicitly and all arguments are fixed by callers here.
+        return subprocess.run(  # noqa: S603
+            [git_executable, *arguments],
             cwd=project_root,
             check=False,
             capture_output=True,

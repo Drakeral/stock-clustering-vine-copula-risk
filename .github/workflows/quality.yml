@@ -46,7 +46,11 @@ jobs:
           uv run ruff check scripts/evaluate_risk_models.py
           scripts/evaluate_full_vine_robustness.py
           scripts/evaluate_ml_risk_models.py
-          scripts/evaluate_group_balanced_robustness.py --select C901
+          scripts/evaluate_group_balanced_robustness.py
+          scripts/build_group_balanced_portfolios.py --select C901
+
+      - name: Check security rules
+        run: uv run ruff check scripts --select S
 
       - name: Check formatting
         run: uv run ruff format --check scripts tests

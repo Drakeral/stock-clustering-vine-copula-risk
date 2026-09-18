@@ -49,6 +49,31 @@ EXPECTED_HEADER = {
     "window_start",
     "transactions",
 }
+MASSIVE_REST_HOSTS = frozenset({"api.massive.com"})
+
+
+def validated_https_url(
+    url: str,
+    *,
+    allowed_hosts: frozenset[str],
+    provider: str,
+) -> urllib.parse.SplitResult:
+    """Return a parsed provider URL after enforcing a narrow HTTPS boundary."""
+
+    try:
+        parsed = urllib.parse.urlsplit(url)
+        port = parsed.port
+    except ValueError as exc:
+        raise ValueError(f"Invalid {provider} URL") from exc
+    if (
+        parsed.scheme.lower() != "https"
+        or parsed.hostname not in allowed_hosts
+        or parsed.username is not None
+        or parsed.password is not None
+        or port not in {None, 443}
+    ):
+        raise ValueError(f"Untrusted {provider} URL origin")
+    return parsed
 
 
 def load_config(path: Path) -> dict[str, Any]:
@@ -188,7 +213,13 @@ def unique_provider_tickers(universe_path: Path, security_master_path: Path) -> 
 
 
 def authenticated_json(url: str, api_key: str, attempts: int = 7) -> dict[str, Any]:
-    parsed = urllib.parse.urlsplit(url)
+    if attempts < 1:
+        raise ValueError("attempts must be at least one")
+    parsed = validated_https_url(
+        url,
+        allowed_hosts=MASSIVE_REST_HOSTS,
+        provider="Massive REST",
+    )
     query = [
         (key, value)
         for key, value in urllib.parse.parse_qsl(parsed.query, keep_blank_values=True)
@@ -199,13 +230,14 @@ def authenticated_json(url: str, api_key: str, attempts: int = 7) -> dict[str, A
         (parsed.scheme, parsed.netloc, parsed.path, urllib.parse.urlencode(query), parsed.fragment)
     )
     safe_endpoint = urllib.parse.urlunsplit((parsed.scheme, parsed.netloc, parsed.path, "", ""))
-    request = urllib.request.Request(
+    # The URL origin is allowlisted before the credential is attached.
+    request = urllib.request.Request(  # noqa: S310
         authenticated_url,
         headers={"Accept": "application/json", "User-Agent": "fe5110-research-pipeline/0.1"},
     )
     for attempt in range(attempts):
         try:
-            with urllib.request.urlopen(request, timeout=60) as response:
+            with urllib.request.urlopen(request, timeout=60) as response:  # noqa: S310
                 return json.loads(response.read().decode("utf-8"))
         except urllib.error.HTTPError as exc:
             if exc.code not in {429, 500, 502, 503, 504} or attempt == attempts - 1:
@@ -286,8 +318,16 @@ def download_reference_type(
     results: list[dict[str, Any]] = []
     while next_url:
         page = authenticated_json(next_url, api_key)
-        results.extend(page.get("results", []))
-        next_url = page.get("next_url")
+        page_results = page.get("results", [])
+        if not isinstance(page_results, list) or any(
+            not isinstance(row, dict) for row in page_results
+        ):
+            raise RuntimeError("Massive reference response has invalid results")
+        results.extend(page_results)
+        provider_next_url = page.get("next_url")
+        if provider_next_url is not None and not isinstance(provider_next_url, str):
+            raise RuntimeError("Massive reference response has invalid next_url")
+        next_url = provider_next_url
 
     payload = {
         "schema_version": 1,

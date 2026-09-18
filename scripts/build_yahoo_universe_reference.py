@@ -31,6 +31,7 @@ except ModuleNotFoundError:  # Support direct execution as ``python scripts/...`
 SEARCH_ENDPOINT = "https://query2.finance.yahoo.com/v1/finance/search"
 CHART_ENDPOINT = "https://query2.finance.yahoo.com/v8/finance/chart/{symbol}"
 YAHOO_TERMS_URL = "https://legal.yahoo.com/us/en/yahoo/terms/otos/index.html"
+YAHOO_API_HOSTS = frozenset({"query2.finance.yahoo.com"})
 TARGET_DATE = dt.date(2020, 1, 2)
 PERIOD1 = int(dt.datetime(2020, 1, 1, tzinfo=dt.UTC).timestamp())
 PERIOD2 = int(dt.datetime(2020, 1, 5, tzinfo=dt.UTC).timestamp())
@@ -101,7 +102,23 @@ def source_url(endpoint: str, params: dict[str, str | int]) -> str:
 
 
 def fetch_json(url: str, retries: int = 4) -> dict[str, Any]:
-    request = urllib.request.Request(
+    if retries < 1:
+        raise ValueError("retries must be at least one")
+    try:
+        parsed = urllib.parse.urlsplit(url)
+        port = parsed.port
+    except ValueError as exc:
+        raise ValueError("Invalid Yahoo URL") from exc
+    if (
+        parsed.scheme.lower() != "https"
+        or parsed.hostname not in YAHOO_API_HOSTS
+        or parsed.username is not None
+        or parsed.password is not None
+        or port not in {None, 443}
+    ):
+        raise ValueError("Untrusted Yahoo URL origin")
+    # The request is restricted to the Yahoo HTTPS origin above.
+    request = urllib.request.Request(  # noqa: S310
         url,
         headers={
             "User-Agent": "Mozilla/5.0 (compatible; FE5110 academic research; contact local user)",
@@ -110,7 +127,7 @@ def fetch_json(url: str, retries: int = 4) -> dict[str, Any]:
     )
     for attempt in range(retries):
         try:
-            with urllib.request.urlopen(request, timeout=30) as response:
+            with urllib.request.urlopen(request, timeout=30) as response:  # noqa: S310
                 return json.loads(response.read().decode("utf-8"))
         except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as exc:
             if attempt + 1 == retries:

@@ -10,6 +10,7 @@ import pandas as pd
 from scripts.build_group_balanced_portfolios import (
     GROUP_RETURN_COLUMNS,
     PORTFOLIO_RETURN_COLUMNS,
+    _annual_sample,
     group_balanced_buy_and_hold,
     validate_group_balanced_protocol,
 )
@@ -92,6 +93,35 @@ class GroupBalancedPortfolioMethodTests(unittest.TestCase):
         frame.loc[frame.index[1], "A"] = -1.0
         with self.assertRaisesRegex(ValueError, "greater than -1"):
             group_balanced_buy_and_hold(frame, {"A": "one", "B": "two"})
+
+    def test_invalid_tolerance_columns_and_labels_fail_closed(self) -> None:
+        frame = pd.DataFrame({"A": [0.0], "B": [0.0]}, index=pd.to_datetime(["2020-01-02"]))
+        with self.assertRaisesRegex(ValueError, "tolerance"):
+            group_balanced_buy_and_hold(frame, {"A": "one", "B": "two"}, tolerance=0)
+        with self.assertRaisesRegex(ValueError, "non-empty"):
+            group_balanced_buy_and_hold(frame, {"A": "one", "B": " "})
+        frame.columns = [1, 2]
+        with self.assertRaisesRegex(ValueError, "unique strings"):
+            group_balanced_buy_and_hold(frame, {1: "one", 2: "two"})
+
+    def test_annual_sample_requires_active_columns_and_exact_rebalance_date(self) -> None:
+        panel = pd.DataFrame(
+            {"A": [0.0, 0.0]},
+            index=pd.to_datetime(["2019-12-31", "2020-01-03"]),
+        )
+        annual = {
+            "year": 2020,
+            "active_security_count": 1,
+            "group_count": 1,
+            "training_start_inclusive": "2019-12-01",
+            "rebalance_date": "2020-01-02",
+            "assignments": [{"ticker": "A"}],
+        }
+        with self.assertRaisesRegex(ValueError, "misaligned"):
+            _annual_sample(panel, annual)
+        annual["assignments"] = [{"ticker": "B"}]
+        with self.assertRaisesRegex(ValueError, "missing active securities"):
+            _annual_sample(panel, annual)
 
 
 @unittest.skipUnless(

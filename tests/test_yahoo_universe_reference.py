@@ -2,16 +2,40 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from scripts.build_yahoo_universe_reference import (
     TARGET_DATE,
     chart_observation,
+    fetch_json,
     retrieval_timestamp,
     select_quote,
 )
 
 
 class YahooUniverseReferenceTests(unittest.TestCase):
+    def test_fetch_rejects_untrusted_origin_before_network_access(self):
+        for url in (
+            "http://query2.finance.yahoo.com/v1/finance/search",
+            "https://attacker.example/v1/finance/search",
+            "https://query2.finance.yahoo.com.attacker.example/v1/finance/search",
+            "https://query2.finance.yahoo.com:444/v1/finance/search",
+            "https://user@query2.finance.yahoo.com/v1/finance/search",
+        ):
+            with (
+                self.subTest(url=url),
+                mock.patch(
+                    "scripts.build_yahoo_universe_reference.urllib.request.urlopen"
+                ) as mocked_open,
+                self.assertRaises(ValueError),
+            ):
+                fetch_json(url, retries=1)
+            mocked_open.assert_not_called()
+
+    def test_fetch_requires_a_positive_retry_count(self):
+        with self.assertRaisesRegex(ValueError, "retries must be at least one"):
+            fetch_json("https://query2.finance.yahoo.com/v1/finance/search", retries=0)
+
     def test_quote_selection_requires_exact_symbol(self):
         payload = {"quotes": [{"symbol": "AAPL"}, {"symbol": "AAPL.MX"}]}
         self.assertEqual(select_quote(payload, "aapl"), {"symbol": "AAPL"})
