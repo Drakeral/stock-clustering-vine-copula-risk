@@ -178,7 +178,7 @@ class MLRiskEvaluationTests(unittest.TestCase):
                 {
                     int(model_id[1:])
                     for model_id in forecast_schema["properties"]["model_id"]["enum"]
-                    if model_id.startswith("M")
+                    if model_id.startswith("M") and model_id[1:].isdigit()
                 }
             )
         )
@@ -187,7 +187,7 @@ class MLRiskEvaluationTests(unittest.TestCase):
                 {
                     int(model_id[1:])
                     for model_id in score_schema["properties"]["model_id"]["enum"]
-                    if model_id.startswith("M")
+                    if model_id.startswith("M") and model_id[1:].isdigit()
                 }
             )
         )
@@ -203,6 +203,7 @@ class MLRiskEvaluationTests(unittest.TestCase):
                 observed,
                 {
                     "M0": "none",
+                    "M0_CC": "none",
                     "M1": "gics",
                     "M2": "gics",
                     "M3": "hierarchical",

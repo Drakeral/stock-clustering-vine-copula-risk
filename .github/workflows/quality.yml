@@ -47,6 +47,7 @@ jobs:
           scripts/evaluate_full_vine_robustness.py
           scripts/evaluate_ml_risk_models.py
           scripts/evaluate_group_balanced_robustness.py
+          scripts/evaluate_current_composition_historical_simulation.py
           scripts/build_group_balanced_portfolios.py --select C901
 
       - name: Check security rules

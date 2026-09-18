@@ -7,7 +7,7 @@
   "allOf": [
     {
       "if": {
-        "properties": {"model_id": {"enum": ["M0", "B_GICS_HS", "B_HIER_HS"]}},
+        "properties": {"model_id": {"enum": ["M0", "M0_CC", "B_GICS_HS", "B_HIER_HS"]}},
         "required": ["model_id"]
       },
       "then": {
@@ -37,7 +37,7 @@
       }
     },
     {
-      "if": {"properties": {"model_id": {"const": "M0"}}, "required": ["model_id"]},
+      "if": {"properties": {"model_id": {"enum": ["M0", "M0_CC"]}}, "required": ["model_id"]},
       "then": {"properties": {"grouping_id": {"const": "none"}}}
     },
     {
@@ -92,7 +92,7 @@
   ],
   "properties": {
     "date": {"type": "string", "format": "date"},
-    "model_id": {"enum": ["M0", "M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "B_GICS_HS", "B_GICS_GAUSSIAN", "B_GICS_VINE", "B_HIER_HS", "B_HIER_GAUSSIAN", "B_HIER_VINE"]},
+    "model_id": {"enum": ["M0", "M0_CC", "M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8", "B_GICS_HS", "B_GICS_GAUSSIAN", "B_GICS_VINE", "B_HIER_HS", "B_HIER_GAUSSIAN", "B_HIER_VINE"]},
     "grouping_id": {"enum": ["none", "gics", "hierarchical", "spectral", "pca_kmeans", "gics_balanced", "hierarchical_balanced"]},
     "refit_id": {"type": "string", "minLength": 1},
     "var_95": {"type": "number"},

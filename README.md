@@ -42,6 +42,14 @@ Gaussian model ranks first within both targets, but none of the six
 vine-minus-Gaussian forecast-loss comparisons is significant after the frozen
 Holm correction. This exploratory result does not revise H1-H3.
 
+The current-composition historical-simulation robustness also passes. `M0_CC`
+freezes each evaluation year's active set across its rolling three-year
+backcast, while preserving M0's canonical realised portfolio return. It changes
+710 of 1,508 daily risk forecasts but no VaR exception count. M0 has lower mean
+loss on all three primary scores; only its 99% quantile-loss advantage survives
+the separate three-test Holm correction. This is partial exploratory evidence
+favouring the realised-history M0 construction and does not revise H1-H3.
+
 The machine-readable authorization and its narrow conditions are frozen in
 `config/provenance_amendment.json`. A licensed point-in-time extract can still
 supersede the amendment and obtain the strict provenance pass later.
@@ -163,6 +171,7 @@ uv run python scripts/build_return_panel.py
 uv run python scripts/validate_portfolio_arithmetic.py
 uv run python scripts/update_foundation_status.py --require-modelling-ready
 uv run python scripts/build_historical_simulation.py
+uv run python scripts/evaluate_current_composition_historical_simulation.py
 uv run python scripts/build_annual_groupings.py
 uv run python scripts/build_marginal_models.py
 uv run python scripts/build_gaussian_copula.py
@@ -311,6 +320,9 @@ added later.
 - `data/processed/group_balanced_robustness/`: isolated historical-simulation,
   marginal, Gaussian, tree-3 vine, forecast, and daily-score artifacts for the
   two group-balanced portfolio targets;
+- `data/processed/current_composition_hs_robustness/`: isolated `M0_CC`
+  forecasts, window records, and matched `M0`/`M0_CC` daily scores for the
+  evaluation-year active-set backcast;
 - `data/manifests/simulation_seed_manifest.json`: reproducible monthly common-
   random-number seeds and uniform-matrix hashes; and
 - `data/manifests/inference_seed_manifest.json`: the H1 block-bootstrap seed,
@@ -334,6 +346,9 @@ added later.
   values;
 - `data/audit/historical_simulation_quality.json`: M0 window, forecast coverage,
   arithmetic, upstream lineage, and output-hash checks;
+- `data/audit/current_composition_hs_robustness.json`: current-composition
+  construction checks, separate calibration and DM families, matched realised
+  losses, interpretation boundaries, and bound-output hashes;
 - `data/audit/marginal_model_quality.json`: marginal coverage, fallback incidence,
   PIT bounds, output hashes, and the frozen 1% EWMA quality gate;
 - `data/audit/gaussian_copula_quality.json`: M1/M3 fit, simulation, forecast-

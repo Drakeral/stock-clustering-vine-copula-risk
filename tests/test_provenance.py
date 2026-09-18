@@ -375,6 +375,9 @@ class RunManifestTests(unittest.TestCase):
         self.assertIn("data/processed/ml_risk_evaluation_daily.parquet", paths)
         self.assertIn("data/processed/historical_simulation_risk_forecasts.parquet", paths)
         self.assertIn("data/processed/historical_simulation_windows.parquet", paths)
+        self.assertIn(
+            "data/processed/current_composition_hs_robustness/daily_scores.parquet", paths
+        )
         self.assertIn("data/processed/marginal_refits.parquet", paths)
         self.assertIn("data/processed/marginal_daily_forecasts.parquet", paths)
         self.assertIn("data/processed/monthly_copula_training_pits.parquet", paths)
@@ -397,6 +400,7 @@ class RunManifestTests(unittest.TestCase):
         self.assertIn("data/audit/group_balanced_portfolio_construction.json", paths)
         self.assertIn("data/audit/group_balanced_robustness.json", paths)
         self.assertIn("data/audit/historical_simulation_quality.json", paths)
+        self.assertIn("data/audit/current_composition_hs_robustness.json", paths)
 
     def test_git_state_counts_untracked_files_as_dirty(self):
         with tempfile.TemporaryDirectory() as temporary:

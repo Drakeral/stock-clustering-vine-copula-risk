@@ -139,6 +139,20 @@ portfolio return series under each year's active-security set. It does not use a
 grouping, marginal model, copula, simulation, or random seed. Its common forecast
 records therefore store null seed components and null copula log scores.
 
+The current-composition historical-simulation robustness freezes the evaluation
+year's active-security set across every return in that year's rolling training
+window. It retains daily equal security weights, the canonical realised M0
+evaluation return, and all core window and empirical-tail estimators. This
+alternative is identified as `M0_CC`; `M0` remains the primary benchmark.
+
+The three primary loss scores are compared as `M0_CC - M0` using two-sided
+Diebold-Mariano tests with Newey-West/Bartlett lag 7 and one three-test Holm
+family. Eight full-period calibration tests—two variants by two VaR levels by
+Kupiec and Christoffersen independence—form a separate Holm family. This
+post-core exercise is exploratory, performs no cross-portfolio ranking, and
+cannot revise H1-H3. Its pre-result protocol is frozen in
+`config/current_composition_hs_robustness.toml`.
+
 ## Margins, copulas, and simulation
 
 The first marginal attempt is AR(1)-GARCH(1,1) with Student-t innovations. An

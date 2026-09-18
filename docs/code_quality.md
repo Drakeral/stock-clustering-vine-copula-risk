@@ -11,7 +11,7 @@ Run the checkpoint from the repository root:
 ```zsh
 uv sync --frozen
 uv run ruff check scripts tests
-uv run ruff check scripts/evaluate_risk_models.py scripts/evaluate_full_vine_robustness.py scripts/evaluate_ml_risk_models.py scripts/evaluate_group_balanced_robustness.py scripts/build_group_balanced_portfolios.py --select C901
+uv run ruff check scripts/evaluate_risk_models.py scripts/evaluate_full_vine_robustness.py scripts/evaluate_ml_risk_models.py scripts/evaluate_group_balanced_robustness.py scripts/evaluate_current_composition_historical_simulation.py scripts/build_group_balanced_portfolios.py --select C901
 uv run ruff check scripts --select S
 uv run ruff format --check scripts tests
 uv run python -m compileall -q scripts tests
@@ -37,7 +37,7 @@ enforces Ruff's cyclomatic-complexity limit on the model-evaluation modules and
 the group-balanced portfolio constructor, where quantitative state transitions
 and statistical validation are most densely orchestrated.
 
-Eleven acceptance-test classes bind the checked-in audit records to large generated
+Twelve acceptance-test classes bind the checked-in audit records to large generated
 Parquet artifacts. Those files are intentionally excluded from Git, so the
 classes report as skipped in a clean public clone. They run automatically when
 the artifacts exist locally. The full checkpoint above additionally requires

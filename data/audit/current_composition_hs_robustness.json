@@ -1,0 +1,289 @@
+{
+  "analysis_role": "exploratory_robustness",
+  "construction_quality": {
+    "annual_diagnostics": [
+      {
+        "active_security_count": 100,
+        "forecast_count": 253,
+        "maximum_realised_return_identity_error": 0.0,
+        "maximum_training_observations": 756,
+        "minimum_training_observations": 752,
+        "year": 2020
+      },
+      {
+        "active_security_count": 98,
+        "forecast_count": 252,
+        "maximum_realised_return_identity_error": 0.0,
+        "maximum_training_observations": 757,
+        "minimum_training_observations": 753,
+        "year": 2021
+      },
+      {
+        "active_security_count": 98,
+        "forecast_count": 251,
+        "maximum_realised_return_identity_error": 0.0,
+        "maximum_training_observations": 758,
+        "minimum_training_observations": 754,
+        "year": 2022
+      },
+      {
+        "active_security_count": 98,
+        "forecast_count": 250,
+        "maximum_realised_return_identity_error": 0.0,
+        "maximum_training_observations": 757,
+        "minimum_training_observations": 752,
+        "year": 2023
+      },
+      {
+        "active_security_count": 98,
+        "forecast_count": 252,
+        "maximum_realised_return_identity_error": 0.0,
+        "maximum_training_observations": 756,
+        "minimum_training_observations": 752,
+        "year": 2024
+      },
+      {
+        "active_security_count": 98,
+        "forecast_count": 250,
+        "maximum_realised_return_identity_error": 0.0,
+        "maximum_training_observations": 754,
+        "minimum_training_observations": 750,
+        "year": 2025
+      }
+    ],
+    "evaluation_date_count": 1508,
+    "forecast_count": 1508,
+    "issues": [],
+    "maximum_realised_return_identity_error": 0.0,
+    "maximum_training_observations": 758,
+    "minimum_training_observations": 750,
+    "status": "pass",
+    "window_count": 1508
+  },
+  "diebold_mariano_comparisons": [
+    {
+      "comparison_id": "M0_CC_minus_M0:quantile_loss_95",
+      "direction": "realised_history_lower_loss",
+      "dm_statistic": 0.41937073585842427,
+      "favours_current_composition_after_holm": false,
+      "favours_realised_history_after_holm": false,
+      "hac_lag": 7,
+      "holm_p_value": 0.6749452078221825,
+      "mean_loss_difference": 1.938280610493339e-07,
+      "observations": 1508,
+      "p_value_two_sided": 0.6749452078221825,
+      "score": "quantile_loss_95",
+      "significant_after_holm": false
+    },
+    {
+      "comparison_id": "M0_CC_minus_M0:quantile_loss_99",
+      "direction": "realised_history_lower_loss",
+      "dm_statistic": 10.462404395071877,
+      "favours_current_composition_after_holm": false,
+      "favours_realised_history_after_holm": true,
+      "hac_lag": 7,
+      "holm_p_value": 3.856543490589401e-25,
+      "mean_loss_difference": 1.65687005094688e-06,
+      "observations": 1508,
+      "p_value_two_sided": 1.2855144968631338e-25,
+      "score": "quantile_loss_99",
+      "significant_after_holm": true
+    },
+    {
+      "comparison_id": "M0_CC_minus_M0:fz0_975",
+      "direction": "realised_history_lower_loss",
+      "dm_statistic": 1.516623525626975,
+      "favours_current_composition_after_holm": false,
+      "favours_realised_history_after_holm": false,
+      "hac_lag": 7,
+      "holm_p_value": 0.25872352445652036,
+      "mean_loss_difference": 0.0004834594164481789,
+      "observations": 1508,
+      "p_value_two_sided": 0.12936176222826018,
+      "score": "fz0_975",
+      "significant_after_holm": false
+    }
+  ],
+  "forecast_validation": {
+    "evaluation_date_count": 1508,
+    "forecast_count": 3016,
+    "forecast_difference_date_count": 710,
+    "maximum_absolute_forecast_differences": {
+      "es_975": 0.0001537679477773904,
+      "var_95": 0.0003244790907788696,
+      "var_975": 0.0004156055173050177,
+      "var_99": 0.0006005857050316171
+    },
+    "maximum_realised_loss_identity_error": 0.0,
+    "model_date_counts": {
+      "M0": 1508,
+      "M0_CC": 1508
+    },
+    "realised_loss_identity_tolerance": 1e-12
+  },
+  "full_period_calibration": [
+    {
+      "christoffersen_independence_holm_p_value": 0.0003373401018511546,
+      "christoffersen_independence_p_value": 4.216751273139433e-05,
+      "christoffersen_independence_reject_after_holm": true,
+      "conditional_coverage_p_value": 2.3144876782222537e-05,
+      "confidence": 0.95,
+      "exception_rate": 0.038461538461538464,
+      "exceptions": 58,
+      "kupiec_holm_p_value": 0.12967379005790666,
+      "kupiec_p_value": 0.032418447514476666,
+      "kupiec_reject_after_holm": false,
+      "model_id": "M0",
+      "observations": 1508
+    },
+    {
+      "christoffersen_independence_holm_p_value": 0.0022517800478744285,
+      "christoffersen_independence_p_value": 0.00037529667464573804,
+      "christoffersen_independence_reject_after_holm": true,
+      "conditional_coverage_p_value": 0.0017407085026958863,
+      "confidence": 0.99,
+      "exception_rate": 0.010610079575596816,
+      "exceptions": 16,
+      "kupiec_holm_p_value": 1.0,
+      "kupiec_p_value": 0.8136126701913784,
+      "kupiec_reject_after_holm": false,
+      "model_id": "M0",
+      "observations": 1508
+    },
+    {
+      "christoffersen_independence_holm_p_value": 0.0003373401018511546,
+      "christoffersen_independence_p_value": 4.216751273139433e-05,
+      "christoffersen_independence_reject_after_holm": true,
+      "conditional_coverage_p_value": 2.3144876782222537e-05,
+      "confidence": 0.95,
+      "exception_rate": 0.038461538461538464,
+      "exceptions": 58,
+      "kupiec_holm_p_value": 0.12967379005790666,
+      "kupiec_p_value": 0.032418447514476666,
+      "kupiec_reject_after_holm": false,
+      "model_id": "M0_CC",
+      "observations": 1508
+    },
+    {
+      "christoffersen_independence_holm_p_value": 0.0022517800478744285,
+      "christoffersen_independence_p_value": 0.00037529667464573804,
+      "christoffersen_independence_reject_after_holm": true,
+      "conditional_coverage_p_value": 0.0017407085026958863,
+      "confidence": 0.99,
+      "exception_rate": 0.010610079575596816,
+      "exceptions": 16,
+      "kupiec_holm_p_value": 1.0,
+      "kupiec_p_value": 0.8136126701913784,
+      "kupiec_reject_after_holm": false,
+      "model_id": "M0_CC",
+      "observations": 1508
+    }
+  ],
+  "gate_name": "current_composition_historical_simulation_robustness_v1",
+  "inputs": {
+    "active_universe": {
+      "path": "data/processed/active_universe_by_year.json",
+      "sha256": "ed3ef62c7f253fcf1af987a589987a63f74d9130e533dcb4c283a661849ba626"
+    },
+    "foundation_status": {
+      "path": "data/audit/current_gate_status.json",
+      "sha256": "66df582e2ba6255c8f2e975c0739480562203fd85de06fa24dea0e58b3dd98b9"
+    },
+    "model_config": {
+      "path": "config/model_config.toml",
+      "sha256": "d6d0cd9a53cce7bfaf0e19b2c973648ff10dcb20d48e67b53c0e5c8367a509fc"
+    },
+    "portfolio_arithmetic": {
+      "path": "data/audit/portfolio_arithmetic.json",
+      "sha256": "96e11c6b59ff140dc4655ef35b0c20d00c53f0196a3438f76425b496214bcd20"
+    },
+    "primary_forecasts": {
+      "path": "data/processed/historical_simulation_risk_forecasts.parquet",
+      "sha256": "b9260b2b20bec7af06d3a2e9f068b8e4cec3f8f0bc5a5d90e014c49a832f731f"
+    },
+    "primary_historical_audit": {
+      "path": "data/audit/historical_simulation_quality.json",
+      "sha256": "454789bf5e2b16665603be52c946f592e3a37bcba5254bc4750b612a65144069"
+    },
+    "robustness_config": {
+      "path": "config/current_composition_hs_robustness.toml",
+      "sha256": "b389a0683287ada0b8d8168279f06f31c14c4abd0133375dbf8768ac49c0c0d5"
+    },
+    "stock_simple_returns": {
+      "path": "data/processed/portfolio_constituent_simple_returns.parquet",
+      "sha256": "e37b805bd8c290ace18a9aab120b3272ed10e8d64b3eab70c892b03c72caf3e9"
+    }
+  },
+  "interpretation": {
+    "analysis_role": "exploratory_robustness",
+    "core_H1_H2_H3_revised": false,
+    "cross_portfolio_ranking_performed": false,
+    "evidence": "partial_realised_history_favoured",
+    "tests_favouring_current_composition_after_holm": 0,
+    "tests_favouring_realised_history_after_holm": 1
+  },
+  "method": {
+    "active_set_rule": "freeze_forecast_year_active_set_across_each_rolling_training_window",
+    "es_boundary_method": "fractional_order_statistic",
+    "es_confidence_level": 0.975,
+    "evaluation_return": "canonical_primary_portfolio_return",
+    "minimum_training_observations": 700,
+    "missing_return_rule": "fail_except_global_initial_all_missing_return_row",
+    "quantile_method": "inverted_empirical_cdf",
+    "reference_model": "M0",
+    "reference_training_backcast": "realised_historical_annual_active_sets",
+    "robustness_model": "M0_CC",
+    "robustness_training_backcast": "evaluation_year_active_set",
+    "var_confidence_levels": [
+      0.95,
+      0.975,
+      0.99
+    ],
+    "weighting": "daily_rebalanced_equal_security_weight",
+    "window_calendar_years": 3
+  },
+  "model_summaries": [
+    {
+      "adjusted_calibration_rejection_count": 2,
+      "exceptions_95": 58,
+      "exceptions_975": 28,
+      "exceptions_99": 16,
+      "mean_fz0_975": -3.1930832120025063,
+      "mean_quantile_loss_95": 0.0015270069373738314,
+      "mean_quantile_loss_99": 0.0005840782181812826,
+      "model_id": "M0",
+      "observations": 1508
+    },
+    {
+      "adjusted_calibration_rejection_count": 2,
+      "exceptions_95": 58,
+      "exceptions_975": 28,
+      "exceptions_99": 16,
+      "mean_fz0_975": -3.192599752586058,
+      "mean_quantile_loss_95": 0.001527200765434881,
+      "mean_quantile_loss_99": 0.0005857350882322295,
+      "model_id": "M0_CC",
+      "observations": 1508
+    }
+  ],
+  "outputs": {
+    "current_composition_forecasts": {
+      "path": "data/processed/current_composition_hs_robustness/forecasts.parquet",
+      "rows": 1508,
+      "sha256": "ee2e8d25e4d56993cd76297bdc8fd7000655ef7405095509659e6856921bb684"
+    },
+    "current_composition_windows": {
+      "path": "data/processed/current_composition_hs_robustness/windows.parquet",
+      "rows": 1508,
+      "sha256": "b57e6787581f9d395d5b6570dc2cb059dfaa5b14c8e449cef3fc53ec23aea24f"
+    },
+    "daily_scores": {
+      "path": "data/processed/current_composition_hs_robustness/daily_scores.parquet",
+      "rows": 3016,
+      "sha256": "cfa9688d28e685a8898283c41e9cebf0c5d6a25acbf085b84e216d860cb46491"
+    }
+  },
+  "reporting_scope": "provisional_research_results",
+  "schema_version": 1,
+  "status": "pass"
+}

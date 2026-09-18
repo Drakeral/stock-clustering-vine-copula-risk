@@ -21,8 +21,9 @@ verification, lifecycle and corporate-action handling, return construction,
 portfolio arithmetic, annual grouping construction, marginal filtering,
 Gaussian and R-vine copulas, Monte Carlo risk forecasts, statistical inference,
 the full ten-tree vine robustness analysis, the spectral and PCA-plus-k-means
-M5-M8 risk extension, the annual group-balanced portfolio robustness, artifact
-schemas and hashes, tests, CI, dependency
+M5-M8 risk extension, the annual group-balanced portfolio robustness, the
+current-composition historical-simulation robustness, artifact schemas and
+hashes, tests, CI, dependency
 locking, secret boundaries, and repository hygiene.
 
 ## Quantitative invariants confirmed
@@ -115,7 +116,7 @@ quality limit. All 144 primary vine refits completed without whole-vine
 fallback. The full tree-10 run also completed all 144 refits and 3,016 forecasts
 without failed pairs or whole-vine fallback. Its 7,920 pair positions and 6,032
 matched robustness score rows pass their production artifact checks. The full
-local suite contains 167 passing tests, including all eleven artifact-bound
+local suite contains 173 passing tests, including all twelve artifact-bound
 production classes. After rebuilding the affected audit chain, the annual
 grouping, marginal, Gaussian, primary-vine, evaluation, full-vine, robustness,
 and exploratory ML numerical artifacts all reproduced their pre-audit SHA-256
@@ -176,6 +177,18 @@ independence rejections, while neither Gaussian nor vine does. Rankings remain
 strictly within portfolio because the two realised loss series differ. This
 exploratory robustness therefore does not alter H1-H3.
 
+The current-composition historical-simulation checkpoint adds 1,508 `M0_CC`
+forecasts and 3,016 matched daily score rows. It freezes each evaluation year's
+active set across that year's rolling three-year backcast and reproduces M0's
+realised return exactly on every date. Risk forecasts differ on 710 dates, but
+both variants retain 58, 28, and 16 exceptions at 95%, 97.5%, and 99%. M0 has
+lower mean loss on all three primary scores. Only the 99% quantile-loss
+difference is significant after the separate three-test Holm correction
+(`M0_CC - M0` mean loss `1.66e-6`, adjusted p-value `3.86e-25`); the 95% and FZ0
+differences are not adjusted-significant. This is partial exploratory evidence
+favouring realised-history M0, not a revision of H1-H3. A second complete build
+reproduced the forecast, window, daily-score, and audit hashes byte for byte.
+
 ## Interpretation and remaining boundaries
 
 - Licensed point-in-time S&P 100 membership, historical GICS, and permanent
@@ -200,9 +213,10 @@ exploratory robustness therefore does not alter H1-H3.
 - M0 deliberately estimates historical simulation from the realised primary
   portfolio series, using the annual active set that applied on each historical
   date. M1-M4 instead apply the evaluation year's active set and grouping to
-  their trailing estimation window. This is the frozen implemented design, not
-  a coding error, but a current-composition historical-simulation backcast would
-  be a useful explicitly labelled robustness check before final submission.
+  their trailing estimation window. The completed `M0_CC` robustness check
+  indicates that the original M0 choice has lower 99% quantile loss after Holm
+  correction, while its other two primary-score advantages are not
+  adjusted-significant.
 - Secondary group-balanced portfolios are implemented as an exploratory
   weighting robustness. Gaussian models rank first within both targets, but no
   adjusted vine-versus-Gaussian loss difference is detected. This is not a

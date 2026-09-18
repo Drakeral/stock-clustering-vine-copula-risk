@@ -1,0 +1,52 @@
+schema_version = 1
+protocol_status = "frozen_before_current_composition_historical_simulation_results"
+analysis_role = "exploratory_robustness"
+
+[models]
+reference_model_id = "M0"
+robustness_model_id = "M0_CC"
+grouping_id = "none"
+
+[portfolio]
+reference_training_backcast = "realised_historical_annual_active_sets"
+robustness_training_backcast = "evaluation_year_active_set"
+active_set_rule = "freeze_forecast_year_active_set_across_each_rolling_training_window"
+weighting = "daily_rebalanced_equal_security_weight"
+evaluation_return = "canonical_primary_portfolio_return"
+missing_return_rule = "fail_except_global_initial_all_missing_return_row"
+
+[forecast]
+window_calendar_years = 3
+minimum_training_observations = 700
+var_confidence_levels = [0.95, 0.975, 0.99]
+es_confidence_level = 0.975
+quantile_method = "inverted_empirical_cdf"
+es_boundary_method = "fractional_order_statistic"
+
+[evaluation]
+evaluation_start_year = 2020
+evaluation_end_year = 2025
+realised_loss_identity_tolerance = 1e-12
+primary_score_columns = ["quantile_loss_95", "quantile_loss_99", "fz0_975"]
+
+[dm]
+loss_difference = "current_composition_minus_realised_history"
+test = "diebold_mariano_two_sided_then_direction_check"
+hac = "newey_west_bartlett"
+hac_lag = 7
+multiplicity = "holm_familywise"
+family_size = 3
+familywise_alpha = 0.05
+
+[calibration]
+confidence_levels = [0.95, 0.99]
+tests = ["kupiec_unconditional_coverage", "christoffersen_independence"]
+multiplicity = "holm_familywise"
+family_size = 8
+familywise_alpha = 0.05
+
+[interpretation]
+role = "robustness_not_new_confirmatory_hypothesis"
+decision_rule = "report_adjusted_pairwise_loss_directions_without_changing_H1_H3"
+core_H1_H2_H3_revised = false
+cross_portfolio_ranking_performed = false
