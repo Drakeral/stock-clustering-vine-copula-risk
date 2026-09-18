@@ -567,7 +567,11 @@ def model_summaries(
     result["within_portfolio_overall_rank"] = result.groupby("portfolio_id")[
         "average_primary_score_rank"
     ].rank(method="average", ascending=True)
-    return cast(list[dict[str, Any]], result.to_dict(orient="records"))
+    records = cast(list[dict[str, Any]], result.to_dict(orient="records"))
+    for row in records:
+        if dependence[str(row["model_id"])] == "historical_simulation":
+            row["mean_copula_log_score"] = None
+    return records
 
 
 def evaluate_forecasts(

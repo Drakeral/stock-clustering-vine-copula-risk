@@ -1,0 +1,706 @@
+{
+  "analysis_role": "exploratory_portfolio_weighting_robustness",
+  "evaluation": {
+    "diebold_mariano_comparisons": [
+      {
+        "comparison_id": "B_GICS_VINE_minus_B_GICS_GAUSSIAN:quantile_loss_95",
+        "direction": "gaussian_lower_loss",
+        "dm_statistic": 1.9528085734815357,
+        "favours_gaussian_after_holm": false,
+        "favours_vine_after_holm": false,
+        "gaussian_model": "B_GICS_GAUSSIAN",
+        "hac_lag": 7,
+        "holm_p_value": 0.2765631548766456,
+        "mean_loss_difference": 1.0856688085293485e-05,
+        "observations": 1508,
+        "p_value_two_sided": 0.050842282260002244,
+        "portfolio_id": "gics_balanced",
+        "score": "quantile_loss_95",
+        "significant_after_holm": false,
+        "vine_model": "B_GICS_VINE"
+      },
+      {
+        "comparison_id": "B_GICS_VINE_minus_B_GICS_GAUSSIAN:quantile_loss_99",
+        "direction": "vine_lower_loss",
+        "dm_statistic": -0.9384267155810292,
+        "favours_gaussian_after_holm": false,
+        "favours_vine_after_holm": false,
+        "gaussian_model": "B_GICS_GAUSSIAN",
+        "hac_lag": 7,
+        "holm_p_value": 1.0,
+        "mean_loss_difference": -2.6721835966172797e-06,
+        "observations": 1508,
+        "p_value_two_sided": 0.34802516195553906,
+        "portfolio_id": "gics_balanced",
+        "score": "quantile_loss_99",
+        "significant_after_holm": false,
+        "vine_model": "B_GICS_VINE"
+      },
+      {
+        "comparison_id": "B_GICS_VINE_minus_B_GICS_GAUSSIAN:fz0_975",
+        "direction": "gaussian_lower_loss",
+        "dm_statistic": 1.136039439120368,
+        "favours_gaussian_after_holm": false,
+        "favours_vine_after_holm": false,
+        "gaussian_model": "B_GICS_GAUSSIAN",
+        "hac_lag": 7,
+        "holm_p_value": 1.0,
+        "mean_loss_difference": 0.004825539873748812,
+        "observations": 1508,
+        "p_value_two_sided": 0.25594005875639236,
+        "portfolio_id": "gics_balanced",
+        "score": "fz0_975",
+        "significant_after_holm": false,
+        "vine_model": "B_GICS_VINE"
+      },
+      {
+        "comparison_id": "B_HIER_VINE_minus_B_HIER_GAUSSIAN:quantile_loss_95",
+        "direction": "gaussian_lower_loss",
+        "dm_statistic": 1.994532800139859,
+        "favours_gaussian_after_holm": false,
+        "favours_vine_after_holm": false,
+        "gaussian_model": "B_HIER_GAUSSIAN",
+        "hac_lag": 7,
+        "holm_p_value": 0.2765631548766456,
+        "mean_loss_difference": 1.5632661055078765e-05,
+        "observations": 1508,
+        "p_value_two_sided": 0.0460938591461076,
+        "portfolio_id": "hierarchical_balanced",
+        "score": "quantile_loss_95",
+        "significant_after_holm": false,
+        "vine_model": "B_HIER_VINE"
+      },
+      {
+        "comparison_id": "B_HIER_VINE_minus_B_HIER_GAUSSIAN:quantile_loss_99",
+        "direction": "vine_lower_loss",
+        "dm_statistic": -0.04398754142636002,
+        "favours_gaussian_after_holm": false,
+        "favours_vine_after_holm": false,
+        "gaussian_model": "B_HIER_GAUSSIAN",
+        "hac_lag": 7,
+        "holm_p_value": 1.0,
+        "mean_loss_difference": -9.801799374457776e-08,
+        "observations": 1508,
+        "p_value_two_sided": 0.9649143347574274,
+        "portfolio_id": "hierarchical_balanced",
+        "score": "quantile_loss_99",
+        "significant_after_holm": false,
+        "vine_model": "B_HIER_VINE"
+      },
+      {
+        "comparison_id": "B_HIER_VINE_minus_B_HIER_GAUSSIAN:fz0_975",
+        "direction": "gaussian_lower_loss",
+        "dm_statistic": 1.0168896299255885,
+        "favours_gaussian_after_holm": false,
+        "favours_vine_after_holm": false,
+        "gaussian_model": "B_HIER_GAUSSIAN",
+        "hac_lag": 7,
+        "holm_p_value": 1.0,
+        "mean_loss_difference": 0.00924433913096757,
+        "observations": 1508,
+        "p_value_two_sided": 0.30920593708438543,
+        "portfolio_id": "hierarchical_balanced",
+        "score": "fz0_975",
+        "significant_after_holm": false,
+        "vine_model": "B_HIER_VINE"
+      }
+    ],
+    "forecast_validation": {
+      "evaluation_date_count": 1508,
+      "forecast_count": 9048,
+      "identity_tolerance": 1e-12,
+      "maximum_within_portfolio_realised_loss_identity_error": 2.7755575615628914e-17,
+      "portfolio_model_date_counts": {
+        "gics_balanced": {
+          "B_GICS_GAUSSIAN": 1508,
+          "B_GICS_HS": 1508,
+          "B_GICS_VINE": 1508
+        },
+        "hierarchical_balanced": {
+          "B_HIER_GAUSSIAN": 1508,
+          "B_HIER_HS": 1508,
+          "B_HIER_VINE": 1508
+        }
+      }
+    },
+    "full_period_calibration": [
+      {
+        "christoffersen_independence_holm_p_value": 0.006001910615618505,
+        "christoffersen_independence_likelihood_ratio": 13.331730166729812,
+        "christoffersen_independence_p_value": 0.0002609526354616741,
+        "christoffersen_independence_reject_after_holm": true,
+        "conditional_coverage_p_value": 0.0004905638712262192,
+        "confidence": 0.95,
+        "exception_rate": 0.042440318302387266,
+        "exceptions": 64,
+        "kupiec_holm_p_value": 1.0,
+        "kupiec_likelihood_ratio": 1.908179975008352,
+        "kupiec_p_value": 0.16716557019056974,
+        "kupiec_reject_after_holm": false,
+        "model_id": "B_GICS_HS",
+        "observations": 1508,
+        "portfolio_id": "gics_balanced"
+      },
+      {
+        "christoffersen_independence_holm_p_value": 0.008256526842206237,
+        "christoffersen_independence_likelihood_ratio": 12.651339558102734,
+        "christoffersen_independence_p_value": 0.00037529667464573804,
+        "christoffersen_independence_reject_after_holm": true,
+        "conditional_coverage_p_value": 0.0017407085026958863,
+        "confidence": 0.99,
+        "exception_rate": 0.010610079575596816,
+        "exceptions": 16,
+        "kupiec_holm_p_value": 1.0,
+        "kupiec_likelihood_ratio": 0.05558656824885588,
+        "kupiec_p_value": 0.8136126701913784,
+        "kupiec_reject_after_holm": false,
+        "model_id": "B_GICS_HS",
+        "observations": 1508,
+        "portfolio_id": "gics_balanced"
+      },
+      {
+        "christoffersen_independence_holm_p_value": 1.0,
+        "christoffersen_independence_likelihood_ratio": 1.8795131005766734,
+        "christoffersen_independence_p_value": 0.17038949734909442,
+        "christoffersen_independence_reject_after_holm": false,
+        "conditional_coverage_p_value": 0.18424094968303648,
+        "confidence": 0.95,
+        "exception_rate": 0.05702917771883289,
+        "exceptions": 86,
+        "kupiec_holm_p_value": 1.0,
+        "kupiec_likelihood_ratio": 1.5035086371943862,
+        "kupiec_p_value": 0.2201322890430289,
+        "kupiec_reject_after_holm": false,
+        "model_id": "B_GICS_GAUSSIAN",
+        "observations": 1508,
+        "portfolio_id": "gics_balanced"
+      },
+      {
+        "christoffersen_independence_holm_p_value": 1.0,
+        "christoffersen_independence_likelihood_ratio": 2.8232737848133524,
+        "christoffersen_independence_p_value": 0.09290673321114663,
+        "christoffersen_independence_reject_after_holm": false,
+        "conditional_coverage_p_value": 0.005164363664500948,
+        "confidence": 0.99,
+        "exception_rate": 0.01790450928381963,
+        "exceptions": 27,
+        "kupiec_holm_p_value": 0.1099122726465088,
+        "kupiec_likelihood_ratio": 7.708672986091358,
+        "kupiec_p_value": 0.00549561363232544,
+        "kupiec_reject_after_holm": false,
+        "model_id": "B_GICS_GAUSSIAN",
+        "observations": 1508,
+        "portfolio_id": "gics_balanced"
+      },
+      {
+        "christoffersen_independence_holm_p_value": 0.8172948456187917,
+        "christoffersen_independence_likelihood_ratio": 3.6977369007042853,
+        "christoffersen_independence_p_value": 0.05448632304125278,
+        "christoffersen_independence_reject_after_holm": false,
+        "conditional_coverage_p_value": 0.038629684960428186,
+        "confidence": 0.95,
+        "exception_rate": 0.05968169761273209,
+        "exceptions": 90,
+        "kupiec_holm_p_value": 1.0,
+        "kupiec_likelihood_ratio": 2.809731614587349,
+        "kupiec_p_value": 0.09369404941653654,
+        "kupiec_reject_after_holm": false,
+        "model_id": "B_GICS_VINE",
+        "observations": 1508,
+        "portfolio_id": "gics_balanced"
+      },
+      {
+        "christoffersen_independence_holm_p_value": 1.0,
+        "christoffersen_independence_likelihood_ratio": 3.0704526720526815,
+        "christoffersen_independence_p_value": 0.07972726847406421,
+        "christoffersen_independence_reject_after_holm": false,
+        "conditional_coverage_p_value": 0.008081579576542933,
+        "confidence": 0.99,
+        "exception_rate": 0.017241379310344827,
+        "exceptions": 26,
+        "kupiec_holm_p_value": 0.19750905763970777,
+        "kupiec_likelihood_ratio": 6.565883194764979,
+        "kupiec_p_value": 0.01039521355998462,
+        "kupiec_reject_after_holm": false,
+        "model_id": "B_GICS_VINE",
+        "observations": 1508,
+        "portfolio_id": "gics_balanced"
+      },
+      {
+        "christoffersen_independence_holm_p_value": 0.0031877641759315827,
+        "christoffersen_independence_likelihood_ratio": 14.601291165706925,
+        "christoffersen_independence_p_value": 0.00013282350733048262,
+        "christoffersen_independence_reject_after_holm": true,
+        "conditional_coverage_p_value": 0.0006482313395418956,
+        "confidence": 0.95,
+        "exception_rate": 0.04840848806366048,
+        "exceptions": 73,
+        "kupiec_holm_p_value": 1.0,
+        "kupiec_likelihood_ratio": 0.08123467400787376,
+        "kupiec_p_value": 0.7756311396341506,
+        "kupiec_reject_after_holm": false,
+        "model_id": "B_HIER_HS",
+        "observations": 1508,
+        "portfolio_id": "hierarchical_balanced"
+      },
+      {
+        "christoffersen_independence_holm_p_value": 0.3011859146029495,
+        "christoffersen_independence_likelihood_ratio": 5.724211270270473,
+        "christoffersen_independence_p_value": 0.016732550811274973,
+        "christoffersen_independence_reject_after_holm": false,
+        "conditional_coverage_p_value": 0.043673829382700924,
+        "confidence": 0.99,
+        "exception_rate": 0.011936339522546418,
+        "exceptions": 18,
+        "kupiec_holm_p_value": 1.0,
+        "kupiec_likelihood_ratio": 0.5378011822013491,
+        "kupiec_p_value": 0.46334541905626425,
+        "kupiec_reject_after_holm": false,
+        "model_id": "B_HIER_HS",
+        "observations": 1508,
+        "portfolio_id": "hierarchical_balanced"
+      },
+      {
+        "christoffersen_independence_holm_p_value": 1.0,
+        "christoffersen_independence_likelihood_ratio": 2.353461426598642,
+        "christoffersen_independence_p_value": 0.12500516423716843,
+        "christoffersen_independence_reject_after_holm": false,
+        "conditional_coverage_p_value": 0.07565312578298419,
+        "confidence": 0.95,
+        "exception_rate": 0.05968169761273209,
+        "exceptions": 90,
+        "kupiec_holm_p_value": 1.0,
+        "kupiec_likelihood_ratio": 2.809731614587349,
+        "kupiec_p_value": 0.09369404941653654,
+        "kupiec_reject_after_holm": false,
+        "model_id": "B_HIER_GAUSSIAN",
+        "observations": 1508,
+        "portfolio_id": "hierarchical_balanced"
+      },
+      {
+        "christoffersen_independence_holm_p_value": 0.6763486533800205,
+        "christoffersen_independence_likelihood_ratio": 4.227020876613949,
+        "christoffersen_independence_p_value": 0.039785214904707086,
+        "christoffersen_independence_reject_after_holm": false,
+        "conditional_coverage_p_value": 0.029647392368524563,
+        "confidence": 0.99,
+        "exception_rate": 0.014588859416445624,
+        "exceptions": 22,
+        "kupiec_holm_p_value": 1.0,
+        "kupiec_likelihood_ratio": 2.8097413323953333,
+        "kupiec_p_value": 0.09369348184702035,
+        "kupiec_reject_after_holm": false,
+        "model_id": "B_HIER_GAUSSIAN",
+        "observations": 1508,
+        "portfolio_id": "hierarchical_balanced"
+      },
+      {
+        "christoffersen_independence_holm_p_value": 1.0,
+        "christoffersen_independence_likelihood_ratio": 1.429033438049828,
+        "christoffersen_independence_p_value": 0.23192224667594827,
+        "christoffersen_independence_reject_after_holm": false,
+        "conditional_coverage_p_value": 0.005606133582105972,
+        "confidence": 0.95,
+        "exception_rate": 0.06763925729442971,
+        "exceptions": 102,
+        "kupiec_holm_p_value": 0.0586284324427113,
+        "kupiec_likelihood_ratio": 8.938754558162941,
+        "kupiec_p_value": 0.002791830116319586,
+        "kupiec_reject_after_holm": false,
+        "model_id": "B_HIER_VINE",
+        "observations": 1508,
+        "portfolio_id": "hierarchical_balanced"
+      },
+      {
+        "christoffersen_independence_holm_p_value": 0.7678955757429594,
+        "christoffersen_independence_likelihood_ratio": 3.9102144252609037,
+        "christoffersen_independence_p_value": 0.04799347348393496,
+        "christoffersen_independence_reject_after_holm": false,
+        "conditional_coverage_p_value": 0.023167055166819817,
+        "confidence": 0.99,
+        "exception_rate": 0.015251989389920425,
+        "exceptions": 23,
+        "kupiec_holm_p_value": 0.8172948456187917,
+        "kupiec_likelihood_ratio": 3.6198336655977528,
+        "kupiec_p_value": 0.057094581253410076,
+        "kupiec_reject_after_holm": false,
+        "model_id": "B_HIER_VINE",
+        "observations": 1508,
+        "portfolio_id": "hierarchical_balanced"
+      }
+    ],
+    "interpretation": {
+      "analysis_role": "exploratory_portfolio_weighting_robustness",
+      "core_H1_H2_H3_revised": false,
+      "cross_portfolio_ranking_performed": false,
+      "evidence": "no_holm_adjusted_difference",
+      "tests_favouring_gaussian_after_holm": 0,
+      "tests_favouring_vine_after_holm": 0
+    },
+    "model_summaries": [
+      {
+        "adjusted_calibration_rejection_count": 2,
+        "average_primary_score_rank": 3.0,
+        "dependence": "historical_simulation",
+        "exception_rate_95": 0.042440318302387266,
+        "exception_rate_975": 0.01989389920424403,
+        "exception_rate_99": 0.010610079575596816,
+        "exceptions_95": 64,
+        "exceptions_975": 30,
+        "exceptions_99": 16,
+        "grouping_id": "gics_balanced",
+        "mean_copula_log_score": null,
+        "mean_fz0_975": -3.129006987794529,
+        "mean_quantile_loss_95": 0.0015739001083334004,
+        "mean_quantile_loss_99": 0.0006464698022583706,
+        "model_id": "B_GICS_HS",
+        "observations": 1508,
+        "portfolio_id": "gics_balanced",
+        "rank_fz0_975": 3.0,
+        "rank_quantile_loss_95": 3.0,
+        "rank_quantile_loss_99": 3.0,
+        "systematic_calibration_failure": true,
+        "within_portfolio_overall_rank": 3.0
+      },
+      {
+        "adjusted_calibration_rejection_count": 0,
+        "average_primary_score_rank": 1.3333333333333333,
+        "dependence": "gaussian",
+        "exception_rate_95": 0.05702917771883289,
+        "exception_rate_975": 0.03183023872679045,
+        "exception_rate_99": 0.01790450928381963,
+        "exceptions_95": 86,
+        "exceptions_975": 48,
+        "exceptions_99": 27,
+        "grouping_id": "gics_balanced",
+        "mean_copula_log_score": 3.072888720969535,
+        "mean_fz0_975": -3.4918745378579876,
+        "mean_quantile_loss_95": 0.0013445243325529942,
+        "mean_quantile_loss_99": 0.0004657989323106637,
+        "model_id": "B_GICS_GAUSSIAN",
+        "observations": 1508,
+        "portfolio_id": "gics_balanced",
+        "rank_fz0_975": 1.0,
+        "rank_quantile_loss_95": 1.0,
+        "rank_quantile_loss_99": 2.0,
+        "systematic_calibration_failure": false,
+        "within_portfolio_overall_rank": 1.0
+      },
+      {
+        "adjusted_calibration_rejection_count": 0,
+        "average_primary_score_rank": 1.6666666666666667,
+        "dependence": "vine_tree_3",
+        "exception_rate_95": 0.05968169761273209,
+        "exception_rate_975": 0.033156498673740056,
+        "exception_rate_99": 0.017241379310344827,
+        "exceptions_95": 90,
+        "exceptions_975": 50,
+        "exceptions_99": 26,
+        "grouping_id": "gics_balanced",
+        "mean_copula_log_score": 3.1778074779116277,
+        "mean_fz0_975": -3.4870489979842394,
+        "mean_quantile_loss_95": 0.001355381020638288,
+        "mean_quantile_loss_99": 0.00046312674871404645,
+        "model_id": "B_GICS_VINE",
+        "observations": 1508,
+        "portfolio_id": "gics_balanced",
+        "rank_fz0_975": 2.0,
+        "rank_quantile_loss_95": 2.0,
+        "rank_quantile_loss_99": 1.0,
+        "systematic_calibration_failure": false,
+        "within_portfolio_overall_rank": 2.0
+      },
+      {
+        "adjusted_calibration_rejection_count": 1,
+        "average_primary_score_rank": 3.0,
+        "dependence": "historical_simulation",
+        "exception_rate_95": 0.04840848806366048,
+        "exception_rate_975": 0.023209549071618037,
+        "exception_rate_99": 0.011936339522546418,
+        "exceptions_95": 73,
+        "exceptions_975": 35,
+        "exceptions_99": 18,
+        "grouping_id": "hierarchical_balanced",
+        "mean_copula_log_score": null,
+        "mean_fz0_975": -3.2672997359452878,
+        "mean_quantile_loss_95": 0.0014113712503345532,
+        "mean_quantile_loss_99": 0.0005822392536297795,
+        "model_id": "B_HIER_HS",
+        "observations": 1508,
+        "portfolio_id": "hierarchical_balanced",
+        "rank_fz0_975": 3.0,
+        "rank_quantile_loss_95": 3.0,
+        "rank_quantile_loss_99": 3.0,
+        "systematic_calibration_failure": true,
+        "within_portfolio_overall_rank": 3.0
+      },
+      {
+        "adjusted_calibration_rejection_count": 0,
+        "average_primary_score_rank": 1.3333333333333333,
+        "dependence": "gaussian",
+        "exception_rate_95": 0.05968169761273209,
+        "exception_rate_975": 0.029177718832891247,
+        "exception_rate_99": 0.014588859416445624,
+        "exceptions_95": 90,
+        "exceptions_975": 44,
+        "exceptions_99": 22,
+        "grouping_id": "hierarchical_balanced",
+        "mean_copula_log_score": 2.0288887179385555,
+        "mean_fz0_975": -3.5920396267660486,
+        "mean_quantile_loss_95": 0.0012190051581772467,
+        "mean_quantile_loss_99": 0.00044723325134610127,
+        "model_id": "B_HIER_GAUSSIAN",
+        "observations": 1508,
+        "portfolio_id": "hierarchical_balanced",
+        "rank_fz0_975": 1.0,
+        "rank_quantile_loss_95": 1.0,
+        "rank_quantile_loss_99": 2.0,
+        "systematic_calibration_failure": false,
+        "within_portfolio_overall_rank": 1.0
+      },
+      {
+        "adjusted_calibration_rejection_count": 0,
+        "average_primary_score_rank": 1.6666666666666667,
+        "dependence": "vine_tree_3",
+        "exception_rate_95": 0.06763925729442971,
+        "exception_rate_975": 0.034482758620689655,
+        "exception_rate_99": 0.015251989389920425,
+        "exceptions_95": 102,
+        "exceptions_975": 52,
+        "exceptions_99": 23,
+        "grouping_id": "hierarchical_balanced",
+        "mean_copula_log_score": 2.000814458008142,
+        "mean_fz0_975": -3.582795287635081,
+        "mean_quantile_loss_95": 0.0012346378192323254,
+        "mean_quantile_loss_99": 0.0004471352333523568,
+        "model_id": "B_HIER_VINE",
+        "observations": 1508,
+        "portfolio_id": "hierarchical_balanced",
+        "rank_fz0_975": 2.0,
+        "rank_quantile_loss_95": 2.0,
+        "rank_quantile_loss_99": 1.0,
+        "systematic_calibration_failure": false,
+        "within_portfolio_overall_rank": 2.0
+      }
+    ],
+    "portfolio_conclusions": [
+      {
+        "adjusted_dm_tests_favouring_gaussian": 0,
+        "adjusted_dm_tests_favouring_vine": 0,
+        "best_average_score_rank_model": "B_GICS_GAUSSIAN",
+        "portfolio_id": "gics_balanced",
+        "vine_quality_eligible": true
+      },
+      {
+        "adjusted_dm_tests_favouring_gaussian": 0,
+        "adjusted_dm_tests_favouring_vine": 0,
+        "best_average_score_rank_model": "B_HIER_GAUSSIAN",
+        "portfolio_id": "hierarchical_balanced",
+        "vine_quality_eligible": true
+      }
+    ]
+  },
+  "gate_name": "group_balanced_robustness_v1",
+  "inputs": {
+    "construction_audit": {
+      "path": "data/audit/group_balanced_portfolio_construction.json",
+      "sha256": "2dde01b583db965f298add46616e4746143878dab2b849855acffc4b0983d3ba"
+    },
+    "foundation_status": {
+      "path": "data/audit/current_gate_status.json",
+      "sha256": "66df582e2ba6255c8f2e975c0739480562203fd85de06fa24dea0e58b3dd98b9"
+    },
+    "group_balanced_config": {
+      "path": "config/group_balanced_robustness.toml",
+      "sha256": "058c75bbd1ac938e4de240a7086449a0944c66faede5a487b5c5486817474a36"
+    },
+    "group_returns": {
+      "path": "data/processed/group_balanced_group_returns.parquet",
+      "sha256": "5329d4526615e8a80a5941db422a3f4fc1b583a8bb67085a8610adad11dcfe43"
+    },
+    "model_config": {
+      "path": "config/model_config.toml",
+      "sha256": "d6d0cd9a53cce7bfaf0e19b2c973648ff10dcb20d48e67b53c0e5c8367a509fc"
+    },
+    "portfolio_returns": {
+      "path": "data/processed/group_balanced_portfolio_returns.parquet",
+      "sha256": "fcc62f3cab2a73f8a293d441b6f39ba575a975ee042a9d63201e1f9cc28f25d0"
+    },
+    "primary_gaussian_audit": {
+      "path": "data/audit/gaussian_copula_quality.json",
+      "sha256": "1525a3a7e18e3c166f14a90f8cd322c34de997ef47bd288acd305f97551fe910"
+    },
+    "primary_seed_manifest": {
+      "path": "data/manifests/simulation_seed_manifest.json",
+      "sha256": "f0763b5e868329ebf55f6973abd74e9ec3f86940bea8c316d5b9e289cca2956d"
+    }
+  },
+  "issues": [],
+  "method": {
+    "common_random_numbers": "reuse_primary_simulation_seed_manifest",
+    "full_vine_cross_robustness": false,
+    "historical_window_protocol": "inherit_config/model_config.toml",
+    "inference": {
+      "calibration_confidence_levels": [
+        0.95,
+        0.99
+      ],
+      "calibration_family_size": 24,
+      "calibration_multiplicity": "holm_familywise",
+      "calibration_tests": [
+        "kupiec_unconditional_coverage",
+        "christoffersen_independence"
+      ],
+      "dm_comparison": "vine_minus_gaussian_within_same_portfolio",
+      "dm_family_size": 6,
+      "dm_hac_lag": 7,
+      "dm_multiplicity": "holm_familywise",
+      "familywise_alpha": 0.05,
+      "hypothesis_treatment": "robustness_does_not_revise_core_H1_H2_H3",
+      "loss_scores": [
+        "quantile_loss_95",
+        "quantile_loss_99",
+        "fz0_975"
+      ],
+      "ranking": "separate_within_each_portfolio_equal_weight_average_primary_score_rank",
+      "result_role": "exploratory_robustness"
+    },
+    "marginal_copula_simulation_protocol": "inherit_config/model_config.toml",
+    "ml_grouping_cross_robustness": false,
+    "portfolio_weight_rule": "annual_equal_group_buy_and_hold",
+    "vine_truncation_tree": 3
+  },
+  "outputs": {
+    "daily_scores": {
+      "path": "data/processed/group_balanced_robustness/daily_scores.parquet",
+      "rows": 9048,
+      "sha256": "e1c3843066c1f2ecce4228de1ed511b29f8f673c62a6e4db775fff6d339d263f"
+    },
+    "gaussian_forecasts": {
+      "path": "data/processed/group_balanced_robustness/gaussian_forecasts.parquet",
+      "rows": 3016,
+      "sha256": "53e2b52d6715b330a1b8aa0099c1c0cf43b3de00efa8a207336eb02a2d5b1c94"
+    },
+    "gaussian_refits": {
+      "path": "data/processed/group_balanced_robustness/gaussian_refits.parquet",
+      "rows": 144,
+      "sha256": "fd4070b0020c41680fe1d0825af2847b9419f577c6e5eff8e619752746ecd5c2"
+    },
+    "historical_forecasts": {
+      "path": "data/processed/group_balanced_robustness/historical_forecasts.parquet",
+      "rows": 3016,
+      "sha256": "df80828afbc249592bb9a6bda13ef00a1d6974cebb2c2bd384eef774d4ce2c96"
+    },
+    "historical_windows": {
+      "path": "data/processed/group_balanced_robustness/historical_windows.parquet",
+      "rows": 3016,
+      "sha256": "20b6093cdc01e1624e5956e8d4a753011c2f3d3257a84dd93e67c5b53cbbe88a"
+    },
+    "marginal_daily": {
+      "path": "data/processed/group_balanced_robustness/marginal_daily.parquet",
+      "rows": 33176,
+      "sha256": "63db551d5eb0842ea260e90202bba029f813d877dfb725aec97672a6a85f4258"
+    },
+    "marginal_refits": {
+      "path": "data/processed/group_balanced_robustness/marginal_refits.parquet",
+      "rows": 1584,
+      "sha256": "de8c4c842a209cab2e2fec5ae702cfc76157351b9f682ea1f686a31d3dc5046f"
+    },
+    "training_pits": {
+      "path": "data/processed/group_balanced_robustness/training_pits.parquet",
+      "rows": 1192730,
+      "sha256": "2386c49c76bafa3aad32271208c623ec92b2dd3ff244d5b8e2e3c35133540468"
+    },
+    "vine_forecasts": {
+      "path": "data/processed/group_balanced_robustness/vine_forecasts.parquet",
+      "rows": 3016,
+      "sha256": "7862cdb6730b6755416c55a31c3d058dfedc8053359dde093cd6701c385fb71c"
+    },
+    "vine_refits": {
+      "path": "data/processed/group_balanced_robustness/vine_refits.parquet",
+      "rows": 144,
+      "sha256": "b466901513a1d51ac0c1235be3ec905b5a55d7844dfa5ca69129a7150c740e90"
+    }
+  },
+  "quality": {
+    "gaussian": {
+      "gics_balanced": {
+        "issues": [],
+        "maximum_condition_number": 44.20534761667265,
+        "maximum_realised_portfolio_identity_error": 0.0,
+        "model_ids": [
+          "B_GICS_GAUSSIAN"
+        ],
+        "refit_count": 72,
+        "repaired_refit_count": 0,
+        "status": "pass"
+      },
+      "hierarchical_balanced": {
+        "issues": [],
+        "maximum_condition_number": 24.41393452443177,
+        "maximum_realised_portfolio_identity_error": 0.0,
+        "model_ids": [
+          "B_HIER_GAUSSIAN"
+        ],
+        "refit_count": 72,
+        "repaired_refit_count": 0,
+        "status": "pass"
+      }
+    },
+    "historical": {
+      "forecast_count": 3016,
+      "issues": [],
+      "minimum_training_observations": 750,
+      "model_date_counts": {
+        "B_GICS_HS": 1508,
+        "B_HIER_HS": 1508
+      },
+      "status": "pass",
+      "window_count": 3016
+    },
+    "marginal": {
+      "ewma_fit_count": 2,
+      "ewma_fit_fraction": 0.0012626262626262627,
+      "fallback_fit_count": 14,
+      "issues": [],
+      "portfolio_weight_rule": "annual_equal_group_buy_and_hold",
+      "refit_count": 1584,
+      "selected_method_counts": {
+        "ar_garch_t": 1570,
+        "ar_garch_t_retry": 9,
+        "constant_mean_garch_t": 3,
+        "ewma_empirical": 2
+      },
+      "status": "pass"
+    },
+    "vine": {
+      "gics_balanced": {
+        "eligible_to_be_declared_best": true,
+        "failed_pair_count": 0,
+        "issues": [],
+        "model_ids": [
+          "B_GICS_VINE"
+        ],
+        "refit_count": 72,
+        "status": "pass",
+        "whole_vine_fallback_date_fraction": 0.0,
+        "whole_vine_fallback_refit_count": 0
+      },
+      "hierarchical_balanced": {
+        "eligible_to_be_declared_best": true,
+        "failed_pair_count": 0,
+        "issues": [],
+        "model_ids": [
+          "B_HIER_VINE"
+        ],
+        "refit_count": 72,
+        "status": "pass",
+        "whole_vine_fallback_date_fraction": 0.0,
+        "whole_vine_fallback_refit_count": 0
+      }
+    }
+  },
+  "reporting_scope": "provisional_research_results",
+  "schema_version": 1,
+  "status": "pass"
+}

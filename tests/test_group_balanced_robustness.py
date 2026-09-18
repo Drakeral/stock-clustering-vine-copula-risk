@@ -184,7 +184,15 @@ class GroupBalancedEvaluationTests(unittest.TestCase):
         self.assertEqual(len(audit["diebold_mariano_comparisons"]), 6)
         self.assertEqual(len(audit["portfolio_conclusions"]), 2)
         self.assertFalse(audit["interpretation"]["cross_portfolio_ranking_performed"])
+        json.dumps(audit, allow_nan=False)
         summaries = pd.DataFrame(audit["model_summaries"])
+        self.assertTrue(
+            summaries.loc[summaries["dependence"].eq("historical_simulation")][
+                "mean_copula_log_score"
+            ]
+            .isna()
+            .all()
+        )
         self.assertTrue(
             summaries.groupby("portfolio_id")["within_portfolio_overall_rank"].min().eq(1.0).all()
         )

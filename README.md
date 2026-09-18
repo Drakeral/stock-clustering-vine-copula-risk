@@ -34,6 +34,14 @@ unchanged. H1 is deliberately not retested because annual assignments are held
 fixed. Exact scenario diagnostics and hashes are in
 `data/audit/wba_dap_sensitivity.json`.
 
+The secondary portfolio-weighting robustness also passes its computational
+gates. GICS sectors and hierarchical clusters are each initialized at equal
+group weights annually and then allowed to drift. Their historical, Gaussian,
+and tree-3 vine models are ranked only within the same realised portfolio. The
+Gaussian model ranks first within both targets, but none of the six
+vine-minus-Gaussian forecast-loss comparisons is significant after the frozen
+Holm correction. This exploratory result does not revise H1-H3.
+
 The machine-readable authorization and its narrow conditions are frozen in
 `config/provenance_amendment.json`. A licensed point-in-time extract can still
 supersede the amendment and obtain the strict provenance pass later.

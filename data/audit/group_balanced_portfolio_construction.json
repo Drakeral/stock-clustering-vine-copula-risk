@@ -1,0 +1,275 @@
+{
+  "analysis_role": "exploratory_portfolio_weighting_robustness",
+  "annual_diagnostics": [
+    {
+      "active_security_count": 100,
+      "evaluation_maximum_group_weight": 0.13081527804789653,
+      "evaluation_minimum_group_weight": 0.038887474040619555,
+      "evaluation_observations": 253,
+      "evaluation_reset_date": "2020-01-02",
+      "group_count": 11,
+      "maximum_portfolio_identity_error": 2.7755575615628914e-17,
+      "portfolio_id": "gics_balanced",
+      "training_calendar_reset_dates": [
+        "2017-01-04",
+        "2018-01-02",
+        "2019-01-02"
+      ],
+      "training_observations": 753,
+      "year": 2020
+    },
+    {
+      "active_security_count": 100,
+      "evaluation_maximum_group_weight": 0.12691737503776573,
+      "evaluation_minimum_group_weight": 0.03708825770934239,
+      "evaluation_observations": 253,
+      "evaluation_reset_date": "2020-01-02",
+      "group_count": 11,
+      "maximum_portfolio_identity_error": 1.3877787807814457e-17,
+      "portfolio_id": "hierarchical_balanced",
+      "training_calendar_reset_dates": [
+        "2017-01-04",
+        "2018-01-02",
+        "2019-01-02"
+      ],
+      "training_observations": 753,
+      "year": 2020
+    },
+    {
+      "active_security_count": 98,
+      "evaluation_maximum_group_weight": 0.14035985286127953,
+      "evaluation_minimum_group_weight": 0.07017673014241843,
+      "evaluation_observations": 252,
+      "evaluation_reset_date": "2021-01-04",
+      "group_count": 11,
+      "maximum_portfolio_identity_error": 1.3877787807814457e-17,
+      "portfolio_id": "gics_balanced",
+      "training_calendar_reset_dates": [
+        "2018-01-04",
+        "2019-01-02",
+        "2020-01-02"
+      ],
+      "training_observations": 754,
+      "year": 2021
+    },
+    {
+      "active_security_count": 98,
+      "evaluation_maximum_group_weight": 0.15261958561570363,
+      "evaluation_minimum_group_weight": 0.06537153773456911,
+      "evaluation_observations": 252,
+      "evaluation_reset_date": "2021-01-04",
+      "group_count": 11,
+      "maximum_portfolio_identity_error": 1.3877787807814457e-17,
+      "portfolio_id": "hierarchical_balanced",
+      "training_calendar_reset_dates": [
+        "2018-01-04",
+        "2019-01-02",
+        "2020-01-02"
+      ],
+      "training_observations": 754,
+      "year": 2021
+    },
+    {
+      "active_security_count": 98,
+      "evaluation_maximum_group_weight": 0.18350001747911565,
+      "evaluation_minimum_group_weight": 0.05771271695658782,
+      "evaluation_observations": 251,
+      "evaluation_reset_date": "2022-01-03",
+      "group_count": 11,
+      "maximum_portfolio_identity_error": 1.3877787807814457e-17,
+      "portfolio_id": "gics_balanced",
+      "training_calendar_reset_dates": [
+        "2019-01-03",
+        "2020-01-02",
+        "2021-01-04"
+      ],
+      "training_observations": 756,
+      "year": 2022
+    },
+    {
+      "active_security_count": 98,
+      "evaluation_maximum_group_weight": 0.12282263627058822,
+      "evaluation_minimum_group_weight": 0.05750204097837258,
+      "evaluation_observations": 251,
+      "evaluation_reset_date": "2022-01-03",
+      "group_count": 11,
+      "maximum_portfolio_identity_error": 1.3877787807814457e-17,
+      "portfolio_id": "hierarchical_balanced",
+      "training_calendar_reset_dates": [
+        "2019-01-03",
+        "2020-01-02",
+        "2021-01-04"
+      ],
+      "training_observations": 756,
+      "year": 2022
+    },
+    {
+      "active_security_count": 98,
+      "evaluation_maximum_group_weight": 0.12130181392912211,
+      "evaluation_minimum_group_weight": 0.06958379725871577,
+      "evaluation_observations": 250,
+      "evaluation_reset_date": "2023-01-03",
+      "group_count": 11,
+      "maximum_portfolio_identity_error": 2.7755575615628914e-17,
+      "portfolio_id": "gics_balanced",
+      "training_calendar_reset_dates": [
+        "2020-01-03",
+        "2021-01-04",
+        "2022-01-03"
+      ],
+      "training_observations": 755,
+      "year": 2023
+    },
+    {
+      "active_security_count": 98,
+      "evaluation_maximum_group_weight": 0.1216605727428756,
+      "evaluation_minimum_group_weight": 0.07126209860350391,
+      "evaluation_observations": 250,
+      "evaluation_reset_date": "2023-01-03",
+      "group_count": 11,
+      "maximum_portfolio_identity_error": 2.7755575615628914e-17,
+      "portfolio_id": "hierarchical_balanced",
+      "training_calendar_reset_dates": [
+        "2020-01-03",
+        "2021-01-04",
+        "2022-01-03"
+      ],
+      "training_observations": 755,
+      "year": 2023
+    },
+    {
+      "active_security_count": 98,
+      "evaluation_maximum_group_weight": 0.10753447706011497,
+      "evaluation_minimum_group_weight": 0.07351339704205981,
+      "evaluation_observations": 252,
+      "evaluation_reset_date": "2024-01-02",
+      "group_count": 11,
+      "maximum_portfolio_identity_error": 1.3877787807814457e-17,
+      "portfolio_id": "gics_balanced",
+      "training_calendar_reset_dates": [
+        "2021-01-04",
+        "2022-01-03",
+        "2023-01-03"
+      ],
+      "training_observations": 753,
+      "year": 2024
+    },
+    {
+      "active_security_count": 98,
+      "evaluation_maximum_group_weight": 0.12133746324012053,
+      "evaluation_minimum_group_weight": 0.04097969886002739,
+      "evaluation_observations": 252,
+      "evaluation_reset_date": "2024-01-02",
+      "group_count": 11,
+      "maximum_portfolio_identity_error": 1.3877787807814457e-17,
+      "portfolio_id": "hierarchical_balanced",
+      "training_calendar_reset_dates": [
+        "2021-01-04",
+        "2022-01-03",
+        "2023-01-03"
+      ],
+      "training_observations": 753,
+      "year": 2024
+    },
+    {
+      "active_security_count": 98,
+      "evaluation_maximum_group_weight": 0.10798330964988363,
+      "evaluation_minimum_group_weight": 0.07395631649510537,
+      "evaluation_observations": 250,
+      "evaluation_reset_date": "2025-01-02",
+      "group_count": 11,
+      "maximum_portfolio_identity_error": 1.3877787807814457e-17,
+      "portfolio_id": "gics_balanced",
+      "training_calendar_reset_dates": [
+        "2022-01-03",
+        "2023-01-03",
+        "2024-01-02"
+      ],
+      "training_observations": 753,
+      "year": 2025
+    },
+    {
+      "active_security_count": 98,
+      "evaluation_maximum_group_weight": 0.12101371175220532,
+      "evaluation_minimum_group_weight": 0.06761470489248206,
+      "evaluation_observations": 250,
+      "evaluation_reset_date": "2025-01-02",
+      "group_count": 11,
+      "maximum_portfolio_identity_error": 1.3877787807814457e-17,
+      "portfolio_id": "hierarchical_balanced",
+      "training_calendar_reset_dates": [
+        "2022-01-03",
+        "2023-01-03",
+        "2024-01-02"
+      ],
+      "training_observations": 753,
+      "year": 2025
+    }
+  ],
+  "evaluation_years": [
+    2020,
+    2025
+  ],
+  "gate_name": "group_balanced_portfolio_construction_v1",
+  "group_return_rows": 132704,
+  "inputs": {
+    "annual_group_assignments": {
+      "path": "data/processed/annual_group_assignments.json",
+      "sha256": "0992a0ddfe38eca1aaf9b2e3b80aedd87acedd57240696c5e48f091eef0be34e"
+    },
+    "clustering_audit": {
+      "path": "data/audit/clustering_diagnostics.json",
+      "sha256": "c493560dab94e45b8e0eb5b2e07951a01022b5c5563bed9d775dec1011f40915"
+    },
+    "foundation_status": {
+      "path": "data/audit/current_gate_status.json",
+      "sha256": "66df582e2ba6255c8f2e975c0739480562203fd85de06fa24dea0e58b3dd98b9"
+    },
+    "group_balanced_config": {
+      "path": "config/group_balanced_robustness.toml",
+      "sha256": "058c75bbd1ac938e4de240a7086449a0944c66faede5a487b5c5486817474a36"
+    },
+    "stock_simple_returns": {
+      "path": "data/processed/portfolio_constituent_simple_returns.parquet",
+      "sha256": "e37b805bd8c290ace18a9aab120b3272ed10e8d64b3eab70c892b03c72caf3e9"
+    }
+  },
+  "issues": [],
+  "maximum_portfolio_identity_error": 2.7755575615628914e-17,
+  "method": {
+    "between_rebalance_rule": "buy_and_hold_total_return_weights_drift",
+    "daily_weight_timing": "pre_return",
+    "dividend_treatment": "inherited_total_return_reinvestment",
+    "initial_group_weight": "equal_one_over_nonempty_group_count",
+    "initial_within_group_weight": "equal_one_over_group_size",
+    "membership_and_labels": "hold_primary_annual_assignments_fixed",
+    "portfolio_identity_tolerance": 1e-12,
+    "rebalance_frequency": "annual_first_trading_day",
+    "return_scale": "simple_total_return",
+    "training_backcast": "evaluation_year_active_set_and_labels",
+    "training_weight_resets": "first_available_session_of_each_calendar_year",
+    "transaction_costs": 0.0,
+    "verified_halt_and_terminal_cash_return": 0.0
+  },
+  "outputs": {
+    "group_returns": {
+      "path": "data/processed/group_balanced_group_returns.parquet",
+      "rows": 132704,
+      "sha256": "5329d4526615e8a80a5941db422a3f4fc1b583a8bb67085a8610adad11dcfe43"
+    },
+    "portfolio_returns": {
+      "path": "data/processed/group_balanced_portfolio_returns.parquet",
+      "rows": 12064,
+      "sha256": "fcc62f3cab2a73f8a293d441b6f39ba575a975ee042a9d63201e1f9cc28f25d0"
+    }
+  },
+  "portfolio_identity_tolerance": 1e-12,
+  "portfolio_ids": [
+    "gics_balanced",
+    "hierarchical_balanced"
+  ],
+  "portfolio_return_rows": 12064,
+  "reporting_scope": "provisional_research_results",
+  "schema_version": 1,
+  "status": "pass"
+}

@@ -1,6 +1,6 @@
 # Quantitative Code Audit
 
-Audit date: 16 September 2026
+Audit date: 18 September 2026
 
 ## Conclusion
 
@@ -21,7 +21,8 @@ verification, lifecycle and corporate-action handling, return construction,
 portfolio arithmetic, annual grouping construction, marginal filtering,
 Gaussian and R-vine copulas, Monte Carlo risk forecasts, statistical inference,
 the full ten-tree vine robustness analysis, the spectral and PCA-plus-k-means
-M5-M8 risk extension, artifact schemas and hashes, tests, CI, dependency
+M5-M8 risk extension, the annual group-balanced portfolio robustness, artifact
+schemas and hashes, tests, CI, dependency
 locking, secret boundaries, and repository hygiene.
 
 ## Quantitative invariants confirmed
@@ -103,12 +104,12 @@ quality limit. All 144 primary vine refits completed without whole-vine
 fallback. The full tree-10 run also completed all 144 refits and 3,016 forecasts
 without failed pairs or whole-vine fallback. Its 7,920 pair positions and 6,032
 matched robustness score rows pass their production artifact checks. The full
-local suite contains 145 passing tests, including all nine artifact-bound
+local suite contains 161 passing tests, including all eleven artifact-bound
 production classes. After rebuilding the affected audit chain, the annual
 grouping, marginal, Gaussian, primary-vine, evaluation, full-vine, robustness,
 and exploratory ML numerical artifacts all reproduced their pre-audit SHA-256
-hashes exactly. The final lineage scan verifies 221 path-bound hash records
-across 28 audit and manifest documents.
+hashes exactly. The final lineage scan verifies 310 path-bound hash records
+across 31 audit and manifest documents.
 
 The post-audit exploratory ML-grouping checkpoint adds 12 deterministic annual
 fits: spectral clustering and PCA-plus-k-means for each year from 2020 through
@@ -144,6 +145,26 @@ frozen operational rule, and none of the 24 exploratory ML comparisons is
 significant after BH adjustment. H1 is unchanged and not retested in this
 fixed-assignment corporate-action valuation sensitivity.
 
+The portfolio-weighting checkpoint constructs two distinct annual buy-and-hold
+targets: equal GICS-sector weights and equal hierarchical-cluster weights. It
+adds 132,704 group-return rows and 12,064 portfolio-return rows. Both targets
+contain 1,508 evaluation dates, and their direct stock-versus-group return
+identities hold within `2.78e-17`. Evaluation-period group weights drift from
+3.71% to 18.35%, confirming that the portfolios are not being silently reset
+each day.
+
+The matched risk run adds 1,584 marginal refits, 144 Gaussian refits, 144 tree-3
+vine refits, and 9,048 daily score rows. Fourteen marginal fits use a fallback
+level, of which two use EWMA (`0.126%`, below the 1% gate). No Gaussian
+correlation repair, failed pair-copula fit, or whole-vine fallback occurs. The
+Gaussian model ranks first and the vine second within each portfolio; historical
+simulation ranks third. None of the six vine-minus-Gaussian loss comparisons is
+significant after Holm correction—the smallest raw p-value is `0.0461`, but its
+adjusted p-value is `0.2766`. Historical simulation has adjusted exception-
+independence rejections, while neither Gaussian nor vine does. Rankings remain
+strictly within portfolio because the two realised loss series differ. This
+exploratory robustness therefore does not alter H1-H3.
+
 ## Interpretation and remaining boundaries
 
 - Licensed point-in-time S&P 100 membership, historical GICS, and permanent
@@ -171,10 +192,10 @@ fixed-assignment corporate-action valuation sensitivity.
   their trailing estimation window. This is the frozen implemented design, not
   a coding error, but a current-composition historical-simulation backcast would
   be a useful explicitly labelled robustness check before final submission.
-- Secondary group-balanced portfolios remain a future stage. The matched M5-M8
-  Gaussian/vine risk forecasts are implemented, but remain an exploratory
-  extension: none of their 24 adjusted loss comparisons is significant, and
-  they do not revise H1-H3 or the core M0-M4 ranking.
+- Secondary group-balanced portfolios are implemented as an exploratory
+  weighting robustness. Gaussian models rank first within both targets, but no
+  adjusted vine-versus-Gaussian loss difference is detected. This is not a
+  cross-portfolio ranking and does not revise H1-H3 or the core M0-M4 ranking.
 - The WBA sensitivity brackets the DAP at zero and its contractual cap; it does
   not model a stochastic payoff distribution or dependence between that payoff
   and market returns. Its conclusion is narrowly that these two endpoint
