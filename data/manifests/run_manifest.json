@@ -1,5 +1,12 @@
 {
+  "artifact_lineage": {
+    "document_count": 31,
+    "hash_record_count": 211,
+    "issues": [],
+    "status": "pass"
+  },
   "completeness": {
+    "artifact_lineage": true,
     "complete": true,
     "configuration": true,
     "git_commit_and_clean_worktree_at_capture": true,
@@ -7,6 +14,12 @@
     "outputs": true
   },
   "configuration": [
+    {
+      "bytes": 1729,
+      "path": "config/current_composition_hs_robustness.toml",
+      "sha256": "b389a0683287ada0b8d8168279f06f31c14c4abd0133375dbf8768ac49c0c0d5",
+      "status": "present"
+    },
     {
       "bytes": 3162,
       "path": "config/data_config.toml",
@@ -23,6 +36,12 @@
       "bytes": 1373,
       "path": "config/full_vine_robustness.toml",
       "sha256": "6f7e3d8ef341d6ec52c85742a0ca9674e3a6a26cbe7626b7f13b55c13a965020",
+      "status": "present"
+    },
+    {
+      "bytes": 2266,
+      "path": "config/group_balanced_robustness.toml",
+      "sha256": "058c75bbd1ac938e4de240a7086449a0944c66faede5a487b5c5486817474a36",
       "status": "present"
     },
     {
@@ -50,6 +69,12 @@
       "status": "present"
     },
     {
+      "bytes": 3856,
+      "path": "config/ml_extension_config.toml",
+      "sha256": "95d7e0d50190e3ff7702c933276e5b4b56a3b33b65990cd80ad8055ad8374939",
+      "status": "present"
+    },
+    {
       "bytes": 4725,
       "path": "config/model_config.toml",
       "sha256": "d6d0cd9a53cce7bfaf0e19b2c973648ff10dcb20d48e67b53c0e5c8367a509fc",
@@ -68,9 +93,9 @@
       "status": "present"
     },
     {
-      "bytes": 2616,
+      "bytes": 4518,
       "path": "config/schemas/forecast_record.schema.json",
-      "sha256": "1a603c00c11ddcd4f7cc89cec4d1431e928aa5da3aff1b944b531257bf0b97c3",
+      "sha256": "94dd742fd243afc482f1fcaa96b3236537c816e6be81de928feefc58814f205b",
       "status": "present"
     },
     {
@@ -80,9 +105,21 @@
       "status": "present"
     },
     {
-      "bytes": 2428,
+      "bytes": 3611,
       "path": "config/schemas/gaussian_copula_refit_record.schema.json",
-      "sha256": "e7a969c0d54cd5bba4631e271053fd6c4c5c76f2b4d3df15053718ebceb066f7",
+      "sha256": "556f717d4bf7a0d91c46258cdb64eb33e4fdc573be11f68f8c455f9010bf7900",
+      "status": "present"
+    },
+    {
+      "bytes": 1079,
+      "path": "config/schemas/group_balanced_group_return_record.schema.json",
+      "sha256": "c0f823af297b61161d378ff93fb1e755d2ca85e4416889bfa7748672fe8c3749",
+      "status": "present"
+    },
+    {
+      "bytes": 1083,
+      "path": "config/schemas/group_balanced_portfolio_return_record.schema.json",
+      "sha256": "5ae718d785d225f16eac67037637ef75531676e709482ed7a58a84a1908d3b3d",
       "status": "present"
     },
     {
@@ -92,39 +129,57 @@
       "status": "present"
     },
     {
-      "bytes": 1975,
+      "bytes": 2059,
       "path": "config/schemas/marginal_daily_record.schema.json",
-      "sha256": "faa3dcf8434317e87450cd76c5df9f426e1ebdcfe20bfc04b3c6d5d15ed7250a",
+      "sha256": "75a1635a52e1e64cce62a14d90f87e84c2293acf9e2b2dd6ac0592f4cf13adfe",
       "status": "present"
     },
     {
-      "bytes": 2818,
+      "bytes": 2902,
       "path": "config/schemas/marginal_refit_record.schema.json",
-      "sha256": "a566264c881a9a703eeb82e9b2c253170e3ade73b00aec4879bea024c3ca94f7",
+      "sha256": "77ffc98519ef44e496ae7309a7d5932242c5efdaa4bba944249294d1c408ea25",
       "status": "present"
     },
     {
-      "bytes": 1594,
+      "bytes": 1678,
       "path": "config/schemas/marginal_training_pit_record.schema.json",
-      "sha256": "e9087b5d52000b5352e5fa129e396cfbc81541d5196543bab854f390299591f9",
+      "sha256": "03e4665550ddf8441e5f5b2039f671bd090fa5ed2ce81daeecaa907d5d75cca2",
       "status": "present"
     },
     {
-      "bytes": 1576,
+      "bytes": 1307,
+      "path": "config/schemas/ml_clustering_seed_record.schema.json",
+      "sha256": "91dc3afeb9bd16db3a2af952284325cdad33f07b65c3f9276b74ff38e819d649",
+      "status": "present"
+    },
+    {
+      "bytes": 989,
+      "path": "config/schemas/ml_group_return_record.schema.json",
+      "sha256": "5cc51da8865a3127069a3bd46dcc69ad137cfdb01e7e9b9b0a07e7fbc7868381",
+      "status": "present"
+    },
+    {
+      "bytes": 3095,
       "path": "config/schemas/risk_evaluation_daily_record.schema.json",
-      "sha256": "53feb523bc2189a18626c4afe0c6bc5f7686c124d20984c6a6a3adb0bb0f0536",
+      "sha256": "c131592c259ef7e1984803b1d351b847797b7d679fa1c7cfe3846eb5e2e2f930",
       "status": "present"
     },
     {
-      "bytes": 3267,
+      "bytes": 4434,
       "path": "config/schemas/vine_copula_refit_record.schema.json",
-      "sha256": "65f660843ba76d4619ea6864a58184fca415af7e671113f66f5b0b823f9ebbc9",
+      "sha256": "8937011393f19845c6c30b04679118cc5e59155b9835f7dc0a0b373de448835a",
       "status": "present"
     },
     {
       "bytes": 3983,
       "path": "config/security_master.json",
       "sha256": "cec884570c4367699a10a7e68aa9451c6a515a11b84f5af1313aa70e55f6307b",
+      "status": "present"
+    },
+    {
+      "bytes": 1487,
+      "path": "config/wba_dap_sensitivity.toml",
+      "sha256": "57b486dd0e0f251785bd176277b8c87a75daadfe7ef704dcc04f88743be1fa6b",
       "status": "present"
     }
   ],
@@ -147,9 +202,9 @@
     "run_scope": "provisional_research_results",
     "status": "provisional_pass"
   },
-  "generated_at_utc": "2026-09-13T15:05:58.967730+00:00",
+  "generated_at_utc": "2026-09-18T14:25:47.625769+00:00",
   "git": {
-    "commit": "413abd552dcb67b741b04c791b637232d8833ddd",
+    "commit": "afa6cf10215747046b1d31ba35a06ac501759c0b",
     "commit_present": true,
     "repository_initialized": true,
     "worktree_clean": true
@@ -188,9 +243,9 @@
       "status": "present"
     },
     {
-      "bytes": 626,
+      "bytes": 643,
       "path": "pyproject.toml",
-      "sha256": "9f57413e5cb870be688847303f57c8b092701299af8b5e40383ab32c3f9e525a",
+      "sha256": "deb1364adc33683ad0931c18b471ad9ecec620d37f5ec2f965c60a55eb3086eb",
       "status": "present"
     },
     {
@@ -205,7 +260,13 @@
     {
       "bytes": 25556,
       "path": "data/audit/clustering_diagnostics.json",
-      "sha256": "c44d3a82f4cb99d8c0e4e1ae1bc6027259a790166599904e15f054dfb186e91f",
+      "sha256": "c493560dab94e45b8e0eb5b2e07951a01022b5c5563bed9d775dec1011f40915",
+      "status": "present"
+    },
+    {
+      "bytes": 10454,
+      "path": "data/audit/current_composition_hs_robustness.json",
+      "sha256": "0ab6a0f0da9f226fc534697b9af80f3d919820e91939ec2a671f994e43dbac52",
       "status": "present"
     },
     {
@@ -223,19 +284,31 @@
     {
       "bytes": 18900,
       "path": "data/audit/full_vine_robustness_evaluation.json",
-      "sha256": "7b0a07d71dbcf4a73404c9fbee05381cc35d161262714af5a8ed55dcfc9315ea",
+      "sha256": "8a63715cba38bb9f1672a55b03e22710d6019c9c0bd3a51f6f53e390cbf151e4",
       "status": "present"
     },
     {
       "bytes": 3997,
       "path": "data/audit/full_vine_robustness_quality.json",
-      "sha256": "d3adfc97f14d975cf3bc9e4328e01c31253039b62467c721a2fd10feadb57cde",
+      "sha256": "25726bcfc4808b8a1b1c5bb71d1fbf880144d75c1e705124b1d8b53c5da513d0",
       "status": "present"
     },
     {
       "bytes": 2979,
       "path": "data/audit/gaussian_copula_quality.json",
-      "sha256": "ea43f423c2b960615a82ec3fe82593ac7ff6ad9accbaa3b2aae58058707f2e75",
+      "sha256": "1525a3a7e18e3c166f14a90f8cd322c34de997ef47bd288acd305f97551fe910",
+      "status": "present"
+    },
+    {
+      "bytes": 9388,
+      "path": "data/audit/group_balanced_portfolio_construction.json",
+      "sha256": "2dde01b583db965f298add46616e4746143878dab2b849855acffc4b0983d3ba",
+      "status": "present"
+    },
+    {
+      "bytes": 27473,
+      "path": "data/audit/group_balanced_robustness.json",
+      "sha256": "c3913db07e6a4c71fcbc06b0c9047ce1a73a8485499b0a6d1c523142a36430e1",
       "status": "present"
     },
     {
@@ -247,7 +320,7 @@
     {
       "bytes": 2701,
       "path": "data/audit/marginal_model_quality.json",
-      "sha256": "e5477b16f30a68a7701f1b5f0c04e7df8e3ebdc49a396fb3ba32f5692595952b",
+      "sha256": "7834d6b9b18ae86ac1ffec95834587af52a1ba4451305fa57547790ac44f3401",
       "status": "present"
     },
     {
@@ -257,9 +330,39 @@
       "status": "present"
     },
     {
+      "bytes": 29905,
+      "path": "data/audit/ml_clustering_diagnostics.json",
+      "sha256": "523534c461bf3c0deeaa0b7c0dd8cded46aee4760024329ffd1fd724e9646515",
+      "status": "present"
+    },
+    {
+      "bytes": 3667,
+      "path": "data/audit/ml_gaussian_copula_quality.json",
+      "sha256": "ba2be41c13955a2cf6339cd7a6c9ce927ae48cae27dc3412f274ab1e36770a1a",
+      "status": "present"
+    },
+    {
+      "bytes": 2926,
+      "path": "data/audit/ml_marginal_model_quality.json",
+      "sha256": "60177654a2f248a05f8eefe0eb79c1b8cb1d3fd4a1fce46ab9e0e4f77579b588",
+      "status": "present"
+    },
+    {
+      "bytes": 66800,
+      "path": "data/audit/ml_model_evaluation.json",
+      "sha256": "70ee06535c17a986eee29213ff85c15ca61c0d4837ba79b6b37bc444a02a5684",
+      "status": "present"
+    },
+    {
+      "bytes": 4291,
+      "path": "data/audit/ml_vine_copula_quality.json",
+      "sha256": "420a093d18fd0ae262b25c487914f82d4f7dcddd64925d70857da1bec79dd130",
+      "status": "present"
+    },
+    {
       "bytes": 59777,
       "path": "data/audit/model_evaluation.json",
-      "sha256": "054b726e08c8791e7c9d67a3f16b4b45460627e1deb4328d9ad1d0bb050d6767",
+      "sha256": "d0fbd98bdd9a9fcc857182213e1a045f45a12abe744bf32e03945ff4f391f78f",
       "status": "present"
     },
     {
@@ -277,13 +380,25 @@
     {
       "bytes": 3960,
       "path": "data/audit/vine_copula_quality.json",
-      "sha256": "a5882fa7940d876cef1567bc28e7b45f47268662c55ee568229078104214efca",
+      "sha256": "27bd79230a42cbbaa967f654a99092443af08856a36cdf6d1d25cf413ac3bc0a",
+      "status": "present"
+    },
+    {
+      "bytes": 247839,
+      "path": "data/audit/wba_dap_sensitivity.json",
+      "sha256": "c805b7a2cf13f768e07775580825742f79875288a990adef6cde050d10266e65",
       "status": "present"
     },
     {
       "bytes": 848,
       "path": "data/manifests/inference_seed_manifest.json",
       "sha256": "85015430e92bc6be6cbb894b2714d3e260ae98ede1af42d1fa1ebc5eaa93eac5",
+      "status": "present"
+    },
+    {
+      "bytes": 6583,
+      "path": "data/manifests/ml_clustering_seed_manifest.json",
+      "sha256": "54931fde7e11439b92002fdabd417712884e824fb0c5a8e2bc4dbb46f5fefc74",
       "status": "present"
     },
     {
@@ -308,6 +423,24 @@
       "bytes": 2662489,
       "path": "data/processed/annual_group_returns.parquet",
       "sha256": "21b467e74da5e585f098a96dec0ed14e4745ae3ba04dc25461f7a1b6dee08cb9",
+      "status": "present"
+    },
+    {
+      "bytes": 95723,
+      "path": "data/processed/current_composition_hs_robustness/daily_scores.parquet",
+      "sha256": "cfa9688d28e685a8898283c41e9cebf0c5d6a25acbf085b84e216d860cb46491",
+      "status": "present"
+    },
+    {
+      "bytes": 64301,
+      "path": "data/processed/current_composition_hs_robustness/forecasts.parquet",
+      "sha256": "ee2e8d25e4d56993cd76297bdc8fd7000655ef7405095509659e6856921bb684",
+      "status": "present"
+    },
+    {
+      "bytes": 63027,
+      "path": "data/processed/current_composition_hs_robustness/windows.parquet",
+      "sha256": "b57e6787581f9d395d5b6570dc2cb059dfaa5b14c8e449cef3fc53ec23aea24f",
       "status": "present"
     },
     {
@@ -359,6 +492,78 @@
       "status": "present"
     },
     {
+      "bytes": 3227592,
+      "path": "data/processed/group_balanced_group_returns.parquet",
+      "sha256": "5329d4526615e8a80a5941db422a3f4fc1b583a8bb67085a8610adad11dcfe43",
+      "status": "present"
+    },
+    {
+      "bytes": 236886,
+      "path": "data/processed/group_balanced_portfolio_returns.parquet",
+      "sha256": "fcc62f3cab2a73f8a293d441b6f39ba575a975ee042a9d63201e1f9cc28f25d0",
+      "status": "present"
+    },
+    {
+      "bytes": 638376,
+      "path": "data/processed/group_balanced_robustness/daily_scores.parquet",
+      "sha256": "e1c3843066c1f2ecce4228de1ed511b29f8f673c62a6e4db775fff6d339d263f",
+      "status": "present"
+    },
+    {
+      "bytes": 228843,
+      "path": "data/processed/group_balanced_robustness/gaussian_forecasts.parquet",
+      "sha256": "53e2b52d6715b330a1b8aa0099c1c0cf43b3de00efa8a207336eb02a2d5b1c94",
+      "status": "present"
+    },
+    {
+      "bytes": 197774,
+      "path": "data/processed/group_balanced_robustness/gaussian_refits.parquet",
+      "sha256": "fd4070b0020c41680fe1d0825af2847b9419f577c6e5eff8e619752746ecd5c2",
+      "status": "present"
+    },
+    {
+      "bytes": 114951,
+      "path": "data/processed/group_balanced_robustness/historical_forecasts.parquet",
+      "sha256": "df80828afbc249592bb9a6bda13ef00a1d6974cebb2c2bd384eef774d4ce2c96",
+      "status": "present"
+    },
+    {
+      "bytes": 84009,
+      "path": "data/processed/group_balanced_robustness/historical_windows.parquet",
+      "sha256": "20b6093cdc01e1624e5956e8d4a753011c2f3d3257a84dd93e67c5b53cbbe88a",
+      "status": "present"
+    },
+    {
+      "bytes": 2318044,
+      "path": "data/processed/group_balanced_robustness/marginal_daily.parquet",
+      "sha256": "63db551d5eb0842ea260e90202bba029f813d877dfb725aec97672a6a85f4258",
+      "status": "present"
+    },
+    {
+      "bytes": 474479,
+      "path": "data/processed/group_balanced_robustness/marginal_refits.parquet",
+      "sha256": "de8c4c842a209cab2e2fec5ae702cfc76157351b9f682ea1f686a31d3dc5046f",
+      "status": "present"
+    },
+    {
+      "bytes": 23792441,
+      "path": "data/processed/group_balanced_robustness/training_pits.parquet",
+      "sha256": "2386c49c76bafa3aad32271208c623ec92b2dd3ff244d5b8e2e3c35133540468",
+      "status": "present"
+    },
+    {
+      "bytes": 228863,
+      "path": "data/processed/group_balanced_robustness/vine_forecasts.parquet",
+      "sha256": "7862cdb6730b6755416c55a31c3d058dfedc8053359dde093cd6701c385fb71c",
+      "status": "present"
+    },
+    {
+      "bytes": 263398,
+      "path": "data/processed/group_balanced_robustness/vine_refits.parquet",
+      "sha256": "b466901513a1d51ac0c1235be3ec905b5a55d7844dfa5ca69129a7150c740e90",
+      "status": "present"
+    },
+    {
       "bytes": 64090,
       "path": "data/processed/historical_simulation_risk_forecasts.parquet",
       "sha256": "b9260b2b20bec7af06d3a2e9f068b8e4cec3f8f0bc5a5d90e014c49a832f731f",
@@ -380,6 +585,66 @@
       "bytes": 453685,
       "path": "data/processed/marginal_refits.parquet",
       "sha256": "3ab07d0c6f6acccf702122d858a352ae81112a6a6da34279e60022a23638117e",
+      "status": "present"
+    },
+    {
+      "bytes": 140159,
+      "path": "data/processed/ml_annual_group_assignments.json",
+      "sha256": "5b82d86dbe071a2344a1e5358b9830a3de3ccdbe7efa28c896aa9229dc6d4ef2",
+      "status": "present"
+    },
+    {
+      "bytes": 2553601,
+      "path": "data/processed/ml_annual_group_returns.parquet",
+      "sha256": "a069f77e216a9abb3332b3d837056233128552f417d5e61a65a1e787fd34254a",
+      "status": "present"
+    },
+    {
+      "bytes": 196780,
+      "path": "data/processed/ml_gaussian_copula_refits.parquet",
+      "sha256": "10950deef79ce29040335f04c01de6d453717315f9f8e182dd9fbc2276d87d67",
+      "status": "present"
+    },
+    {
+      "bytes": 210561,
+      "path": "data/processed/ml_gaussian_risk_forecasts.parquet",
+      "sha256": "0d8ffadb301dfc51e67bd358195f207273d9a52ba3e474b555a336e58ed62686",
+      "status": "present"
+    },
+    {
+      "bytes": 1981703,
+      "path": "data/processed/ml_marginal_daily_forecasts.parquet",
+      "sha256": "22c16514f8f5a5a1c56411b6266473872c8a2c7998b52d8e54d5fe1a4cf2b015",
+      "status": "present"
+    },
+    {
+      "bytes": 454125,
+      "path": "data/processed/ml_marginal_refits.parquet",
+      "sha256": "e1a3e8aed71815c7432a35c211111153cb5f3edc60f4287b626e678c5ddc21f2",
+      "status": "present"
+    },
+    {
+      "bytes": 23986119,
+      "path": "data/processed/ml_monthly_copula_training_pits.parquet",
+      "sha256": "9908d6ae7e11c61c8ba591d2f85d05b039881b8adc2349d8fecfba2fcfe7d1b2",
+      "status": "present"
+    },
+    {
+      "bytes": 517954,
+      "path": "data/processed/ml_risk_evaluation_daily.parquet",
+      "sha256": "26b07bb783b498c51dcf9d5850b797f25cb8c1982c9a8e5074480af0e1690da9",
+      "status": "present"
+    },
+    {
+      "bytes": 267063,
+      "path": "data/processed/ml_vine_copula_refits.parquet",
+      "sha256": "34559179bd3cce7715ec0a168219b4d7fe726bc5a60c891e746179fa9ce10102",
+      "status": "present"
+    },
+    {
+      "bytes": 210602,
+      "path": "data/processed/ml_vine_risk_forecasts.parquet",
+      "sha256": "96a7259de383cba0ebe4910a825e38764f8be9882771b0c27740fc04cd9e667b",
       "status": "present"
     },
     {
@@ -423,9 +688,57 @@
       "path": "data/processed/vine_risk_forecasts.parquet",
       "sha256": "a012b305bb8943caa33f6f06e651da69b64a39e211f9b322e2501082e4c80422",
       "status": "present"
+    },
+    {
+      "bytes": 1054141,
+      "path": "data/processed/wba_dap_sensitivity/dap_cap/daily_scores.parquet",
+      "sha256": "efb8012d67a1c6af70d624fcb165989547c5b43f7941edc4ec9a2e5b2ef7fc3d",
+      "status": "present"
+    },
+    {
+      "bytes": 361116,
+      "path": "data/processed/wba_dap_sensitivity/dap_cap/gaussian_refits.parquet",
+      "sha256": "70b528ee94fa3e4b7df3fe2666e31f075c46383e6b24194eb7716e1d3f7ba5d4",
+      "status": "present"
+    },
+    {
+      "bytes": 844515,
+      "path": "data/processed/wba_dap_sensitivity/dap_cap/marginal_refits.parquet",
+      "sha256": "63f05a7c45bc925efe0455acdfbd5417d11138839893fdf834450876ad8a2067",
+      "status": "present"
+    },
+    {
+      "bytes": 500845,
+      "path": "data/processed/wba_dap_sensitivity/dap_cap/vine_refits.parquet",
+      "sha256": "adbdd03c99ef8b10e95fdf382edb66d67ceb659fb06e25817c8b51f3ad9c688a",
+      "status": "present"
+    },
+    {
+      "bytes": 1054211,
+      "path": "data/processed/wba_dap_sensitivity/dap_zero/daily_scores.parquet",
+      "sha256": "86ce41032f3fda446f0f42d13898cfb4004ddd5d6f5cdcac717c276937c39e67",
+      "status": "present"
+    },
+    {
+      "bytes": 360997,
+      "path": "data/processed/wba_dap_sensitivity/dap_zero/gaussian_refits.parquet",
+      "sha256": "ff3c33f4c1951bd165fb151c2d92a688852a87ae7a02e36b01fb7851a68d0024",
+      "status": "present"
+    },
+    {
+      "bytes": 845288,
+      "path": "data/processed/wba_dap_sensitivity/dap_zero/marginal_refits.parquet",
+      "sha256": "ebf1c97643b7428f9681b8cfccbbe0458cdab140263bcfafa9159fc577f450d4",
+      "status": "present"
+    },
+    {
+      "bytes": 500849,
+      "path": "data/processed/wba_dap_sensitivity/dap_zero/vine_refits.parquet",
+      "sha256": "87cb129c439376aee9444b61c67874b355a4f9c3dbd699d993e2f7d93ec3650b",
+      "status": "present"
     }
   ],
-  "schema_version": 1,
+  "schema_version": 2,
   "seed_configuration": {
     "base_seed": 5110,
     "bit_generator": "PCG64DXSM",
