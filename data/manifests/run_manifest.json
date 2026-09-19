@@ -1,7 +1,7 @@
 {
   "artifact_lineage": {
-    "document_count": 31,
-    "hash_record_count": 211,
+    "document_count": 32,
+    "hash_record_count": 232,
     "issues": [],
     "status": "pass"
   },
@@ -90,6 +90,12 @@
       "bytes": 1346,
       "path": "config/provenance_amendment.json",
       "sha256": "3983cfff5c13b3806dac40bd3cb7753ec1f841aa00571ea087267197b4d0c82b",
+      "status": "present"
+    },
+    {
+      "bytes": 1741,
+      "path": "config/reporting_config.toml",
+      "sha256": "ede3de901064eb12a25999b3654bfd5d456313370b24f1671e7331006d6e7a9d",
       "status": "present"
     },
     {
@@ -187,6 +193,7 @@
     "direct_dependency_versions": {
       "arch": "7.2.0",
       "boto3": "1.43.72",
+      "matplotlib": "3.11.1",
       "numpy": "2.5.2",
       "pandas": "2.3.3",
       "pyarrow": "23.0.1",
@@ -202,9 +209,9 @@
     "run_scope": "provisional_research_results",
     "status": "provisional_pass"
   },
-  "generated_at_utc": "2026-09-18T14:25:47.625769+00:00",
+  "generated_at_utc": "2026-09-19T08:24:26.220889+00:00",
   "git": {
-    "commit": "afa6cf10215747046b1d31ba35a06ac501759c0b",
+    "commit": "a67b1376200d00bdeaa0c9c3832da51521e80bd8",
     "commit_present": true,
     "repository_initialized": true,
     "worktree_clean": true
@@ -243,15 +250,15 @@
       "status": "present"
     },
     {
-      "bytes": 643,
+      "bytes": 668,
       "path": "pyproject.toml",
-      "sha256": "deb1364adc33683ad0931c18b471ad9ecec620d37f5ec2f965c60a55eb3086eb",
+      "sha256": "95bc03f5ba464bdb877fe728b73b177fb7a9bb4c85bb6657a3039b0e2ff2a0f1",
       "status": "present"
     },
     {
-      "bytes": 111490,
+      "bytes": 111573,
       "path": "uv.lock",
-      "sha256": "0d8c88134ebacf0c60ff35f4acbcdeabc475592fed54ef54ae3c2d628adfc3d5",
+      "sha256": "02877621c8beed5b0fd63ef0a8470305fef7fcea94c4c0f76460ddfa1fada30f",
       "status": "present"
     }
   ],
@@ -735,6 +742,78 @@
       "bytes": 500849,
       "path": "data/processed/wba_dap_sensitivity/dap_zero/vine_refits.parquet",
       "sha256": "87cb129c439376aee9444b61c67874b355a4f9c3dbd699d993e2f7d93ec3650b",
+      "status": "present"
+    },
+    {
+      "bytes": 53888,
+      "path": "reports/figures/annual_dependence_gaps.svg",
+      "sha256": "730935900319e333085bc6cbc805a22e189685d6deb81191a90956135b8c9573",
+      "status": "present"
+    },
+    {
+      "bytes": 52074,
+      "path": "reports/figures/core_model_score_ranks.svg",
+      "sha256": "0187dcd70a5733e6d593a712a8e19eace0239a7f40f438b59b6e8737b51e8623",
+      "status": "present"
+    },
+    {
+      "bytes": 47398,
+      "path": "reports/figures/core_var_exception_rates.svg",
+      "sha256": "7f8c722f665763c467015a51d55a52a955f5236ffffb7210620356986842464a",
+      "status": "present"
+    },
+    {
+      "bytes": 5037,
+      "path": "reports/report_manifest.json",
+      "sha256": "8b25e9ffe20e117a6c738b783feadf645cffa6bd41a950945939ab393b7c59ff",
+      "status": "present"
+    },
+    {
+      "bytes": 2155,
+      "path": "reports/results_summary.md",
+      "sha256": "8a4a6395e6ea1472cdb358e930f066187bf1132fa00c69b24d78e6ff14956e42",
+      "status": "present"
+    },
+    {
+      "bytes": 3074,
+      "path": "reports/tables/clustering_diagnostics.csv",
+      "sha256": "7a30f92bf229cb12ca49306a94b5ff411e94ad3c195fe01c5c54b9bc53228e39",
+      "status": "present"
+    },
+    {
+      "bytes": 1504,
+      "path": "reports/tables/core_calibration.csv",
+      "sha256": "4273b0c2fb4ab0c61ede635e489bb180e955cecb5b8160d11965840c5f04a3fb",
+      "status": "present"
+    },
+    {
+      "bytes": 1182,
+      "path": "reports/tables/core_dm_tests.csv",
+      "sha256": "522a317ea08fba9594012035855ca5ca79835418007129166d0bba813188760f",
+      "status": "present"
+    },
+    {
+      "bytes": 1128,
+      "path": "reports/tables/core_model_performance.csv",
+      "sha256": "cd48051f1fa49eb913f0d062bbb0316c05a745a16c48a2308f6c798a0dbadcb6",
+      "status": "present"
+    },
+    {
+      "bytes": 807,
+      "path": "reports/tables/hypothesis_conclusions.csv",
+      "sha256": "8ca686dc754ed7a0f2de506439bcc531efa330037f6ff22d85a8d5e9a0293012",
+      "status": "present"
+    },
+    {
+      "bytes": 861,
+      "path": "reports/tables/ml_model_performance.csv",
+      "sha256": "ad1449124fbdf42a81083b207c6c051c4cab831c1a0e131b42f4a0342879866f",
+      "status": "present"
+    },
+    {
+      "bytes": 944,
+      "path": "reports/tables/robustness_summary.csv",
+      "sha256": "62919774f898dee062f465c67bbacf089565ba5660487a4f0d099701514a883b",
       "status": "present"
     }
   ],
