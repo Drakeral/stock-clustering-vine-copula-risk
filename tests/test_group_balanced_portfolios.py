@@ -17,6 +17,13 @@ from scripts.build_group_balanced_portfolios import (
 from scripts.pipeline_io import require_current_hash_records
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PRODUCTION_ARTIFACTS = (
+    PROJECT_ROOT / "data/audit/group_balanced_portfolio_construction.json",
+    PROJECT_ROOT / "data/processed/annual_group_assignments.json",
+    PROJECT_ROOT / "data/processed/group_balanced_group_returns.parquet",
+    PROJECT_ROOT / "data/processed/group_balanced_portfolio_returns.parquet",
+    PROJECT_ROOT / "data/processed/portfolio_constituent_simple_returns.parquet",
+)
 
 
 class GroupBalancedPortfolioMethodTests(unittest.TestCase):
@@ -125,7 +132,7 @@ class GroupBalancedPortfolioMethodTests(unittest.TestCase):
 
 
 @unittest.skipUnless(
-    (PROJECT_ROOT / "data/audit/group_balanced_portfolio_construction.json").is_file(),
+    all(path.is_file() for path in PRODUCTION_ARTIFACTS),
     "requires locally generated group-balanced portfolio artifacts",
 )
 class ProductionGroupBalancedPortfolioTests(unittest.TestCase):

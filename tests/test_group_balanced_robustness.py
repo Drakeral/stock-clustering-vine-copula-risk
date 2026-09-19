@@ -18,6 +18,26 @@ from scripts.evaluate_risk_models import DAILY_SCORE_COLUMNS
 from scripts.pipeline_io import require_current_hash_records
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PRODUCTION_ARTIFACTS = (
+    PROJECT_ROOT / "data/audit/group_balanced_robustness.json",
+    PROJECT_ROOT / "data/processed/group_balanced_group_returns.parquet",
+    PROJECT_ROOT / "data/processed/group_balanced_portfolio_returns.parquet",
+    *(
+        PROJECT_ROOT / "data/processed/group_balanced_robustness" / filename
+        for filename in (
+            "daily_scores.parquet",
+            "gaussian_forecasts.parquet",
+            "gaussian_refits.parquet",
+            "historical_forecasts.parquet",
+            "historical_windows.parquet",
+            "marginal_daily.parquet",
+            "marginal_refits.parquet",
+            "training_pits.parquet",
+            "vine_forecasts.parquet",
+            "vine_refits.parquet",
+        )
+    ),
+)
 
 
 def _forecast_frame(model_ids: list[tuple[str, str, str]], dates: pd.DatetimeIndex) -> pd.DataFrame:
@@ -199,7 +219,7 @@ class GroupBalancedEvaluationTests(unittest.TestCase):
 
 
 @unittest.skipUnless(
-    (PROJECT_ROOT / "data/audit/group_balanced_robustness.json").is_file(),
+    all(path.is_file() for path in PRODUCTION_ARTIFACTS),
     "requires locally generated group-balanced risk artifacts",
 )
 class ProductionGroupBalancedRobustnessTests(unittest.TestCase):

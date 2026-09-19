@@ -18,6 +18,33 @@ from scripts.evaluate_wba_dap_sensitivity import (
 from scripts.pipeline_io import require_current_hash_records
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PRODUCTION_ARTIFACTS = (
+    PROJECT_ROOT / "data/audit/wba_dap_sensitivity.json",
+    *(
+        PROJECT_ROOT / "data/processed" / filename
+        for filename in (
+            "active_universe_by_year.json",
+            "annual_group_assignments.json",
+            "annual_group_returns.parquet",
+            "ml_annual_group_assignments.json",
+            "ml_annual_group_returns.parquet",
+            "ml_risk_evaluation_daily.parquet",
+            "portfolio_constituent_simple_returns.parquet",
+            "risk_evaluation_daily.parquet",
+            "security_daily.parquet",
+        )
+    ),
+    *(
+        PROJECT_ROOT / "data/processed/wba_dap_sensitivity" / scenario / filename
+        for scenario in ("dap_zero", "dap_cap")
+        for filename in (
+            "daily_scores.parquet",
+            "gaussian_refits.parquet",
+            "marginal_refits.parquet",
+            "vine_refits.parquet",
+        )
+    ),
+)
 
 
 class WbaDapProtocolTests(unittest.TestCase):
@@ -219,7 +246,7 @@ class WbaDapComparisonTests(unittest.TestCase):
 
 
 @unittest.skipUnless(
-    (PROJECT_ROOT / "data/audit/wba_dap_sensitivity.json").is_file(),
+    all(path.is_file() for path in PRODUCTION_ARTIFACTS),
     "requires locally generated WBA DAP sensitivity artifacts",
 )
 class ProductionWbaDapSensitivityTests(unittest.TestCase):

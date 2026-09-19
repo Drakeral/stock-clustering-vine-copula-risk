@@ -111,6 +111,11 @@ secret boundaries, and repository hygiene.
   addition to evaluation and group-balanced orchestration. The remaining
   complexity exceptions are older, explicitly bounded ingestion and modelling
   orchestration functions with characterization tests.
+- Three production acceptance classes previously gated only on their tracked
+  audit JSON even though their assertions also require ignored Parquet outputs.
+  Their guards now enumerate the complete required artifact sets. This keeps
+  stale local outputs fail-closed while allowing a source-only clone to run the
+  portable suite without attempting to open unavailable generated data.
 
 ## Verification evidence
 
@@ -145,6 +150,12 @@ marginal refits with four EWMA fallbacks (`0.253%`), 144 Gaussian and 144 primar
 vine refits, zero failed vine pairs, zero whole-vine fallbacks, at least 750
 observations in every historical-simulation window, and a maximum GICS-versus-
 hierarchical portfolio identity error of `2.78e-17`.
+
+A source-only archive produced from the audited revision passes Ruff lint and
+format checks and the complete 182-test discovery run. Fourteen tests are
+expectedly skipped there: thirteen production-artifact acceptance classes and
+the report byte-reproducibility test. The local artifact-complete checkout runs
+all 182 tests without skips.
 
 The deterministic reporting checkpoint adds seven CSV tables, three canonical
 SVG figures, one audit-derived narrative summary, and a report manifest. A

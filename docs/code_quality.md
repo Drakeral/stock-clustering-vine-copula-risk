@@ -41,7 +41,9 @@ shared filesystem/lineage helpers.
 Thirteen acceptance-test classes bind the checked-in audit records to large generated
 Parquet artifacts. Those files are intentionally excluded from Git, so the
 classes report as skipped in a clean public clone. They run automatically when
-the artifacts exist locally. The full checkpoint above additionally requires
+the artifacts exist locally. One additional report-reproducibility test skips
+when its ignored upstream artifacts are absent, giving 14 expected skips in a
+source-only clone. The full checkpoint above additionally requires
 `foundation_v2` modelling readiness and therefore cannot pass merely because
 the artifact-bound tests were skipped.
 
