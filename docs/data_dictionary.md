@@ -285,3 +285,22 @@ Every XNYS session between a security's explicit listing and removal dates is cl
 Every raw split or dividend record receives exactly one disposition: `applied`, `duplicate_aggregated`, `out_of_segment`, or `unmatched_price`. Every absolute simple return above 40% requires a versioned `validated` disposition in `config/observation_reviews.json`; validated genuine observations are retained without winsorisation.
 
 The executable `data_construction_v2` gate fails on any duplicate, unexplained active-session absence, non-positive or non-finite required value, invalid OHLC ordering, negative volume/transaction count, unmatched or unclassified reference event, missing manual action, unresolved lifecycle/exit review, or unreviewed extreme. The aggregate `foundation_v2` status additionally requires universe provenance, market-input integrity, portfolio arithmetic, and the method freeze to pass.
+
+## Report-ready artifacts
+
+`reports/tables/` contains deterministic CSV extracts from passed audit files:
+core and exploratory-ML model summaries, the six confirmatory DM comparisons,
+the ten model-confidence calibration rows, H1-H3 conclusions, 24 annual
+clustering-method diagnostics, and five robustness summaries. Blank CSV cells
+represent quantities that are not applicable, not zero.
+
+`reports/figures/` contains the canonical SVG visualizations of annual
+dependence gaps, core-model primary-score ranks, and VaR exception rates. The
+figures summarize audited values only; their generator performs no estimation
+or inference. `reports/results_summary.md` applies the same boundary to the
+narrative interpretation.
+
+`reports/report_manifest.json` records the frozen reporting configuration, all
+eight audit sources, every generated output, byte counts, row/column counts, and
+SHA-256 digests. Its `reporting_scope` must remain
+`provisional_research_results` while PA-001 is in force.

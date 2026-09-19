@@ -216,6 +216,7 @@ absent.
 Finally capture the exact code/environment/configuration/input/output identity:
 
 ```zsh
+uv run python scripts/build_report_artifacts.py
 uv run python scripts/generate_run_manifest.py --require-complete
 uv run python scripts/verify_artifact_lineage.py
 ```
@@ -246,6 +247,15 @@ portfolio and review purposes; all rights remain reserved unless a license is
 added later.
 
 ## Main outputs
+
+- `reports/results_summary.md`: concise H1-H3, exploratory-ML, and robustness
+  interpretation generated only from passed audit records;
+- `reports/tables/`: report-ready core performance, DM, calibration,
+  hypothesis, clustering, ML and robustness CSV tables;
+- `reports/figures/`: deterministic SVG figures for annual dependence gaps,
+  core forecast-loss ranks and VaR exception rates;
+- `reports/report_manifest.json`: report scope plus SHA-256 bindings to all
+  source audits and generated report artifacts;
 
 - `data/manifests/universe_source_manifest.json`: source revisions, hashes,
   licences, and licensed reconciliation status;

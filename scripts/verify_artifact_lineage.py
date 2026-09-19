@@ -21,6 +21,9 @@ def lineage_documents(project_root: Path) -> list[Path]:
     for directory in (project_root / "data/audit", project_root / "data/manifests"):
         if directory.is_dir():
             paths.extend(directory.glob("*.json"))
+    report_manifest = project_root / "reports/report_manifest.json"
+    if report_manifest.is_file():
+        paths.append(report_manifest)
     return sorted(paths)
 
 

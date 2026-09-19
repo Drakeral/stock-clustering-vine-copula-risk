@@ -1,0 +1,6 @@
+analysis_id,analysis_role,evidence,adjusted_tests_favouring_alternative,adjusted_tests_favouring_baseline,core_conclusions_revised,detail
+full_vine_tree_10,exploratory_robustness,no_adjusted_loss_difference,0,0,false,Tree 10 versus frozen tree 3; matched information and random numbers
+ml_groupings,exploratory_unsupervised_risk_extension,no_fdr_adjusted_loss_difference,0,0,false,24 comparisons controlled by Benjamini-Hochberg FDR at 5%
+group_balanced_portfolios,exploratory_portfolio_weighting_robustness,no_holm_adjusted_difference,0,0,false,Within-portfolio comparisons only; no cross-portfolio ranking
+wba_dap_valuation,corporate_action_valuation_sensitivity,all_frozen_conclusions_stable,,,false,2 scenarios: DAP values $0 and $3 versus primary $0.53
+current_composition_historical_simulation,exploratory_robustness,partial_realised_history_favoured,0,1,false,Alternative constituent-history assumption; no cross-portfolio ranking

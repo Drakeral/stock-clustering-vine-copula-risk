@@ -222,6 +222,18 @@ def default_output_paths() -> list[Path]:
         Path("data/manifests/simulation_seed_manifest.json"),
         Path("data/manifests/inference_seed_manifest.json"),
         Path("data/manifests/ml_clustering_seed_manifest.json"),
+        Path("reports/report_manifest.json"),
+        Path("reports/results_summary.md"),
+        Path("reports/tables/core_model_performance.csv"),
+        Path("reports/tables/core_dm_tests.csv"),
+        Path("reports/tables/core_calibration.csv"),
+        Path("reports/tables/hypothesis_conclusions.csv"),
+        Path("reports/tables/clustering_diagnostics.csv"),
+        Path("reports/tables/ml_model_performance.csv"),
+        Path("reports/tables/robustness_summary.csv"),
+        Path("reports/figures/annual_dependence_gaps.svg"),
+        Path("reports/figures/core_model_score_ranks.svg"),
+        Path("reports/figures/core_var_exception_rates.svg"),
     ]
 
 

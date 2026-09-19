@@ -401,6 +401,10 @@ class RunManifestTests(unittest.TestCase):
         self.assertIn("data/audit/group_balanced_robustness.json", paths)
         self.assertIn("data/audit/historical_simulation_quality.json", paths)
         self.assertIn("data/audit/current_composition_hs_robustness.json", paths)
+        self.assertIn("reports/report_manifest.json", paths)
+        self.assertIn("reports/results_summary.md", paths)
+        self.assertIn("reports/tables/core_model_performance.csv", paths)
+        self.assertIn("reports/figures/annual_dependence_gaps.svg", paths)
 
     def test_git_state_counts_untracked_files_as_dirty(self):
         with tempfile.TemporaryDirectory() as temporary:

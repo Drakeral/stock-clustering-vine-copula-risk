@@ -1,0 +1,4 @@
+hypothesis_id,research_claim,decision,decision_rule_or_evidence,key_estimate,uncertainty_or_eligibility,analysis_role
+H1,Hierarchical clusters separate dependence better than GICS sectors,not_supported,positive mean cluster gap and strictly positive paired bootstrap CI,-0.00558967152685,"95% paired block-bootstrap CI [-0.018669, 0.006569]",confirmatory_methodological
+H2,Vines improve matched risk-forecast loss over Gaussian copulas,no_support,All six Holm-adjusted DM tests must favour the vine,0,0 of 6 adjusted tests favour vine,confirmatory_statistical
+H3,The integrated hierarchical-vine model is the best eligible core model,supported,Lowest average primary-score rank with quality eligibility,M4,vine_quality_eligible=true; systematic_calibration_failure=false,confirmatory_integrated_ranking

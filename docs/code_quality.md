@@ -17,6 +17,7 @@ uv run ruff format --check scripts tests
 uv run python -m compileall -q scripts tests
 uv run python -m unittest discover -s tests -v
 uv run python scripts/update_foundation_status.py --require-modelling-ready
+uv run python scripts/build_report_artifacts.py
 uv run python scripts/generate_run_manifest.py --require-complete
 uv run python scripts/verify_artifact_lineage.py
 git status --short
@@ -45,10 +46,10 @@ the artifacts exist locally. The full checkpoint above additionally requires
 the artifact-bound tests were skipped.
 
 The lineage verifier recursively inspects every JSON object carrying both a
-`path` and `sha256` under `data/audit/` and `data/manifests/`. Missing files,
-invalid digests, or stale bindings fail the checkpoint. Run-manifest generation
-performs the same check while excluding the manifest being replaced, and records
-the result in its completeness decision.
+`path` and `sha256` under `data/audit/`, `data/manifests/`, and the report
+manifest. Missing files, invalid digests, or stale bindings fail the checkpoint.
+Run-manifest generation performs the same check while excluding the manifest
+being replaced, and records the result in its completeness decision.
 
 ## Repository boundaries
 

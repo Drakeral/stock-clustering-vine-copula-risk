@@ -1,0 +1,60 @@
+schema_version = 1
+protocol_status = "frozen_before_report_artifact_generation"
+analysis_role = "descriptive_reporting_only"
+reporting_scope = "provisional_research_results"
+output_root = "reports"
+float_significant_digits = 12
+
+core_model_order = ["M0", "M1", "M2", "M3", "M4"]
+ml_model_order = ["M5", "M6", "M7", "M8"]
+clustering_method_order = ["gics", "hierarchical", "spectral", "pca_kmeans"]
+
+[sources]
+clustering = "data/audit/clustering_diagnostics.json"
+core_evaluation = "data/audit/model_evaluation.json"
+ml_clustering = "data/audit/ml_clustering_diagnostics.json"
+ml_evaluation = "data/audit/ml_model_evaluation.json"
+full_vine = "data/audit/full_vine_robustness_evaluation.json"
+group_balanced = "data/audit/group_balanced_robustness.json"
+wba_dap = "data/audit/wba_dap_sensitivity.json"
+current_composition = "data/audit/current_composition_hs_robustness.json"
+
+[model_labels]
+M0 = "Historical simulation"
+M1 = "GICS + Gaussian"
+M2 = "GICS + vine"
+M3 = "Hierarchical + Gaussian"
+M4 = "Hierarchical + vine"
+M5 = "Spectral + Gaussian"
+M6 = "Spectral + vine"
+M7 = "PCA-k-means + Gaussian"
+M8 = "PCA-k-means + vine"
+
+[method_labels]
+gics = "GICS sectors"
+hierarchical = "Hierarchical clustering"
+spectral = "Spectral clustering"
+pca_kmeans = "PCA + k-means"
+
+[palette]
+gics = "#4C78A8"
+hierarchical = "#F58518"
+spectral = "#54A24B"
+pca_kmeans = "#B279A2"
+
+[artifacts]
+tables = [
+  "core_model_performance.csv",
+  "core_dm_tests.csv",
+  "core_calibration.csv",
+  "hypothesis_conclusions.csv",
+  "clustering_diagnostics.csv",
+  "ml_model_performance.csv",
+  "robustness_summary.csv",
+]
+figures = [
+  "annual_dependence_gaps.svg",
+  "core_model_score_ranks.svg",
+  "core_var_exception_rates.svg",
+]
+documents = ["results_summary.md"]

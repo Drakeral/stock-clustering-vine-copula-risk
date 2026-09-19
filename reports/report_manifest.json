@@ -1,0 +1,153 @@
+{
+  "analysis_role": "descriptive_reporting_only",
+  "configuration": {
+    "bytes": 1741,
+    "path": "config/reporting_config.toml",
+    "sha256": "ede3de901064eb12a25999b3654bfd5d456313370b24f1671e7331006d6e7a9d"
+  },
+  "generator": {
+    "bytes": 34680,
+    "path": "scripts/build_report_artifacts.py",
+    "sha256": "c99f96ba8e1059b451cd2038440d86cc7f7ada2277419f9806212a4077ef62eb"
+  },
+  "manifest_type": "deterministic_report_artifacts",
+  "outputs": {
+    "documents": [
+      {
+        "bytes": 2155,
+        "media_type": "text/markdown",
+        "path": "reports/results_summary.md",
+        "sha256": "8a4a6395e6ea1472cdb358e930f066187bf1132fa00c69b24d78e6ff14956e42"
+      }
+    ],
+    "figures": [
+      {
+        "bytes": 53888,
+        "media_type": "image/svg+xml",
+        "path": "reports/figures/annual_dependence_gaps.svg",
+        "sha256": "730935900319e333085bc6cbc805a22e189685d6deb81191a90956135b8c9573"
+      },
+      {
+        "bytes": 52074,
+        "media_type": "image/svg+xml",
+        "path": "reports/figures/core_model_score_ranks.svg",
+        "sha256": "0187dcd70a5733e6d593a712a8e19eace0239a7f40f438b59b6e8737b51e8623"
+      },
+      {
+        "bytes": 47398,
+        "media_type": "image/svg+xml",
+        "path": "reports/figures/core_var_exception_rates.svg",
+        "sha256": "7f8c722f665763c467015a51d55a52a955f5236ffffb7210620356986842464a"
+      }
+    ],
+    "tables": [
+      {
+        "bytes": 1128,
+        "columns": 17,
+        "path": "reports/tables/core_model_performance.csv",
+        "rows": 5,
+        "sha256": "cd48051f1fa49eb913f0d062bbb0316c05a745a16c48a2308f6c798a0dbadcb6"
+      },
+      {
+        "bytes": 1182,
+        "columns": 14,
+        "path": "reports/tables/core_dm_tests.csv",
+        "rows": 6,
+        "sha256": "522a317ea08fba9594012035855ca5ca79835418007129166d0bba813188760f"
+      },
+      {
+        "bytes": 1504,
+        "columns": 13,
+        "path": "reports/tables/core_calibration.csv",
+        "rows": 10,
+        "sha256": "4273b0c2fb4ab0c61ede635e489bb180e955cecb5b8160d11965840c5f04a3fb"
+      },
+      {
+        "bytes": 807,
+        "columns": 7,
+        "path": "reports/tables/hypothesis_conclusions.csv",
+        "rows": 3,
+        "sha256": "8ca686dc754ed7a0f2de506439bcc531efa330037f6ff22d85a8d5e9a0293012"
+      },
+      {
+        "bytes": 3074,
+        "columns": 11,
+        "path": "reports/tables/clustering_diagnostics.csv",
+        "rows": 24,
+        "sha256": "7a30f92bf229cb12ca49306a94b5ff411e94ad3c195fe01c5c54b9bc53228e39"
+      },
+      {
+        "bytes": 861,
+        "columns": 14,
+        "path": "reports/tables/ml_model_performance.csv",
+        "rows": 4,
+        "sha256": "ad1449124fbdf42a81083b207c6c051c4cab831c1a0e131b42f4a0342879866f"
+      },
+      {
+        "bytes": 944,
+        "columns": 7,
+        "path": "reports/tables/robustness_summary.csv",
+        "rows": 5,
+        "sha256": "62919774f898dee062f465c67bbacf089565ba5660487a4f0d099701514a883b"
+      }
+    ]
+  },
+  "protocol_status": "frozen_before_report_artifact_generation",
+  "quality": {
+    "all_source_lineage_current": true,
+    "all_sources_passed": true,
+    "model_refits_performed": false,
+    "new_inference_performed": false,
+    "source_gate_count": 8
+  },
+  "rendering_environment": {
+    "backend": "Agg",
+    "matplotlib": "3.11.1",
+    "svg_hashsalt": "fe5110-report-v1"
+  },
+  "reporting_scope": "provisional_research_results",
+  "schema_version": 1,
+  "sources": {
+    "clustering": {
+      "bytes": 25556,
+      "path": "data/audit/clustering_diagnostics.json",
+      "sha256": "c493560dab94e45b8e0eb5b2e07951a01022b5c5563bed9d775dec1011f40915"
+    },
+    "core_evaluation": {
+      "bytes": 59777,
+      "path": "data/audit/model_evaluation.json",
+      "sha256": "d0fbd98bdd9a9fcc857182213e1a045f45a12abe744bf32e03945ff4f391f78f"
+    },
+    "current_composition": {
+      "bytes": 10454,
+      "path": "data/audit/current_composition_hs_robustness.json",
+      "sha256": "0ab6a0f0da9f226fc534697b9af80f3d919820e91939ec2a671f994e43dbac52"
+    },
+    "full_vine": {
+      "bytes": 18900,
+      "path": "data/audit/full_vine_robustness_evaluation.json",
+      "sha256": "8a63715cba38bb9f1672a55b03e22710d6019c9c0bd3a51f6f53e390cbf151e4"
+    },
+    "group_balanced": {
+      "bytes": 27473,
+      "path": "data/audit/group_balanced_robustness.json",
+      "sha256": "c3913db07e6a4c71fcbc06b0c9047ce1a73a8485499b0a6d1c523142a36430e1"
+    },
+    "ml_clustering": {
+      "bytes": 29905,
+      "path": "data/audit/ml_clustering_diagnostics.json",
+      "sha256": "523534c461bf3c0deeaa0b7c0dd8cded46aee4760024329ffd1fd724e9646515"
+    },
+    "ml_evaluation": {
+      "bytes": 66800,
+      "path": "data/audit/ml_model_evaluation.json",
+      "sha256": "70ee06535c17a986eee29213ff85c15ca61c0d4837ba79b6b37bc444a02a5684"
+    },
+    "wba_dap": {
+      "bytes": 247839,
+      "path": "data/audit/wba_dap_sensitivity.json",
+      "sha256": "c805b7a2cf13f768e07775580825742f79875288a990adef6cde050d10266e65"
+    }
+  },
+  "status": "pass"
+}

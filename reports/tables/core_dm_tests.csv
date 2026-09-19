@@ -1,0 +1,7 @@
+comparison_id,grouping_id,vine_model,gaussian_model,score,observations,mean_loss_difference,dm_statistic,p_value_two_sided,holm_p_value,direction,significant_after_holm,favours_vine_after_holm,favours_gaussian_after_holm
+M2_minus_M1:fz0_975,gics,M2,M1,fz0_975,1508,-0.00166696488781,-0.418083570191,0.675886016969,0.808319077051,vine_lower_loss,false,false,false
+M2_minus_M1:quantile_loss_95,gics,M2,M1,quantile_loss_95,1508,7.91884413631e-06,1.45135103748,0.146682136279,0.586728545116,gaussian_lower_loss,false,false,false
+M2_minus_M1:quantile_loss_99,gics,M2,M1,quantile_loss_99,1508,-1.76298586848e-06,-0.834215535014,0.404159538525,0.808319077051,vine_lower_loss,false,false,false
+M4_minus_M3:fz0_975,hierarchical,M4,M3,fz0_975,1508,-0.00414314214338,-1.18870101428,0.234557341356,0.703672024067,vine_lower_loss,false,false,false
+M4_minus_M3:quantile_loss_95,hierarchical,M4,M3,quantile_loss_95,1508,5.29520063523e-06,1.78777358626,0.0738125440108,0.442875264065,gaussian_lower_loss,false,false,false
+M4_minus_M3:quantile_loss_99,hierarchical,M4,M3,quantile_loss_99,1508,-3.17069726919e-06,-1.69982888899,0.0891631158634,0.445815579317,vine_lower_loss,false,false,false
