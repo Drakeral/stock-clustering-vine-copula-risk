@@ -10,7 +10,7 @@ import urllib.error
 from pathlib import Path
 from unittest import mock
 
-from scripts.download_market_data import authenticated_json
+from scripts.download_market_data import authenticated_json, local_path_for, make_s3_client
 from scripts.generate_run_manifest import (
     build_run_manifest,
     default_config_paths,
@@ -469,6 +469,72 @@ class RunManifestTests(unittest.TestCase):
 
 
 class CredentialSafetyTests(unittest.TestCase):
+    def test_s3_client_rejects_untrusted_endpoint_before_attaching_credentials(self):
+        for endpoint in (
+            "http://files.massive.com",
+            "https://attacker.example",
+            "https://files.massive.com.attacker.example",
+            "https://files.massive.com:444",
+            "https://user@files.massive.com",
+            "https://files.massive.com/unexpected-path",
+            "https://files.massive.com?redirect=attacker.example",
+        ):
+            config = {
+                "massive": {
+                    "flat_file_endpoint": endpoint,
+                    "s3_access_key_env": "TEST_MASSIVE_ACCESS",
+                    "s3_secret_key_env": "TEST_MASSIVE_SECRET",
+                }
+            }
+            with (
+                self.subTest(endpoint=endpoint),
+                mock.patch("scripts.download_market_data.boto3.client") as mocked_client,
+                self.assertRaises(ValueError),
+            ):
+                make_s3_client(config)
+            mocked_client.assert_not_called()
+
+    def test_s3_client_uses_only_the_allowlisted_canonical_endpoint(self):
+        config = {
+            "massive": {
+                "flat_file_endpoint": "https://files.massive.com/",
+                "s3_access_key_env": "TEST_MASSIVE_ACCESS",
+                "s3_secret_key_env": "TEST_MASSIVE_SECRET",
+            }
+        }
+        with (
+            mock.patch.dict(
+                "os.environ",
+                {"TEST_MASSIVE_ACCESS": "access", "TEST_MASSIVE_SECRET": "secret"},
+            ),
+            mock.patch("scripts.download_market_data.boto3.client") as mocked_client,
+        ):
+            make_s3_client(config)
+        call = mocked_client.call_args
+        self.assertEqual(call.args, ("s3",))
+        self.assertEqual(call.kwargs["endpoint_url"], "https://files.massive.com")
+        self.assertEqual(call.kwargs["aws_access_key_id"], "access")
+        self.assertEqual(call.kwargs["aws_secret_access_key"], "secret")
+
+    def test_provider_object_keys_cannot_escape_the_raw_data_directory(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            expected = (root / "day_aggs/2020/01/2020-01-02.csv.gz").resolve()
+            self.assertEqual(
+                local_path_for(
+                    root,
+                    "us_stocks_sip/day_aggs_v1/2020/01/2020-01-02.csv.gz",
+                ),
+                expected,
+            )
+            for key in (
+                "other-prefix/2020-01-02.csv.gz",
+                "us_stocks_sip/day_aggs_v1/../../escape.csv.gz",
+                "",
+            ):
+                with self.subTest(key=key), self.assertRaises(ValueError):
+                    local_path_for(root, key)
+
     def test_rest_request_rejects_untrusted_origin_before_attaching_key(self):
         secret = "do-not-send-this-key"
         for url in (

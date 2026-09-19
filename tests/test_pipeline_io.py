@@ -156,7 +156,9 @@ class PipelineIoTests(unittest.TestCase):
 
     def test_hash_record_validation_detects_stale_missing_and_invalid_records(self):
         with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary)
+            base = Path(temporary)
+            root = base / "project"
+            root.mkdir()
             artifact = root / "artifact.bin"
             artifact.write_bytes(b"version-one")
             record = {
@@ -186,6 +188,19 @@ class PipelineIoTests(unittest.TestCase):
             self.assertIn(
                 "payload:$:missing:missing.bin",
                 artifact_hash_issues(missing, project_root=root),
+            )
+
+            outside = base / "outside.bin"
+            outside.write_bytes(b"outside")
+            escaped = {"path": "../outside.bin", "sha256": sha256_file(outside)}
+            absolute = {"path": str(outside), "sha256": sha256_file(outside)}
+            self.assertIn(
+                "payload:$:external_path:../outside.bin",
+                artifact_hash_issues(escaped, project_root=root),
+            )
+            self.assertIn(
+                f"payload:$:external_path:{outside}",
+                artifact_hash_issues(absolute, project_root=root),
             )
 
 

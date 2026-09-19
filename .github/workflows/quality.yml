@@ -41,14 +41,17 @@ jobs:
       - name: Lint
         run: uv run ruff check scripts tests
 
-      - name: Check evaluation complexity
+      - name: Check maintained-module complexity
         run: >-
           uv run ruff check scripts/evaluate_risk_models.py
           scripts/evaluate_full_vine_robustness.py
           scripts/evaluate_ml_risk_models.py
           scripts/evaluate_group_balanced_robustness.py
           scripts/evaluate_current_composition_historical_simulation.py
-          scripts/build_group_balanced_portfolios.py --select C901
+          scripts/build_group_balanced_portfolios.py
+          scripts/build_report_artifacts.py
+          scripts/download_market_data.py
+          scripts/pipeline_io.py --select C901
 
       - name: Check security rules
         run: uv run ruff check scripts --select S

@@ -11,7 +11,7 @@ Run the checkpoint from the repository root:
 ```zsh
 uv sync --frozen
 uv run ruff check scripts tests
-uv run ruff check scripts/evaluate_risk_models.py scripts/evaluate_full_vine_robustness.py scripts/evaluate_ml_risk_models.py scripts/evaluate_group_balanced_robustness.py scripts/evaluate_current_composition_historical_simulation.py scripts/build_group_balanced_portfolios.py --select C901
+uv run ruff check scripts/evaluate_risk_models.py scripts/evaluate_full_vine_robustness.py scripts/evaluate_ml_risk_models.py scripts/evaluate_group_balanced_robustness.py scripts/evaluate_current_composition_historical_simulation.py scripts/build_group_balanced_portfolios.py scripts/build_report_artifacts.py scripts/download_market_data.py scripts/pipeline_io.py --select C901
 uv run ruff check scripts --select S
 uv run ruff format --check scripts tests
 uv run python -m compileall -q scripts tests
@@ -34,11 +34,11 @@ GitHub Actions runs the portable lint, security, format, compilation and unit-te
 on every push to `main` and on every pull request under both supported Python
 3.12 and 3.13 versions. The workflow installs the pinned uv version, then
 reconstructs each environment from `uv.lock` with `uv sync --frozen`. It also
-enforces Ruff's cyclomatic-complexity limit on the model-evaluation modules and
-the group-balanced portfolio constructor, where quantitative state transitions
-and statistical validation are most densely orchestrated.
+enforces Ruff's cyclomatic-complexity limit on the model-evaluation modules,
+group-balanced portfolio constructor, report generator, provider boundary, and
+shared filesystem/lineage helpers.
 
-Twelve acceptance-test classes bind the checked-in audit records to large generated
+Thirteen acceptance-test classes bind the checked-in audit records to large generated
 Parquet artifacts. Those files are intentionally excluded from Git, so the
 classes report as skipped in a clean public clone. They run automatically when
 the artifacts exist locally. The full checkpoint above additionally requires
@@ -74,3 +74,11 @@ covered by targeted acceptance tests and should be decomposed only alongside
 new behavioural tests, not as an unrelated formatting exercise. New modelling
 modules should prefer small pure functions, explicit input validation and typed
 structured records.
+
+A repository-wide advisory `C901` scan currently identifies 23 legacy
+functions, concentrated in foundation verification, lifecycle construction,
+and Gaussian/vine/marginal orchestration. The largest are orchestration
+functions rather than numerical kernels. They remain bounded technical debt:
+the enforced maintained-module list above must stay clean, and any future
+decomposition of the legacy set must preserve artifact hashes or explicitly
+document an authorized numerical change.

@@ -1,6 +1,6 @@
 # Quantitative Code Audit
 
-Audit date: 18 September 2026
+Audit date: 20 September 2026
 
 ## Conclusion
 
@@ -23,8 +23,8 @@ Gaussian and R-vine copulas, Monte Carlo risk forecasts, statistical inference,
 the full ten-tree vine robustness analysis, the spectral and PCA-plus-k-means
 M5-M8 risk extension, the annual group-balanced portfolio robustness, the
 current-composition historical-simulation robustness, artifact schemas and
-hashes, tests, CI, dependency
-locking, secret boundaries, and repository hygiene.
+hashes, deterministic report tables and figures, tests, CI, dependency locking,
+secret boundaries, and repository hygiene.
 
 ## Quantitative invariants confirmed
 
@@ -98,10 +98,24 @@ locking, secret boundaries, and repository hygiene.
   is revalidated on every page, malformed page structures fail closed, and CI
   runs an explicit security-rule scan. Git executable discovery in the run
   manifest no longer relies on a partial executable path.
+- Massive S3 credentials now have the same fail-closed origin protection as the
+  REST key: the configured endpoint is validated and canonicalised to
+  `https://files.massive.com` before either credential is read or passed to the
+  SDK. Provider object keys are resolved beneath the raw-data directory and
+  reject wrong prefixes, traversal components, and symlink escapes.
+- Repository lineage records can no longer bind or inspect paths outside the
+  project root. Relative traversal, absolute external paths, and symlink escapes
+  are reported as `external_path` failures before any file is hashed.
+- The maintained-module complexity gate now covers the deterministic report
+  generator, provider boundary, and shared filesystem/lineage helpers in
+  addition to evaluation and group-balanced orchestration. The remaining
+  complexity exceptions are older, explicitly bounded ingestion and modelling
+  orchestration functions with characterization tests.
 
 ## Verification evidence
 
-The local checkpoint includes Ruff lint and format checks, source compilation,
+The local checkpoint includes locked-environment reconstruction, Ruff lint,
+security, maintained-module complexity and format checks, source compilation,
 the complete unit and artifact-bound test suite, a fresh return-panel build,
 portfolio-arithmetic validation, and the aggregate modelling-readiness gate.
 The return rebuild reproduced the tracked public construction audit without a
@@ -116,12 +130,28 @@ quality limit. All 144 primary vine refits completed without whole-vine
 fallback. The full tree-10 run also completed all 144 refits and 3,016 forecasts
 without failed pairs or whole-vine fallback. Its 7,920 pair positions and 6,032
 matched robustness score rows pass their production artifact checks. The full
-local suite contains 173 passing tests, including all twelve artifact-bound
+local suite contains 182 passing tests, including all thirteen artifact-bound
 production classes. After rebuilding the affected audit chain, the annual
 grouping, marginal, Gaussian, primary-vine, evaluation, full-vine, robustness,
 and exploratory ML numerical artifacts all reproduced their pre-audit SHA-256
-hashes exactly. The final lineage scan verifies 310 path-bound hash records
-across 31 audit and manifest documents.
+hashes exactly. The final lineage scan verifies 360 path-bound hash records
+across 33 audit, manifest, and report-lineage documents.
+
+An independent read-only reconciliation of the production Parquet files
+reconstructed all quantile and FZ0 scores to a maximum numerical difference of
+`8.53e-14`, matched every model summary exactly, and found maximum realised-loss
+disagreement of `5.55e-17` across M0-M4. It independently confirmed 1,584
+marginal refits with four EWMA fallbacks (`0.253%`), 144 Gaussian and 144 primary
+vine refits, zero failed vine pairs, zero whole-vine fallbacks, at least 750
+observations in every historical-simulation window, and a maximum GICS-versus-
+hierarchical portfolio identity error of `2.78e-17`.
+
+The deterministic reporting checkpoint adds seven CSV tables, three canonical
+SVG figures, one audit-derived narrative summary, and a report manifest. A
+repeat build reproduced all eleven generated output hashes; visual inspection
+confirmed the final layouts. The generator rejects failed or stale source
+audits, preserves the provisional reporting scope, and performs neither model
+refits nor new inference.
 
 The post-audit exploratory ML-grouping checkpoint adds 12 deterministic annual
 fits: spectral clustering and PCA-plus-k-means for each year from 2020 through

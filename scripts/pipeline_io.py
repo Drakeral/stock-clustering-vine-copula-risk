@@ -27,6 +27,36 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _hash_record_issue(
+    recorded_path: object,
+    recorded_hash: object,
+    *,
+    project_root: Path,
+) -> str | None:
+    """Return one issue for a path/hash record, or ``None`` when it is current."""
+
+    if not isinstance(recorded_path, str) or not recorded_path:
+        return "invalid_path"
+    if (
+        not isinstance(recorded_hash, str)
+        or len(recorded_hash) != 64
+        or any(character not in "0123456789abcdef" for character in recorded_hash)
+    ):
+        return "invalid_sha256"
+    root = project_root.resolve()
+    target = Path(recorded_path)
+    target = target.resolve() if target.is_absolute() else (root / target).resolve()
+    try:
+        target.relative_to(root)
+    except ValueError:
+        return f"external_path:{recorded_path}"
+    if not target.is_file():
+        return f"missing:{recorded_path}"
+    if sha256_file(target) != recorded_hash:
+        return f"stale:{recorded_path}"
+    return None
+
+
 def artifact_hash_issues(
     payload: object,
     *,
@@ -40,24 +70,13 @@ def artifact_hash_issues(
     def visit(value: object, location: str) -> None:
         if isinstance(value, Mapping):
             if "path" in value and "sha256" in value:
-                recorded_path = value["path"]
-                recorded_hash = value["sha256"]
-                if not isinstance(recorded_path, str) or not recorded_path:
-                    issues.append(f"{source_name}:{location}:invalid_path")
-                elif (
-                    not isinstance(recorded_hash, str)
-                    or len(recorded_hash) != 64
-                    or any(character not in "0123456789abcdef" for character in recorded_hash)
-                ):
-                    issues.append(f"{source_name}:{location}:invalid_sha256")
-                else:
-                    target = Path(recorded_path)
-                    if not target.is_absolute():
-                        target = project_root / target
-                    if not target.is_file():
-                        issues.append(f"{source_name}:{location}:missing:{recorded_path}")
-                    elif sha256_file(target) != recorded_hash:
-                        issues.append(f"{source_name}:{location}:stale:{recorded_path}")
+                issue = _hash_record_issue(
+                    value["path"],
+                    value["sha256"],
+                    project_root=project_root,
+                )
+                if issue:
+                    issues.append(f"{source_name}:{location}:{issue}")
             for key, child in value.items():
                 visit(child, f"{location}.{key}")
         elif isinstance(value, list):

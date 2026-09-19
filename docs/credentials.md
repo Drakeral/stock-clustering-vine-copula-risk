@@ -8,6 +8,11 @@ The downloader reads credentials only from environment variables:
 | `MASSIVE_S3_ACCESS_KEY` | Flat-file S3 access-key identifier |
 | `MASSIVE_S3_SECRET_KEY` | Flat-file S3 secret |
 
+Before attaching credentials, the downloader requires the exact allowlisted
+HTTPS origins `api.massive.com` for REST and `files.massive.com` for S3.
+Downloaded object keys must remain under the configured daily-aggregate prefix
+and resolve inside the ignored raw-data directory.
+
 No credential value, authenticated URL, home-directory path, or environment
 dump is written to a manifest or audit file.
 

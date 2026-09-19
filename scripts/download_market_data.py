@@ -50,6 +50,7 @@ EXPECTED_HEADER = {
     "transactions",
 }
 MASSIVE_REST_HOSTS = frozenset({"api.massive.com"})
+MASSIVE_S3_HOSTS = frozenset({"files.massive.com"})
 
 
 def validated_https_url(
@@ -60,6 +61,8 @@ def validated_https_url(
 ) -> urllib.parse.SplitResult:
     """Return a parsed provider URL after enforcing a narrow HTTPS boundary."""
 
+    if not isinstance(url, str) or not url:
+        raise ValueError(f"Invalid {provider} URL")
     try:
         parsed = urllib.parse.urlsplit(url)
         port = parsed.port
@@ -74,6 +77,19 @@ def validated_https_url(
     ):
         raise ValueError(f"Untrusted {provider} URL origin")
     return parsed
+
+
+def validated_s3_endpoint(url: str) -> str:
+    """Return the canonical Massive S3 endpoint before credentials are attached."""
+
+    parsed = validated_https_url(
+        url,
+        allowed_hosts=MASSIVE_S3_HOSTS,
+        provider="Massive S3",
+    )
+    if parsed.path not in {"", "/"} or parsed.query or parsed.fragment:
+        raise ValueError("Untrusted Massive S3 endpoint")
+    return f"https://{parsed.hostname}"
 
 
 def load_config(path: Path) -> dict[str, Any]:
@@ -95,11 +111,12 @@ def require_env(name: str) -> str:
 
 def make_s3_client(config: dict[str, Any]):
     massive = config["massive"]
+    endpoint = validated_s3_endpoint(massive["flat_file_endpoint"])
     access_key = require_env(massive["s3_access_key_env"])
     secret_key = require_env(massive["s3_secret_key_env"])
     return boto3.client(
         "s3",
-        endpoint_url=massive["flat_file_endpoint"],
+        endpoint_url=endpoint,
         aws_access_key_id=access_key,
         aws_secret_access_key=secret_key,
         region_name="us-east-1",
@@ -172,7 +189,21 @@ def sha256_file(path: Path) -> str:
 
 
 def local_path_for(raw_root: Path, key: str) -> Path:
-    return raw_root / "day_aggs" / Path(key).relative_to("us_stocks_sip/day_aggs_v1")
+    if not isinstance(key, str) or not key:
+        raise ValueError("Provider object key must be a non-empty string")
+    try:
+        relative = Path(key).relative_to("us_stocks_sip/day_aggs_v1")
+    except ValueError as exc:
+        raise ValueError("Provider object key is outside the daily-aggregate prefix") from exc
+    if relative == Path(".") or ".." in relative.parts:
+        raise ValueError("Provider object key contains an unsafe relative component")
+    destination_root = (raw_root / "day_aggs").resolve()
+    destination = (destination_root / relative).resolve()
+    try:
+        destination.relative_to(destination_root)
+    except ValueError as exc:
+        raise ValueError("Provider object key resolves outside the raw-data directory") from exc
+    return destination
 
 
 def download_one(
