@@ -209,9 +209,9 @@
     "run_scope": "provisional_research_results",
     "status": "provisional_pass"
   },
-  "generated_at_utc": "2026-09-19T16:21:58.076233+00:00",
+  "generated_at_utc": "2026-09-21T13:24:13.591333+00:00",
   "git": {
-    "commit": "3270af67fc53b22c79ac3f0604eedf8fa779b394",
+    "commit": "763ad761305c67f52b28a3b95f63f4d892dc116f",
     "commit_present": true,
     "repository_initialized": true,
     "worktree_clean": true
