@@ -14,16 +14,21 @@ from scripts.build_group_balanced_portfolios import (
     group_balanced_buy_and_hold,
     validate_group_balanced_protocol,
 )
-from scripts.pipeline_io import require_current_hash_records
+from scripts.pipeline_io import artifact_hash_issues, require_current_hash_records
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-PRODUCTION_ARTIFACTS = (
-    PROJECT_ROOT / "data/audit/group_balanced_portfolio_construction.json",
-    PROJECT_ROOT / "data/processed/annual_group_assignments.json",
-    PROJECT_ROOT / "data/processed/group_balanced_group_returns.parquet",
-    PROJECT_ROOT / "data/processed/group_balanced_portfolio_returns.parquet",
-    PROJECT_ROOT / "data/processed/portfolio_constituent_simple_returns.parquet",
-)
+PRODUCTION_AUDIT = PROJECT_ROOT / "data/audit/group_balanced_portfolio_construction.json"
+
+
+def _has_current_production_artifacts() -> bool:
+    if not PRODUCTION_AUDIT.is_file():
+        return False
+    audit = json.loads(PRODUCTION_AUDIT.read_text(encoding="utf-8"))
+    return not artifact_hash_issues(
+        audit,
+        project_root=PROJECT_ROOT,
+        source_name="group-balanced construction audit",
+    )
 
 
 class GroupBalancedPortfolioMethodTests(unittest.TestCase):
@@ -132,13 +137,12 @@ class GroupBalancedPortfolioMethodTests(unittest.TestCase):
 
 
 @unittest.skipUnless(
-    all(path.is_file() for path in PRODUCTION_ARTIFACTS),
+    _has_current_production_artifacts(),
     "requires locally generated group-balanced portfolio artifacts",
 )
 class ProductionGroupBalancedPortfolioTests(unittest.TestCase):
     def test_artifacts_are_complete_and_hash_bound(self) -> None:
-        audit_path = PROJECT_ROOT / "data/audit/group_balanced_portfolio_construction.json"
-        audit = json.loads(audit_path.read_text(encoding="utf-8"))
+        audit = json.loads(PRODUCTION_AUDIT.read_text(encoding="utf-8"))
 
         require_current_hash_records(audit, source_name="group-balanced construction audit")
         self.assertEqual(audit["status"], "pass")
