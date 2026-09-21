@@ -2,8 +2,8 @@
 
 ## Evidence from a Provisional S&P 100 Research Universe
 
-> **Draft status:** Sections 3-5 are drafted from the frozen methodology and
-> audited project artifacts. Sections 1, 2, and 6-9 remain to be written. This
+> **Draft status:** Sections 3-6 are drafted from the frozen methodology and
+> audited project artifacts. Sections 1, 2, and 7-9 remain to be written. This
 > source document deliberately omits personal identifiers; the student's name,
 > student ID, recorded workload, and final filename will be inserted only into
 > the local submission documents.
@@ -474,8 +474,155 @@ cannot be used to retroactively declare H1 or H2 supported.
 
 ## 6. Core Empirical Results
 
-*To be drafted from the deterministic report tables after Sections 3-5 are
-reviewed.*
+This section reports the prespecified H1-H3 tests over the 1,508 out-of-sample
+dates. All findings retain the provisional-universe qualification described in
+Section 3. The distinction between three questions is important: H1 tests the
+information in the grouping, H2 tests vine versus Gaussian dependence within a
+matched grouping, and H3 ranks the five complete forecasting systems.
+
+### 6.1 Dependence separation and H1
+
+The annual dependence gaps do not show a persistent advantage for hierarchical
+clustering. Hierarchical groups have the larger gap in 2021 and 2025, whereas
+GICS has the larger gap in 2020, 2022, 2023, and 2024. The largest annual
+difference is negative in 2020, when the hierarchical gap is 0.0879 compared
+with 0.1414 for GICS. The strongest hierarchical result occurs in 2021, when
+its gap exceeds the GICS gap by 0.0434. The near-zero difference in 2023
+indicates that the two representations can also produce almost indistinguishable
+separation despite assigning stocks differently.
+
+| Year | GICS gap | Hierarchical gap | Hierarchical minus GICS |
+|---:|---:|---:|---:|
+| 2020 | 0.1414 | 0.0879 | -0.0535 |
+| 2021 | 0.2067 | 0.2501 | 0.0434 |
+| 2022 | 0.1729 | 0.1454 | -0.0275 |
+| 2023 | 0.1566 | 0.1557 | -0.0009 |
+| 2024 | 0.1592 | 0.1452 | -0.0140 |
+| 2025 | 0.1765 | 0.1955 | 0.0190 |
+| **Equal-year mean** | **0.1689** | **0.1633** | **-0.0056** |
+
+![Annual out-of-sample dependence gaps](../reports/figures/annual_dependence_gaps.svg)
+
+*Figure 1. Annual within-minus-between Spearman dependence gaps. H1 uses only
+the GICS and hierarchical series; the exploratory spectral and PCA-plus-k-means
+series are discussed in Section 7.*
+
+The equally weighted mean hierarchical-minus-GICS difference is -0.005590.
+Its paired circular moving-block bootstrap 95% interval is
+[-0.018669, 0.006569]. The estimate therefore has the wrong sign for H1, and
+the interval includes zero. H1 is not supported under its frozen requirement
+of a positive point estimate and a strictly positive interval.
+
+This decision does not imply that hierarchical clustering contains no useful
+structure. The annual hierarchical assignments have moderate overlap with GICS
+(normalised mutual information ranges from 0.508 to 0.686) and their
+consecutive-year stability varies materially (Adjusted Rand Index ranges from
+0.346 to 0.792 where defined). The narrower conclusion is that the selected
+rolling-window algorithm did not establish superior *out-of-sample dependence
+separation* relative to the sector benchmark in this sample.
+
+### 6.2 Forecast-loss ranking
+
+All four filtered copula models have lower mean loss than historical simulation
+on each primary score. M0 ranks fifth on 95% quantile loss, 99% quantile loss,
+and the joint 97.5% FZ0 score. This descriptive gap is consistent with the value
+of updating conditional volatility and cross-sectional dependence, although the
+confirmatory DM family was designed for matched vine-Gaussian comparisons and
+does not provide a formal M0-versus-copula significance test.
+
+| Overall rank | Model | Mean QL 95% | Mean QL 99% | Mean FZ0 97.5% | Average score rank |
+|---:|---|---:|---:|---:|---:|
+| 1 | M4: hierarchical + vine | 0.001272 | 0.000385 | -3.6164 | 1.333 |
+| 2 | M3: hierarchical + Gaussian | 0.001266 | 0.000388 | -3.6122 | 1.667 |
+| 3 | M2: GICS + vine | 0.001284 | 0.000405 | -3.5965 | 3.333 |
+| 4 | M1: GICS + Gaussian | 0.001276 | 0.000407 | -3.5948 | 3.667 |
+| 5 | M0: historical simulation | 0.001527 | 0.000584 | -3.1931 | 5.000 |
+
+![Average primary-score ranks](../reports/figures/core_model_score_ranks.svg)
+
+*Figure 2. Average rank across 95% quantile loss, 99% quantile loss, and 97.5%
+FZ0. Lower values indicate better average forecast performance.*
+
+M4 is uniquely first with an average rank of 1.333. It ranks first on 99%
+quantile loss and FZ0, but second to M3 on 95% quantile loss. M3 is correspondingly
+first on the 95% score and second on the other two. The ranking therefore does
+not show uniform M4 dominance. Instead, it shows a small trade-off: the
+hierarchical Gaussian model performs best at the less extreme VaR level, while
+the hierarchical vine performs best on the two more tail-focused primary
+scores. Both hierarchical models outrank both GICS models on the aggregate
+criterion, even though H1 itself is not supported. A grouping can thus be useful
+inside a nonlinear forecasting system without satisfying a separate
+within-minus-between correlation hypothesis.
+
+### 6.3 Matched vine-Gaussian comparisons and H2
+
+The signs of the matched loss differences are consistent across the two
+groupings but mixed across scoring rules. The vines have lower mean loss for
+99% VaR and joint 97.5% VaR-ES, while the Gaussian copulas have lower mean loss
+for 95% VaR. None of the six two-sided DM tests is significant after Holm
+adjustment.
+
+| Grouping | Score | Vine minus Gaussian mean loss | Holm-adjusted p-value | Descriptive direction |
+|---|---|---:|---:|---|
+| GICS | QL 95% | 0.00000792 | 0.587 | Gaussian |
+| GICS | QL 99% | -0.00000176 | 0.808 | Vine |
+| GICS | FZ0 97.5% | -0.001667 | 0.808 | Vine |
+| Hierarchical | QL 95% | 0.00000530 | 0.443 | Gaussian |
+| Hierarchical | QL 99% | -0.00000317 | 0.446 | Vine |
+| Hierarchical | FZ0 97.5% | -0.004143 | 0.704 | Vine |
+
+The smallest unadjusted p-value is 0.0738 for hierarchical 95% quantile loss;
+even that comparison points towards the Gaussian model and does not meet the
+unadjusted 5% threshold. The confirmatory result is therefore not an artefact of
+Holm correction alone. With zero of six adjusted comparisons favouring the
+vine, H2 has no support. Descriptive copula log scores and M4's overall rank do
+not override this decision because they answer different questions.
+
+### 6.4 Calibration and H3
+
+Exception frequencies alone do not determine calibration. M0 records 58
+exceptions at 95% and 16 at 99%, compared with expectations of 75.4 and 15.08.
+Although neither adjusted Kupiec test rejects frequency calibration, the
+Christoffersen independence test rejects at both primary levels after Holm
+adjustment (adjusted p-values 0.00084 and 0.00713). Its exceptions are therefore
+too clustered under the prespecified rule, and M0 is classified as a systematic
+calibration failure.
+
+![Full-period VaR exception rates](../reports/figures/core_var_exception_rates.svg)
+
+*Figure 3. Full-period exception rates at the reported VaR confidence levels.
+Dashed reference levels indicate nominal exception probabilities.*
+
+M1-M4 record 87-94 exceptions at 95% and 22-24 at 99%. None has a Holm-adjusted
+Kupiec or independence rejection at either primary level. This is not a claim
+that their observed rates equal the nominal rates exactly. For example, M4 has
+94 rather than 75.4 expected 95% exceptions and 24 rather than 15.08 expected
+99% exceptions. It means that the deviations do not cross the prespecified
+family-wise-adjusted rejection threshold in a sample of 1,508 dates.
+
+M4 satisfies all three parts of the H3 rule: it is uniquely first on average
+primary-score rank, the vine-quality audit declares it eligible with no
+whole-vine fallback dates, and it has no adjusted primary calibration rejection.
+H3 is consequently supported. This is an integrated, within-experiment model
+selection result. It does not establish that vines generally dominate Gaussian
+copulas: the direct H2 comparisons provide no such evidence, and M4's ranking
+advantage is not uniform across scores.
+
+### 6.5 Hypothesis summary
+
+| Hypothesis | Frozen question | Decision | Decisive evidence |
+|---|---|---|---|
+| H1 | Do hierarchical clusters separate dependence better than GICS? | **Not supported** | Mean difference -0.005590; 95% interval [-0.018669, 0.006569] |
+| H2 | Do vines improve matched loss over Gaussian copulas? | **No support** | 0 of 6 Holm-adjusted DM tests favour the vine |
+| H3 | Is M4 the best eligible integrated core model? | **Supported** | Unique average-rank winner (1.333), vine-quality eligible, no systematic calibration failure |
+
+Taken together, the core results favour restraint. Neither data-driven
+hierarchical grouping nor flexible vine dependence wins its isolated
+confirmatory test. Nevertheless, their combination produces the strongest
+prespecified integrated ranking without breaching the model-quality or
+calibration gates. The subsequent robustness analysis asks whether that narrow
+conclusion survives alternative unsupervised groupings, vine depth, portfolio
+weights, historical-simulation construction, and WBA terminal valuation.
 
 ## 7. ML Extension and Robustness
 
