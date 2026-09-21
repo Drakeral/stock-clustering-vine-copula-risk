@@ -248,6 +248,8 @@ added later.
 
 ## Main outputs
 
+- `report/main_report_draft.md`: privacy-safe working report source; Sections
+  3-5 currently contain the audited data, methodology, and evaluation draft;
 - `docs/project_report_blueprint.md`: FE5110-brief-aligned writing plan with
   section arguments, word allocations, evidence mapping, literature targets,
   interpretation guardrails, and submission checks;
