@@ -2,8 +2,8 @@
 
 ## Evidence from a Provisional S&P 100 Research Universe
 
-> **Draft status:** Sections 3-6 are drafted from the frozen methodology and
-> audited project artifacts. Sections 1, 2, and 7-9 remain to be written. This
+> **Draft status:** Sections 3-7 are drafted from the frozen methodology and
+> audited project artifacts. Sections 1, 2, 8, and 9 remain to be written. This
 > source document deliberately omits personal identifiers; the student's name,
 > student ID, recorded workload, and final filename will be inserted only into
 > the local submission documents.
@@ -626,7 +626,128 @@ weights, historical-simulation construction, and WBA terminal valuation.
 
 ## 7. ML Extension and Robustness
 
-*To be drafted after the core-results narrative is stable.*
+The analyses in this section were designated exploratory before their risk
+results were inspected. They extend the core design without revising the
+confirmatory H1-H3 decisions. Where the realised portfolio changes, models are
+ranked only within that portfolio target.
+
+### 7.1 Spectral clustering and PCA-plus-k-means
+
+The substantial ML extension replaces the hierarchical assignments with two
+additional unsupervised representations. Spectral clustering applies an RBF
+affinity to the Spearman correlation-distance matrix, while PCA-plus-k-means
+clusters stocks in a lower-dimensional principal-component embedding. Both
+methods use the same rolling three-calendar-year information sets, annual
+rebalance dates, 11-group constraint, daily portfolio arithmetic, and seeded
+initialisation protocol as the core analysis. Every annual solution contains
+11 non-empty groups and reconstructs the primary stock portfolio within
+\(6.94\times10^{-17}\).
+
+Spectral clustering has the strongest descriptive dependence separation. Its
+six-year mean gap exceeds GICS by 0.02734 and hierarchical clustering by
+0.03293. The corresponding PCA-plus-k-means differences are smaller but still
+positive on average, at 0.00510 and 0.01069. This result strengthens the case
+that nonlinear graph-based clustering can identify compact correlation
+communities. It does not, by itself, show that those communities improve tail-
+risk forecasts.
+
+| Model | Representation and dependence | QL 95% | QL 99% | FZ0 97.5% |
+|---|---|---:|---:|---:|
+| M5 | Spectral + Gaussian | 0.001280 | 0.000416 | -3.5898 |
+| M6 | Spectral + vine | 0.001281 | 0.000405 | -3.6001 |
+| M7 | PCA-k-means + Gaussian | 0.001275 | 0.000406 | -3.5934 |
+| M8 | PCA-k-means + vine | 0.001279 | 0.000395 | -3.6042 |
+
+The ML models reproduce the core dependence pattern: vines have lower 99%
+quantile loss and FZ0 within both representations, whereas Gaussian copulas
+have lower 95% quantile loss. The broader evaluation compares M5-M8 with their
+matched GICS and hierarchical baselines across 24 loss differentials. After
+Benjamini-Hochberg control at a 5% false-discovery rate, no comparison favours
+an ML grouping and none favours a baseline grouping. Stronger descriptive
+clustering separation therefore does not translate into statistically
+detectable VaR/ES forecast improvement in this sample.
+
+### 7.2 Vine depth
+
+The primary vine stops after tree 3; the robustness specification estimates all
+ten possible trees. The mean number of fitted parameters rises from 40.51 to
+66.22 per monthly refit, an increase of 25.71 parameters. The full vine has a
+higher descriptive copula log score within both groupings: the mean improvement
+is 0.0440 for GICS and 0.1367 for hierarchical clusters. This is evidence of
+better fit to the multivariate PIT sample, not necessarily better portfolio-
+loss forecasts.
+
+Five of the six mean forecast-loss differences favour the full vine, while the
+hierarchical 99% quantile loss favours tree 3. None is significant after Holm
+adjustment. Both depths complete all 144 refits without whole-vine fallback.
+The robustness exercise therefore supplies no adjusted forecast-loss evidence
+that the additional trees justify their estimation complexity; the tree-3
+results remain the primary results.
+
+### 7.3 Equal-group portfolio weighting
+
+The primary portfolio gives every security the same daily weight. The weighting
+robustness instead assigns equal weights to the 11 groups at each annual
+rebalance and lets those group weights drift. This creates different realised
+GICS-balanced and hierarchical-balanced portfolios, so their losses cannot be
+ranked against each other or against M0-M4 as though the target were unchanged.
+
+Within each balanced portfolio, the Gaussian model ranks first with an average
+primary-score rank of 1.333, and the vine ranks second at 1.667. Historical
+simulation ranks third. No Holm-adjusted matched loss comparison favours either
+the vine or Gaussian specification. The reversal from M4's primary integrated
+rank shows that portfolio construction and dependence modelling interact, but
+the absence of adjusted pairwise evidence remains consistent with H2.
+
+### 7.4 Historical-simulation constituent history
+
+M0 uses the realised annual active sets in its rolling history. The alternative
+M0_CC freezes each forecast year's active set throughout that forecast's
+three-year training window. This changes at least one forecast on 710 of 1,508
+dates, although both constructions produce exactly the same exception counts:
+58, 28, and 16 at the 95%, 97.5%, and 99% levels.
+
+The realised-history M0 has lower mean loss on all three primary scores. Only
+the 99% quantile-loss difference is significant after the separate three-test
+Holm correction (adjusted \(p=3.86\times10^{-25}\)); the 95% and FZ0
+comparisons are not significant. This sensitivity shows that historical-
+simulation tail estimates can depend on how past constituent histories are
+constructed. It does not revise H1-H3 because both variants forecast the same
+realised primary portfolio and M0 remains outside the matched H2 comparisons.
+
+### 7.5 WBA DAP valuation
+
+The primary WBA terminal value assigns USD 0.53 to the DAP right, making total
+consideration equal to the previous USD 11.98 close. The endpoint scenarios
+assign the right either zero or its USD 3 contractual cap. They change only the
+WBA return on 28 August 2025: the zero-value endpoint implies a -4.42% stock
+return, while the cap implies +20.62%. At the 98-security portfolio level these
+become approximately -0.089% and +0.167%, respectively.
+
+Both endpoints leave every model's exception counts unchanged. H2 remains
+unsupported, H3 remains supported, and the exploratory ML family still has no
+FDR-adjusted loss difference. These are deterministic endpoint sensitivities,
+not a probabilistic valuation model for the non-transferable right. Their role
+is to demonstrate that the core conclusions do not depend on the frozen USD
+0.53 assumption.
+
+### 7.6 Robustness synthesis
+
+| Analysis | Main result | Revises H1-H3? |
+|---|---|---|
+| Spectral and PCA-k-means groupings | 0 of 24 FDR-adjusted loss tests favour either side | No |
+| Full tree-10 vine | Better descriptive log score; 0 of 6 adjusted loss tests significant | No |
+| Equal-group portfolios | Gaussian ranks first within both targets; no adjusted matched difference | No |
+| Current-composition historical simulation | Realised history wins only the adjusted 99% score | No |
+| WBA DAP endpoints | Exception counts and frozen decisions unchanged | No |
+
+The common message is that representation, copula flexibility, and portfolio
+construction can move descriptive scores without producing stable adjusted
+forecast-loss differences. The robustness results consequently reinforce the
+narrow interpretation of Section 6: M4 is the best eligible model under the
+prespecified integrated ranking, but the evidence does not support a general
+claim that more flexible clustering or dependence models must forecast tail
+risk better.
 
 ## 8. Discussion, Limitations, and Extensions
 
