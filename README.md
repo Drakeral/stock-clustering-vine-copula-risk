@@ -248,6 +248,9 @@ added later.
 
 ## Main outputs
 
+- `docs/project_report_blueprint.md`: FE5110-brief-aligned writing plan with
+  section arguments, word allocations, evidence mapping, literature targets,
+  interpretation guardrails, and submission checks;
 - `reports/results_summary.md`: concise H1-H3, exploratory-ML, and robustness
   interpretation generated only from passed audit records;
 - `reports/tables/`: report-ready core performance, DM, calibration,
