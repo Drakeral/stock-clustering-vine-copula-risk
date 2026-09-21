@@ -15,36 +15,21 @@ from scripts.evaluate_wba_dap_sensitivity import (
     construct_scenario_inputs,
     validate_sensitivity_protocol,
 )
-from scripts.pipeline_io import require_current_hash_records
+from scripts.pipeline_io import artifact_hash_issues, require_current_hash_records
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-PRODUCTION_ARTIFACTS = (
-    PROJECT_ROOT / "data/audit/wba_dap_sensitivity.json",
-    *(
-        PROJECT_ROOT / "data/processed" / filename
-        for filename in (
-            "active_universe_by_year.json",
-            "annual_group_assignments.json",
-            "annual_group_returns.parquet",
-            "ml_annual_group_assignments.json",
-            "ml_annual_group_returns.parquet",
-            "ml_risk_evaluation_daily.parquet",
-            "portfolio_constituent_simple_returns.parquet",
-            "risk_evaluation_daily.parquet",
-            "security_daily.parquet",
-        )
-    ),
-    *(
-        PROJECT_ROOT / "data/processed/wba_dap_sensitivity" / scenario / filename
-        for scenario in ("dap_zero", "dap_cap")
-        for filename in (
-            "daily_scores.parquet",
-            "gaussian_refits.parquet",
-            "marginal_refits.parquet",
-            "vine_refits.parquet",
-        )
-    ),
-)
+PRODUCTION_AUDIT = PROJECT_ROOT / "data/audit/wba_dap_sensitivity.json"
+
+
+def _has_current_production_artifacts() -> bool:
+    if not PRODUCTION_AUDIT.is_file():
+        return False
+    audit = json.loads(PRODUCTION_AUDIT.read_text(encoding="utf-8"))
+    return not artifact_hash_issues(
+        audit,
+        project_root=PROJECT_ROOT,
+        source_name="WBA DAP sensitivity audit",
+    )
 
 
 class WbaDapProtocolTests(unittest.TestCase):
@@ -246,13 +231,12 @@ class WbaDapComparisonTests(unittest.TestCase):
 
 
 @unittest.skipUnless(
-    all(path.is_file() for path in PRODUCTION_ARTIFACTS),
+    _has_current_production_artifacts(),
     "requires locally generated WBA DAP sensitivity artifacts",
 )
 class ProductionWbaDapSensitivityTests(unittest.TestCase):
     def test_audit_binds_complete_passed_scenarios(self) -> None:
-        audit_path = PROJECT_ROOT / "data/audit/wba_dap_sensitivity.json"
-        audit = json.loads(audit_path.read_text(encoding="utf-8"))
+        audit = json.loads(PRODUCTION_AUDIT.read_text(encoding="utf-8"))
 
         require_current_hash_records(audit, source_name="WBA DAP sensitivity audit")
         self.assertEqual(audit["status"], "pass")

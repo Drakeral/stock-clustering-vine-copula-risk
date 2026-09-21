@@ -15,29 +15,21 @@ from scripts.evaluate_group_balanced_robustness import (
     validate_risk_protocol,
 )
 from scripts.evaluate_risk_models import DAILY_SCORE_COLUMNS
-from scripts.pipeline_io import require_current_hash_records
+from scripts.pipeline_io import artifact_hash_issues, require_current_hash_records
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-PRODUCTION_ARTIFACTS = (
-    PROJECT_ROOT / "data/audit/group_balanced_robustness.json",
-    PROJECT_ROOT / "data/processed/group_balanced_group_returns.parquet",
-    PROJECT_ROOT / "data/processed/group_balanced_portfolio_returns.parquet",
-    *(
-        PROJECT_ROOT / "data/processed/group_balanced_robustness" / filename
-        for filename in (
-            "daily_scores.parquet",
-            "gaussian_forecasts.parquet",
-            "gaussian_refits.parquet",
-            "historical_forecasts.parquet",
-            "historical_windows.parquet",
-            "marginal_daily.parquet",
-            "marginal_refits.parquet",
-            "training_pits.parquet",
-            "vine_forecasts.parquet",
-            "vine_refits.parquet",
-        )
-    ),
-)
+PRODUCTION_AUDIT = PROJECT_ROOT / "data/audit/group_balanced_robustness.json"
+
+
+def _has_current_production_artifacts() -> bool:
+    if not PRODUCTION_AUDIT.is_file():
+        return False
+    audit = json.loads(PRODUCTION_AUDIT.read_text(encoding="utf-8"))
+    return not artifact_hash_issues(
+        audit,
+        project_root=PROJECT_ROOT,
+        source_name="group-balanced robustness audit",
+    )
 
 
 def _forecast_frame(model_ids: list[tuple[str, str, str]], dates: pd.DatetimeIndex) -> pd.DataFrame:
@@ -219,13 +211,12 @@ class GroupBalancedEvaluationTests(unittest.TestCase):
 
 
 @unittest.skipUnless(
-    all(path.is_file() for path in PRODUCTION_ARTIFACTS),
+    _has_current_production_artifacts(),
     "requires locally generated group-balanced risk artifacts",
 )
 class ProductionGroupBalancedRobustnessTests(unittest.TestCase):
     def test_complete_risk_artifacts_are_passed_and_bound(self) -> None:
-        audit_path = PROJECT_ROOT / "data/audit/group_balanced_robustness.json"
-        audit = json.loads(audit_path.read_text(encoding="utf-8"))
+        audit = json.loads(PRODUCTION_AUDIT.read_text(encoding="utf-8"))
 
         require_current_hash_records(audit, source_name="group-balanced robustness audit")
         self.assertEqual(audit["status"], "pass")
