@@ -15,20 +15,23 @@ from scripts.evaluate_group_balanced_robustness import (
     validate_risk_protocol,
 )
 from scripts.evaluate_risk_models import DAILY_SCORE_COLUMNS
-from scripts.pipeline_io import artifact_hash_issues, require_current_hash_records
+from scripts.pipeline_io import (
+    has_only_missing_artifact_hash_issues,
+    require_current_hash_records,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PRODUCTION_AUDIT = PROJECT_ROOT / "data/audit/group_balanced_robustness.json"
 
 
-def _has_current_production_artifacts() -> bool:
+def _should_run_production_acceptance() -> bool:
     if not PRODUCTION_AUDIT.is_file():
-        return False
+        return True
     audit = json.loads(PRODUCTION_AUDIT.read_text(encoding="utf-8"))
-    return not artifact_hash_issues(
+    return not has_only_missing_artifact_hash_issues(
         audit,
+        allowed_missing_roots=(PROJECT_ROOT / "data/processed",),
         project_root=PROJECT_ROOT,
-        source_name="group-balanced robustness audit",
     )
 
 
@@ -211,7 +214,7 @@ class GroupBalancedEvaluationTests(unittest.TestCase):
 
 
 @unittest.skipUnless(
-    _has_current_production_artifacts(),
+    _should_run_production_acceptance(),
     "requires locally generated group-balanced risk artifacts",
 )
 class ProductionGroupBalancedRobustnessTests(unittest.TestCase):

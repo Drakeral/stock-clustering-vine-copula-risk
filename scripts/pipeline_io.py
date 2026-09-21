@@ -65,7 +65,59 @@ def artifact_hash_issues(
 ) -> list[str]:
     """Return missing or stale ``path``/``sha256`` record issues in a payload."""
 
-    issues: list[str] = []
+    return [
+        f"{source_name}:{location}:{issue}"
+        for location, issue in _artifact_hash_issue_records(
+            payload,
+            project_root=project_root,
+        )
+    ]
+
+
+def has_only_missing_artifact_hash_issues(
+    payload: object,
+    *,
+    allowed_missing_roots: Sequence[Path],
+    project_root: Path = PROJECT_ROOT,
+) -> bool:
+    """Return whether all issues are missing files under approved roots.
+
+    This distinguishes a source-only checkout, where ignored generated files
+    are legitimately absent, from stale, malformed, or external lineage. The
+    latter conditions must remain visible to fail-closed acceptance checks.
+    """
+
+    root = project_root.resolve()
+    allowed_roots = tuple(
+        path.resolve() if path.is_absolute() else (root / path).resolve()
+        for path in allowed_missing_roots
+    )
+    if not allowed_roots:
+        raise ValueError("at least one allowed missing root is required")
+    if any(not path.is_relative_to(root) for path in allowed_roots):
+        raise ValueError("allowed missing roots must remain inside the project")
+
+    records = _artifact_hash_issue_records(payload, project_root=root)
+    if not records:
+        return False
+    for _, issue in records:
+        if not issue.startswith("missing:"):
+            return False
+        recorded_path = Path(issue.removeprefix("missing:"))
+        target = (root / recorded_path).resolve()
+        if not any(target.is_relative_to(path) for path in allowed_roots):
+            return False
+    return True
+
+
+def _artifact_hash_issue_records(
+    payload: object,
+    *,
+    project_root: Path,
+) -> list[tuple[str, str]]:
+    """Return structured locations and issues for all hash-bound artifacts."""
+
+    records: list[tuple[str, str]] = []
 
     def visit(value: object, location: str) -> None:
         if isinstance(value, Mapping):
@@ -76,7 +128,7 @@ def artifact_hash_issues(
                     project_root=project_root,
                 )
                 if issue:
-                    issues.append(f"{source_name}:{location}:{issue}")
+                    records.append((location, issue))
             for key, child in value.items():
                 visit(child, f"{location}.{key}")
         elif isinstance(value, list):
@@ -84,7 +136,7 @@ def artifact_hash_issues(
                 visit(child, f"{location}[{index}]")
 
     visit(payload, "$")
-    return issues
+    return records
 
 
 def require_current_hash_records(

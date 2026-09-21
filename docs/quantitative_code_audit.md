@@ -1,6 +1,6 @@
 # Quantitative Code Audit
 
-Audit date: 20 September 2026
+Audit date: 21 September 2026
 
 ## Conclusion
 
@@ -113,9 +113,16 @@ secret boundaries, and repository hygiene.
   orchestration functions with characterization tests.
 - Three production acceptance classes previously gated only on their tracked
   audit JSON even though their assertions also require ignored Parquet outputs.
-  Their guards now enumerate the complete required artifact sets. This keeps
-  stale local outputs fail-closed while allowing a source-only clone to run the
-  portable suite without attempting to open unavailable generated data.
+  Their guards were first expanded to the complete required artifact sets,
+  allowing a source-only clone to run the portable suite without attempting to
+  open unavailable generated data.
+- A subsequent clean-clone guard refactor was found to conflate missing ignored
+  artifacts with stale or otherwise invalid hash lineage, which could turn a
+  corrupted local artifact into a skipped acceptance test. Shared lineage
+  classification now permits a skip only when every issue is a missing
+  generated file under `data/processed/`; missing tracked inputs or audits and
+  stale, malformed, mixed, or external-path records continue into the
+  fail-closed acceptance check.
 
 ## Verification evidence
 
@@ -155,7 +162,10 @@ A source-only archive produced from the audited revision passes Ruff lint and
 format checks and the complete 182-test discovery run. Fourteen tests are
 expectedly skipped there: thirteen production-artifact acceptance classes and
 the report byte-reproducibility test. The local artifact-complete checkout runs
-all 182 tests without skips.
+all 182 tests without skips. Targeted classification tests confirm that only
+missing generated outputs under an explicitly approved project directory may
+skip; current, missing tracked, stale, malformed, mixed, external-path, and
+out-of-project exemption roots cannot be mistaken for that condition.
 
 The deterministic reporting checkpoint adds seven CSV tables, three canonical
 SVG figures, one audit-derived narrative summary, and a report manifest. A

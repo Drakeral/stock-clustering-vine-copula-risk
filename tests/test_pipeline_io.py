@@ -15,6 +15,7 @@ import scripts.evaluate_group_balanced_robustness as balanced_risk
 from scripts.pipeline_io import (
     PROJECT_ROOT,
     artifact_hash_issues,
+    has_only_missing_artifact_hash_issues,
     project_path,
     reporting_scope,
     require_current_hash_records,
@@ -170,12 +171,26 @@ class PipelineIoTests(unittest.TestCase):
                 }
             }
             self.assertEqual(artifact_hash_issues(record, project_root=root), [])
+            self.assertFalse(
+                has_only_missing_artifact_hash_issues(
+                    record,
+                    allowed_missing_roots=(root,),
+                    project_root=root,
+                )
+            )
             require_current_hash_records(record, project_root=root)
 
             artifact.write_bytes(b"version-two")
             issues = artifact_hash_issues(record, project_root=root, source_name="audit.json")
             self.assertEqual(len(issues), 1)
             self.assertIn("stale:artifact.bin", issues[0])
+            self.assertFalse(
+                has_only_missing_artifact_hash_issues(
+                    record,
+                    allowed_missing_roots=(root,),
+                    project_root=root,
+                )
+            )
             with self.assertRaisesRegex(RuntimeError, "artifact lineage check failed"):
                 require_current_hash_records(record, project_root=root)
 
@@ -188,6 +203,34 @@ class PipelineIoTests(unittest.TestCase):
             self.assertIn(
                 "payload:$:missing:missing.bin",
                 artifact_hash_issues(missing, project_root=root),
+            )
+            self.assertTrue(
+                has_only_missing_artifact_hash_issues(
+                    missing,
+                    allowed_missing_roots=(root,),
+                    project_root=root,
+                )
+            )
+            self.assertFalse(
+                has_only_missing_artifact_hash_issues(
+                    missing,
+                    allowed_missing_roots=(root / "generated",),
+                    project_root=root,
+                )
+            )
+            self.assertFalse(
+                has_only_missing_artifact_hash_issues(
+                    invalid,
+                    allowed_missing_roots=(root,),
+                    project_root=root,
+                )
+            )
+            self.assertFalse(
+                has_only_missing_artifact_hash_issues(
+                    [missing, invalid],
+                    allowed_missing_roots=(root,),
+                    project_root=root,
+                )
             )
 
             outside = base / "outside.bin"
@@ -202,6 +245,32 @@ class PipelineIoTests(unittest.TestCase):
                 f"payload:$:external_path:{outside}",
                 artifact_hash_issues(absolute, project_root=root),
             )
+            self.assertFalse(
+                has_only_missing_artifact_hash_issues(
+                    escaped,
+                    allowed_missing_roots=(root,),
+                    project_root=root,
+                )
+            )
+            self.assertFalse(
+                has_only_missing_artifact_hash_issues(
+                    absolute,
+                    allowed_missing_roots=(root,),
+                    project_root=root,
+                )
+            )
+            with self.assertRaisesRegex(ValueError, "at least one"):
+                has_only_missing_artifact_hash_issues(
+                    missing,
+                    allowed_missing_roots=(),
+                    project_root=root,
+                )
+            with self.assertRaisesRegex(ValueError, "inside the project"):
+                has_only_missing_artifact_hash_issues(
+                    missing,
+                    allowed_missing_roots=(outside.parent,),
+                    project_root=root,
+                )
 
 
 if __name__ == "__main__":

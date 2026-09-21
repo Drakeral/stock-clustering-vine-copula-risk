@@ -45,7 +45,11 @@ the artifacts exist locally. One additional report-reproducibility test skips
 when its ignored upstream artifacts are absent, giving 14 expected skips in a
 source-only clone. The full checkpoint above additionally requires
 `foundation_v2` modelling readiness and therefore cannot pass merely because
-the artifact-bound tests were skipped.
+the artifact-bound tests were skipped. Artifact-bound guards classify the full
+recorded lineage: only missing generated files under `data/processed/` may
+skip. A missing tracked input or audit, stale digest, malformed record,
+external path, or mixture of missing and invalid records must run and fail the
+corresponding acceptance check.
 
 The lineage verifier recursively inspects every JSON object carrying both a
 `path` and `sha256` under `data/audit/`, `data/manifests/`, and the report

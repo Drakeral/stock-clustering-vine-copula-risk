@@ -14,20 +14,23 @@ from scripts.build_group_balanced_portfolios import (
     group_balanced_buy_and_hold,
     validate_group_balanced_protocol,
 )
-from scripts.pipeline_io import artifact_hash_issues, require_current_hash_records
+from scripts.pipeline_io import (
+    has_only_missing_artifact_hash_issues,
+    require_current_hash_records,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 PRODUCTION_AUDIT = PROJECT_ROOT / "data/audit/group_balanced_portfolio_construction.json"
 
 
-def _has_current_production_artifacts() -> bool:
+def _should_run_production_acceptance() -> bool:
     if not PRODUCTION_AUDIT.is_file():
-        return False
+        return True
     audit = json.loads(PRODUCTION_AUDIT.read_text(encoding="utf-8"))
-    return not artifact_hash_issues(
+    return not has_only_missing_artifact_hash_issues(
         audit,
+        allowed_missing_roots=(PROJECT_ROOT / "data/processed",),
         project_root=PROJECT_ROOT,
-        source_name="group-balanced construction audit",
     )
 
 
@@ -137,7 +140,7 @@ class GroupBalancedPortfolioMethodTests(unittest.TestCase):
 
 
 @unittest.skipUnless(
-    _has_current_production_artifacts(),
+    _should_run_production_acceptance(),
     "requires locally generated group-balanced portfolio artifacts",
 )
 class ProductionGroupBalancedPortfolioTests(unittest.TestCase):
