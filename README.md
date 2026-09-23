@@ -248,9 +248,9 @@ added later.
 
 ## Main outputs
 
-- `report/main_report_draft.md`: privacy-safe complete working report draft,
-  including the abstract, literature review, audited design and methods,
-  results, robustness, discussion, and conclusion;
+- `report/main_report_draft.md`: privacy-safe, quantitatively audited report
+  manuscript, including the abstract, literature review, design and methods,
+  results, robustness, discussion, conclusion, and verified references;
 - `docs/project_report_blueprint.md`: FE5110-brief-aligned writing plan with
   section arguments, word allocations, evidence mapping, literature targets,
   interpretation guardrails, and submission checks;

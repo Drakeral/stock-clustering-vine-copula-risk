@@ -1,12 +1,6 @@
 # Do Data-Driven Stock Clusters and Vine Copulas Improve Portfolio Tail-Risk Forecasts?
 
-## Evidence from a Provisional S&P 100 Research Universe
-
-> **Draft status:** The abstract and Sections 1-9 are drafted from the frozen
-> methodology and audited project artifacts. This
-> source document deliberately omits personal identifiers; the student's name,
-> student ID, recorded workload, and final filename will be inserted only into
-> the local submission documents.
+*Evidence from a Provisional S&P 100 Research Universe*
 
 ## Abstract
 
@@ -270,14 +264,16 @@ allow securities with documented terminal events to leave the portfolio at the
 next calendar-year rebalance.
 
 The provenance of the universe requires an explicit qualification. Membership
-is based on an archived contemporaneous Wikipedia revision dated 21 November
-2019, while Yahoo metadata and price availability on 2 January 2020 provide a
-secondary cross-check. These sources do not constitute licensed point-in-time
-evidence of index membership, historical GICS classification, or permanent
-security identity. Protocol amendment PA-001 permits modelling on this basis,
-but the universe gate remains `provisional_authorized_yahoo` and every empirical
-result is therefore reported as a provisional research result. The analysis
-does not describe Yahoo as an authoritative historical constituent source.
+comes from an archived S&P 100 page revision timestamped 5 December 2019 whose
+component table states that it is current as at 21 November 2019. GICS labels
+come from an archived S&P 500 constituent-table revision timestamped 2 January
+2020 (Wikipedia, 2019, 2020). Yahoo metadata and price availability on 2
+January 2020 provide only secondary checks. These sources do not constitute
+licensed point-in-time evidence of index membership, historical GICS
+classification, or permanent security identity. Protocol amendment PA-001
+permits modelling on this basis, but the universe gate remains provisional and
+every empirical result is therefore reported as a provisional research result.
+Yahoo is not treated as an authoritative historical constituent source.
 
 The initial source table contained 101 candidate securities. A security entered
 the fixed research universe only if both price and return coverage reached 95%
@@ -286,21 +282,22 @@ Dow Inc. (DOW), was excluded because the new company's price history begins in
 April 2019 and covers only approximately 25.2% of the initial price window. The
 legacy Dow Chemical series was not joined to the new Dow Inc. series; doing so
 would create an economically invalid return across two different security
-lineages. The final modelling universe consequently contains 100 securities
-across 11 non-empty GICS sectors. The active set contains 100 securities in
-2020 and 98 from the 2021 annual rebalance onward following documented terminal
-events. GOOG and GOOGL remain separate listed securities in the primary
-analysis. A robustness construction replaces them with one equally weighted
-Alphabet issuer position.
+lineages (Dow, 2019; DowDuPont, 2017). The final modelling universe consequently
+contains 100 securities across 11 non-empty GICS sectors. The active set
+contains 100 securities in 2020 and 98 from the 2021 annual rebalance onward
+following documented terminal events. GOOG and GOOGL remain separate listed
+securities in the primary analysis. A robustness construction replaces them
+with one equally weighted Alphabet issuer position.
 
 ### 3.2 Market data and total-return construction
 
 The market-data sample runs from 3 January 2017 through 31 December 2025 and
-contains 2,262 expected New York Stock Exchange sessions. The raw inputs are
-daily unadjusted open, high, low, close, and volume observations together with
-dividend and corporate-action reference records. The use of unadjusted prices
-keeps the economic components of total return explicit rather than relying on
-an undocumented vendor-adjusted close.
+contains 2,262 expected US equity trading sessions generated from the XNYS
+calendar. The raw inputs are Massive SIP daily unadjusted open, high, low,
+close, and volume flat files together with Massive dividend and split reference
+records (Massive, n.d.-a). The use of unadjusted prices keeps the economic
+components of total return explicit rather than relying on a vendor-adjusted
+close (Massive, n.d.-b).
 
 For security \(i\) on date \(t\), the close-to-close simple total return is
 constructed from the price change and applicable cash or security
@@ -321,28 +318,31 @@ listing and terminal dates. Each absent security-date observation must be
 classified as pre-inception, a verified halt, terminal cash, removed, or an
 unexplained active-period absence. Unexplained active-period absences fail the
 construction gate. Two missing BIIB sessions, 6 November 2020 and 9 June 2023,
-were verified as trading halts. Each receives a synthetic stale-price return of
-zero, while the cumulative market movement remains in the observed return when
-trading resumes. This treatment avoids both deleting an active portfolio
-position and spreading the resumption movement over a day when the position
-could not trade.
+were verified as trading halts (OCC, 2020; Biogen, 2023). Each receives a
+synthetic stale-price return of zero, while the cumulative market movement
+remains in the observed return when trading resumes. This treatment avoids both
+deleting an active portfolio position and spreading the resumption movement
+over a day when the position could not trade.
 
 Corporate actions are reconciled to typed economic events rather than treated
 as interchangeable vendor split factors. The classifications distinguish
 literal splits, stock dividends, spin-offs, merger exchanges, and cash
 acquisitions. Spin-offs use documented child-share ratios and values; a provider
 continuity factor cannot be applied a second time. Allergan's terminal value is
-booked as USD 120.30 in cash plus 0.866 times AbbVie's event-date close. The
-primary Walgreens Boots Alliance terminal value on 28 August 2025 is USD 11.45
-cash plus a USD 0.53 market-implied value for the non-transferable DAP right.
+booked as USD 120.30 in cash plus 0.866 times AbbVie's event-date close
+(AbbVie, 2020). The primary Walgreens Boots Alliance terminal value on 28
+August 2025 is USD 11.45 cash plus a USD 0.53 market-implied value for the
+non-transferable DAP right (SEC, 2025).
 After terminal consideration is booked, the proceeds earn a zero return until
 the next annual rebalance. Endpoint sensitivities value the DAP at zero and at
 its contractual USD 3 cap, but do not alter the primary data construction.
 
 Extreme returns are retained only after an observation-level disposition. The
 OXY total return of -50.48% on 9 March 2020 was reconciled to the oil-price shock,
-raw OHLC observations, and the applicable dividend. The BIIB return of +43.97%
-on 4 November 2020 was reconciled to the release of FDA briefing materials.
+raw OHLC observations, the applicable dividend, and Occidental's same-day
+capital and dividend announcement (Occidental, 2020). The BIIB return of +43.97%
+on 4 November 2020 was reconciled to the release of FDA briefing materials and
+Biogen's advisory-committee announcement (Biogen, 2020).
 Both are treated as genuine economic observations and are not winsorised. This
 is especially important for a tail-risk study, where mechanically suppressing
 large valid returns would bias both marginal tail fitting and dependence
@@ -372,6 +372,19 @@ This timing convention separates estimation from evaluation at every stage. A
 cannot use the realised return or any transformation of information first
 observed on (t). Historical simulation uses an analogous three-calendar-year
 window, \([t-3\text{ years},t)\), with at least 700 valid observations.
+
+**Table 1. Summary of the empirical design**
+
+| Design element | Frozen specification |
+|---|---|
+| Candidate/final universe | 101/100 securities |
+| Group dimension | 11 non-empty groups |
+| Data sample | 3 January 2017-31 December 2025; 2,262 sessions |
+| Forecast evaluation | 2 January 2020-31 December 2025; 1,508 sessions |
+| Primary portfolio | Daily-rebalanced equal security weights |
+| Grouping updates | Annual, using the preceding three calendar years |
+| Risk-model updates | Monthly, with daily marginal-state updates |
+| Reporting scope | Provisional research results |
 
 ### 3.4 Common portfolio target
 
@@ -576,6 +589,8 @@ available through the preceding session.
 The empirical design contains one non-parametric benchmark and four matched
 copula specifications:
 
+**Table 2. Core portfolio-risk models**
+
 | Model | Grouping | Margins and dependence |
 |---|---|---|
 | M0 | None | Rolling historical simulation of the primary portfolio |
@@ -727,6 +742,15 @@ its gap exceeds the GICS gap by 0.0434. The near-zero difference in 2023
 indicates that the two representations can also produce almost indistinguishable
 separation despite assigning stocks differently.
 
+The 2020 GICS calculation contains 551 within-sector and 4,399 between-sector
+pairs. Materials and Real Estate are singleton sectors, so nine of the 11
+sectors contribute within-sector pairs; both singletons still contribute all
+eligible between-sector pairs. This implements the prespecified pair-weighting
+rule rather than assigning an artificial zero within-group correlation to a
+singleton.
+
+**Table 3. Annual out-of-sample dependence gaps**
+
 | Year | GICS gap | Hierarchical gap | Hierarchical minus GICS |
 |---:|---:|---:|---:|
 | 2020 | 0.1414 | 0.0879 | -0.0535 |
@@ -766,6 +790,8 @@ of updating conditional volatility and cross-sectional dependence, although the
 confirmatory DM family was designed for matched vine-Gaussian comparisons and
 does not provide a formal M0-versus-copula significance test.
 
+**Table 4. Core model forecast-loss ranking**
+
 | Overall rank | Model | Mean QL 95% | Mean QL 99% | Mean FZ0 97.5% | Average score rank |
 |---:|---|---:|---:|---:|---:|
 | 1 | M4: hierarchical + vine | 0.001272 | 0.000385 | -3.6164 | 1.333 |
@@ -797,6 +823,8 @@ groupings but mixed across scoring rules. The vines have lower mean loss for
 99% VaR and joint 97.5% VaR-ES, while the Gaussian copulas have lower mean loss
 for 95% VaR. None of the six two-sided DM tests is significant after Holm
 adjustment.
+
+**Table 5. Matched vine-minus-Gaussian Diebold-Mariano results**
 
 | Grouping | Score | Vine minus Gaussian mean loss | Holm-adjusted p-value | Descriptive direction |
 |---|---|---:|---:|---|
@@ -846,6 +874,8 @@ advantage is not uniform across scores.
 
 ### 6.5 Hypothesis summary
 
+**Table 6. Decisions on the prespecified hypotheses**
+
 | Hypothesis | Frozen question | Decision | Decisive evidence |
 |---|---|---|---|
 | H1 | Do hierarchical clusters separate dependence better than GICS? | **Not supported** | Mean difference -0.005590; 95% interval [-0.018669, 0.006569] |
@@ -887,6 +917,8 @@ that nonlinear graph-based clustering can identify compact correlation
 communities. It does not, by itself, show that those communities improve tail-
 risk forecasts.
 
+**Table 7. Forecast losses for the exploratory ML models**
+
 | Model | Representation and dependence | QL 95% | QL 99% | FZ0 97.5% |
 |---|---|---:|---:|---:|
 | M5 | Spectral + Gaussian | 0.001280 | 0.000416 | -3.5898 |
@@ -903,7 +935,18 @@ an ML grouping and none favours a baseline grouping. Stronger descriptive
 clustering separation therefore does not translate into statistically
 detectable VaR/ES forecast improvement in this sample.
 
-### 7.2 Vine depth
+### 7.2 Alphabet issuer deduplication
+
+The issuer-deduplicated check combines GOOG and GOOGL into one 50/50 Alphabet
+simple-return position. It therefore contains 99 positions in 2020 and 97 from
+2021 onward. The equal-year mean hierarchical-minus-GICS gap is -0.006976,
+compared with -0.005590 in the security-level analysis. The sign and practical
+interpretation are unchanged: double representation of Alphabet does not
+explain the failure of hierarchical clustering to outperform GICS on the H1
+statistic. This check is descriptive and does not replace the prespecified H1
+bootstrap.
+
+### 7.3 Vine depth
 
 The primary vine stops after tree 3; the robustness specification estimates all
 ten possible trees. The mean number of fitted parameters rises from 40.51 to
@@ -920,7 +963,7 @@ The robustness exercise therefore supplies no adjusted forecast-loss evidence
 that the additional trees justify their estimation complexity; the tree-3
 results remain the primary results.
 
-### 7.3 Equal-group portfolio weighting
+### 7.4 Equal-group portfolio weighting
 
 The primary portfolio gives every security the same daily weight. The weighting
 robustness instead assigns equal weights to the 11 groups at each annual
@@ -935,7 +978,7 @@ the vine or Gaussian specification. The reversal from M4's primary integrated
 rank shows that portfolio construction and dependence modelling interact, but
 the absence of adjusted pairwise evidence remains consistent with H2.
 
-### 7.4 Historical-simulation constituent history
+### 7.5 Historical-simulation constituent history
 
 M0 uses the realised annual active sets in its rolling history. The alternative
 M0_CC freezes each forecast year's active set throughout that forecast's
@@ -951,7 +994,7 @@ simulation tail estimates can depend on how past constituent histories are
 constructed. It does not revise H1-H3 because both variants forecast the same
 realised primary portfolio and M0 remains outside the matched H2 comparisons.
 
-### 7.5 WBA DAP valuation
+### 7.6 WBA DAP valuation
 
 The primary WBA terminal value assigns USD 0.53 to the DAP right, making total
 consideration equal to the previous USD 11.98 close. The endpoint scenarios
@@ -967,10 +1010,13 @@ not a probabilistic valuation model for the non-transferable right. Their role
 is to demonstrate that the core conclusions do not depend on the frozen USD
 0.53 assumption.
 
-### 7.6 Robustness synthesis
+### 7.7 Robustness synthesis
+
+**Table 8. Summary of exploratory robustness results**
 
 | Analysis | Main result | Revises H1-H3? |
 |---|---|---|
+| Alphabet issuer deduplication | Mean H1 gap difference remains negative at -0.006976 | No |
 | Spectral and PCA-k-means groupings | 0 of 24 FDR-adjusted loss tests favour either side | No |
 | Full tree-10 vine | Better descriptive log score; 0 of 6 adjusted loss tests significant | No |
 | Equal-group portfolios | Gaussian ranks first within both targets; no adjusted matched difference | No |
@@ -1149,10 +1195,9 @@ superiority. For portfolio-risk research, disciplined experimental control,
 loss-based evaluation, multiplicity correction, and reproducible data lineage
 are therefore as important as additional model flexibility.
 
-## Working References
+## References
 
-The final bibliography style remains to be selected. These entries are the
-verified working sources cited in the current draft.
+### Academic references
 
 - Aas, K., Czado, C., Frigessi, A. and Bakken, H. (2009). Pair-copula
   constructions of multiple dependence. *Insurance: Mathematics and
@@ -1243,3 +1288,39 @@ verified working sources cited in the current draft.
   correction for chance. *Journal of Machine Learning Research*, 11,
   2837-2854.
   <https://www.jmlr.org/papers/v11/vinh10a.html>
+
+### Data and event sources
+
+- AbbVie (2020). *AbbVie completes transformative acquisition of Allergan*.
+  <https://news.abbvie.com/2020-05-08-AbbVie-Completes-Transformative-Acquisition-of-Allergan>
+- Biogen (2020). *Biogen and Eisai announce FDA Advisory Committee meeting to
+  review aducanumab for Alzheimer's disease*.
+  <https://investors.biogen.com/news-releases/news-release-details/biogen-and-eisai-announce-fda-advisory-committee-meeting>
+- Biogen (2023). *Biogen and Eisai announce FDA Advisory Committee votes
+  unanimously that LEQEMBI clinical benefit is verified*.
+  <https://investors.biogen.com/node/26871>
+- Dow (2019). *Dow completes separation from DowDuPont*.
+  <https://investors.dow.com/en/news/news-details/2019/Dow-completes-separation-from-DowDuPont/default.aspx>
+- DowDuPont (2017). *DowDuPont announces successful completion of merger of
+  equals*. US Securities and Exchange Commission exhibit.
+  <https://www.sec.gov/Archives/edgar/data/1666700/000119312517274834/d426905dex991.htm>
+- Massive (n.d.-a). *US stocks flat files: Overview*.
+  <https://massive.com/docs/flat-files/stocks/overview>
+- Massive (n.d.-b). *Is Massive's stock data adjusted for splits or
+  dividends?*
+  <https://massive.com/knowledge-base/article/is-massives-stock-data-adjusted-for-splits-or-dividends>
+- OCC (2020). *Information Memo 47809: Biogen, Inc. - Information regarding
+  trading halt*.
+  <https://infomemo.theocc.com/infomemos?number=47809>
+- Occidental (2020). *Occidental reduces capital spending and dividend to
+  maximize cash flow*.
+  <https://www.oxy.com/news/news-releases/occidental-reduces-capital-spending-and-dividend-to-maximize-cash-flow/>
+- SEC (2025). *Walgreens Boots Alliance transaction terms*. US Securities and
+  Exchange Commission exhibit.
+  <https://www.sec.gov/Archives/edgar/data/1618921/000119312525190603/d87240dex991.htm>
+- Wikipedia (2019). *S&P 100*, revision 929329274, 5 December 2019; component
+  table dated 21 November 2019.
+  <https://en.wikipedia.org/w/index.php?title=S%26P_100&oldid=929329274>
+- Wikipedia (2020). *List of S&P 500 companies*, revision 933762580, 2 January
+  2020.
+  <https://en.wikipedia.org/w/index.php?title=List_of_S%26P_500_companies&oldid=933762580>
