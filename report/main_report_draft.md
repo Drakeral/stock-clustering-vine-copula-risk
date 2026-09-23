@@ -2,8 +2,8 @@
 
 ## Evidence from a Provisional S&P 100 Research Universe
 
-> **Draft status:** Sections 3-7 are drafted from the frozen methodology and
-> audited project artifacts. Sections 1, 2, 8, and 9 remain to be written. This
+> **Draft status:** Sections 3-8 are drafted from the frozen methodology and
+> audited project artifacts. Sections 1, 2, and 9 remain to be written. This
 > source document deliberately omits personal identifiers; the student's name,
 > student ID, recorded workload, and final filename will be inserted only into
 > the local submission documents.
@@ -751,7 +751,131 @@ risk better.
 
 ## 8. Discussion, Limitations, and Extensions
 
-*To be drafted after the results and robustness sections are complete.*
+### 8.1 Interpretation
+
+The results distinguish three objectives that can easily be conflated:
+separating stock correlations into groups, fitting the joint distribution of
+group innovations, and forecasting portfolio tail loss. A method can improve
+one objective without improving the next. Spectral clustering illustrates this
+point most clearly. It produces the largest average within-minus-between
+dependence gap, yet its downstream VaR and ES losses do not improve
+significantly after false-discovery-rate control. The correlation-gap objective
+is therefore not a sufficient proxy for tail-risk forecast performance.
+
+The core hierarchical models nevertheless occupy the first two integrated
+ranking positions even though H1 is not supported. This is not contradictory.
+H1 reduces grouping quality to the mean separation of pairwise Spearman
+correlations, whereas the risk pipeline operates on group return distributions,
+conditional volatility, and their joint tail behaviour. A representation may
+interact productively with these later stages without achieving a larger
+average pairwise gap. The evidence supports that possibility within this
+experiment, but does not identify hierarchical clustering as the cause of the
+ranking outcome.
+
+The vine results show a similar distinction. Relative to matched Gaussian
+copulas, the tree-3 vines have descriptively lower loss at 99% VaR and on the
+joint VaR-ES score, but higher loss at 95% VaR. None of those differences is
+significant after family-wise correction. Greater dependence flexibility may
+capture heterogeneous and asymmetric pair relationships, but it also raises
+estimation variance in rolling samples of roughly three years. Extending the
+vine from tree 3 to tree 10 adds an average of 25.71 fitted parameters and
+improves in-sample copula log scores, without delivering an adjusted forecast-
+loss gain. This pattern is consistent with a bias-variance trade-off and
+supports truncation as a defensible regularisation choice.
+
+M4's H3 support must consequently be read as an operational selection result,
+not as proof of either H1 or H2. M4 is uniquely first under an equally weighted
+rank of three prespecified losses, passes the vine-quality gate, and has no
+adjusted primary calibration rejection. Its lead over M3 is nonetheless
+score-dependent: M3 has the lower 95% quantile loss, and their matched loss
+differences are not statistically decisive. The main practical conclusion is
+that M4 is the preferred candidate among the five systems tested, subject to
+continued challenger monitoring rather than automatic production adoption.
+
+### 8.2 Design strengths
+
+The experiment has several safeguards that make this restrained conclusion
+credible. Annual grouping and monthly model fits use strictly prior data, while
+daily conditional states update without look-ahead. GICS and data-driven
+representations reconstruct exactly the same primary realised portfolio, so
+their results are not confounded by different stock exposures. Gaussian and
+vine models share marginal filters, information sets, portfolio arithmetic,
+and common random numbers. Their comparisons therefore isolate the dependence
+specification more cleanly than an unrestricted model tournament would.
+
+The implementation also makes numerical failure observable. Marginal models
+follow a deterministic fallback chain, only four of 1,584 core fits use EWMA,
+and all 144 primary vine refits complete without failed pairs or whole-vine
+fallback. Calibration and predictive-accuracy families use prespecified
+multiplicity controls. Finally, hashed manifests, fail-closed gates, seeded
+simulation and bootstrap streams, and executable artifact tests connect the
+reported values to reproducible outputs. These controls are an important part
+of the contribution because flexible models are only useful when their data
+lineage and failure modes can be audited.
+
+### 8.3 Limitations
+
+The most important limitation is provenance. The intended 2 January 2020 S&P
+100 universe and GICS labels are supported by an archived Wikipedia revision
+and Yahoo-based cross-checks, not a licensed point-in-time constituent and
+classification extract. The protocol authorises this provisional foundation,
+but it cannot establish official membership, historical classifications, or
+permanent identifiers to institutional-data standards. Every empirical claim
+therefore remains provisional.
+
+The universe design introduces additional selection concerns. Constituents are
+fixed near the start of evaluation and must pass a 2017-2019 coverage screen.
+Explicit acquisitions, terminal cash positions, and annual active sets reduce
+ordinary survivorship errors, but the design may still favour securities with
+continuous pre-sample histories and does not represent subsequent index
+entrants. It answers a fixed-cohort forecasting question rather than measuring
+the performance of a continuously reconstituted official index.
+
+Statistical power is limited in the far tail. The 1,508 evaluation dates imply
+only 15.08 expected 99% exceptions, making annual tail tests particularly weak.
+Multiplicity correction appropriately protects against selective findings but
+further reduces power to detect modest effects. H3's rank rule also discards the
+magnitude of score differences: a narrow first place receives the same ordinal
+credit as a wide one. Loss levels, matched tests, and ranks must therefore be
+read together.
+
+Dimension reduction from roughly 100 securities to 11 group returns makes
+monthly vine estimation feasible, but may average away firm-specific tail
+events and security-level contagion. Dependence parameters remain fixed within
+each month, and cluster assignments within each year, so abrupt regime changes
+are captured only through daily marginal-state updates until the next scheduled
+refit. No explicit regime-switching or time-varying copula is estimated.
+
+The economic target is also stylised. The primary portfolio is equal weighted
+and rebalanced daily without transaction costs, market impact, borrowing
+constraints, taxes, or liquidity limits. Equal-group robustness changes the
+target and cannot establish investable superiority. The analysis forecasts
+one-day statistical loss rather than trading returns or regulatory and
+economic capital. Finally, the WBA exercise brackets the DAP at deterministic
+endpoints; it does not model the right's contingent payoff distribution.
+Evidence from one provisional US large-cap cohort should not be extrapolated to
+other periods, markets, asset classes, or portfolio mandates.
+
+### 8.4 Prioritised extensions
+
+The first extension should replace the provisional universe with a licensed
+point-in-time constituent and GICS extract, retaining permanent security and
+issuer identifiers. A continuously reconstituted index variant could then be
+run beside the fixed-cohort design to quantify membership-selection effects.
+The second priority is external validation across another US index and at least
+one international market, using the same frozen scoring and inference rules.
+
+Methodological extensions should address specific limitations rather than add
+complexity for its own sake. A separately frozen regime-dependent or smoothly
+time-varying copula could test whether monthly dependence updates are too slow.
+Sparse higher-dimensional vines or factor-copula hybrids could preserve more
+security-level tail information while controlling parameter growth. Portfolio
+extensions should compare realistic weekly or monthly rebalancing after
+turnover and transaction costs. Finally, multi-day horizons, stress scenarios,
+and economic-capital applications would test whether the ranking is relevant
+beyond one-day VaR and ES. Each extension should retain the present project's
+matched design, leakage controls, multiplicity correction, and reproducible
+audit trail.
 
 ## 9. Conclusion
 
