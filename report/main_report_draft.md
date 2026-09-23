@@ -2,8 +2,9 @@
 
 ## Evidence from a Provisional S&P 100 Research Universe
 
-> **Draft status:** Sections 3-8 are drafted from the frozen methodology and
-> audited project artifacts. Sections 1, 2, and 9 remain to be written. This
+> **Draft status:** Sections 3-9 are drafted from the frozen methodology and
+> audited project artifacts. The abstract and Sections 1-2 remain to be
+> written. This
 > source document deliberately omits personal identifiers; the student's name,
 > student ID, recorded workload, and final filename will be inserted only into
 > the local submission documents.
@@ -879,7 +880,39 @@ audit trail.
 
 ## 9. Conclusion
 
-*To be drafted last, before the abstract.*
+This study asks whether data-driven stock grouping and flexible vine-copula
+dependence improve one-day portfolio tail-risk forecasts relative to GICS
+sectors, Gaussian dependence, and historical simulation. The controlled design
+holds the realised daily equal-weight stock portfolio, marginal-model protocol,
+information windows, and Monte Carlo draws constant wherever the comparison
+requires them to be constant.
+
+The evidence is mixed and does not support universal model superiority.
+Hierarchical clusters do not separate out-of-sample dependence better than GICS
+under the prespecified H1 test: the mean gap difference is -0.005590 and its 95%
+block-bootstrap interval, [-0.018669, 0.006569], includes zero. Vines likewise
+do not significantly improve matched forecast loss over Gaussian copulas. Zero
+of the six Holm-adjusted DM comparisons favours the vine, so H2 receives no
+support.
+
+The complete hierarchical-vine system nevertheless ranks first across the five
+core models. M4 has an average primary-score rank of 1.333, passes the vine-
+quality gate, and has no adjusted systematic calibration failure; it therefore
+satisfies the frozen H3 rule. This finding is narrower than vine dominance. M4
+does not have the lowest loss on every score, and its matched differences from
+the hierarchical Gaussian model are not statistically decisive. Spectral
+clustering, PCA-plus-k-means, full-depth vines, alternative portfolio weights,
+historical-constituent treatment, and WBA valuation endpoints do not overturn
+the core conclusions.
+
+All empirical results remain provisional because the intended 2 January 2020
+S&P 100 universe and GICS labels are not corroborated by a licensed point-in-
+time source. Subject to that limitation, the project’s main result is
+methodological: an integrated sophisticated model can rank well even when
+neither of its individual components demonstrates consistent standalone
+superiority. For portfolio-risk research, disciplined experimental control,
+loss-based evaluation, multiplicity correction, and reproducible data lineage
+are therefore as important as additional model flexibility.
 
 ## Working References for Sections 3-5
 
