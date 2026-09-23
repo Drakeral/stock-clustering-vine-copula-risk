@@ -2,8 +2,8 @@
 
 ## Evidence from a Provisional S&P 100 Research Universe
 
-> **Draft status:** Sections 2-9 are drafted from the frozen methodology and
-> audited project artifacts. The abstract and Section 1 remain to be
+> **Draft status:** Sections 1-9 are drafted from the frozen methodology and
+> audited project artifacts. The abstract remains to be
 > written. This
 > source document deliberately omits personal identifiers; the student's name,
 > student ID, recorded workload, and final filename will be inserted only into
@@ -15,7 +15,90 @@
 
 ## 1. Introduction
 
-*To be drafted after Sections 3-9 are stable.*
+Portfolio risk is determined not only by the volatility of individual assets,
+but also by how their losses occur together. Both features become especially
+important in stressed markets: volatility changes through time, correlations
+can strengthen, and joint tail behaviour need not resemble ordinary market
+conditions. Value-at-Risk (VaR) summarises a loss quantile, while Expected
+Shortfall (ES) measures the average loss beyond a tail threshold. Their
+forecasts therefore depend on credible conditional marginal models and a
+credible representation of cross-sectional dependence.
+
+Directly estimating a flexible joint distribution for roughly 100 stocks is
+difficult with rolling samples. This project uses grouping as a controlled form
+of dimension reduction. GICS sectors provide an interpretable economic
+benchmark, but a fixed industry taxonomy is not designed to maximise the
+statistical separation of returns. Rolling correlation-based clusters may
+identify common behaviour that crosses sector boundaries, as suggested by the
+hierarchical structure found in financial correlation networks (Mantegna,
+1999). The empirical question is not whether those clusters look plausible in
+sample, but whether they preserve information that improves out-of-sample
+portfolio-risk forecasts.
+
+Dependence modelling creates a second choice. A Gaussian copula is parsimonious
+and scalable, but it imposes symmetric dependence and has no non-degenerate
+asymptotic tail dependence. A regular vine instead combines conditional
+bivariate copulas, allowing different pairs to use Gaussian, Student-t,
+Archimedean, or rotated families (Aas et al., 2009). That flexibility may better
+represent heterogeneous tail relationships, but it also increases estimation
+uncertainty. A fair comparison must therefore hold the marginal filters,
+information sets, portfolio exposure, and simulation randomness constant.
+
+The exact research question is:
+
+> For a fixed large-cap US equity universe, does replacing GICS sectors with
+> rolling data-driven stock clusters and replacing Gaussian dependence with a
+> regular vine copula improve one-day-ahead out-of-sample VaR and ES forecasts?
+
+Three prespecified hypotheses separate the components of that question. H1
+states that rolling hierarchical clusters produce a larger out-of-sample
+within-minus-between dependence gap than GICS sectors. H2 states that truncated
+R-vines improve matched forecast loss over Gaussian copulas within both GICS
+and hierarchical representations; full support requires all six adjusted
+comparisons to favour the vine. H3 states that the complete hierarchical-vine
+model, M4, is the uniquely best eligible core model under the equal-weighted
+rank of 95% quantile loss, 99% quantile loss, and the joint 97.5% VaR-ES FZ0
+score, subject to model-quality and calibration restrictions. H2 and H3 are
+deliberately distinct: an integrated model can rank first without establishing
+that vines consistently dominate their matched Gaussian alternatives.
+
+The core experiment compares five systems. M0 is rolling historical simulation.
+M1 and M2 use GICS group returns with Gaussian and tree-3 R-vine dependence,
+respectively; M3 and M4 repeat that comparison with annual hierarchical
+clusters. All copula models share a monthly marginal-fitting protocol that
+attempts AR-GARCH-t first, together with 100,000 seeded scenarios per refit.
+GICS and cluster group-size weights reconstruct the same daily-rebalanced
+equal-weight stock portfolio, while common random numbers reduce Monte Carlo
+noise in matched dependence comparisons. Forecasts are
+evaluated over 1,508 trading dates from 2020 through 2025 using loss functions,
+coverage and independence diagnostics, multiplicity-adjusted DM tests, and a
+paired block bootstrap.
+
+The findings are deliberately mixed. H1 is not supported, and none of the six
+Holm-adjusted matched tests supports H2. M4 nevertheless has the best average
+primary-score rank and passes the frozen H3 eligibility conditions. Exploratory
+spectral clustering, PCA-plus-k-means, a full ten-tree vine, alternative
+portfolio weights, constituent-history treatment, and WBA acquisition-value
+endpoints do not overturn those conclusions. The defensible result is therefore
+that M4 is the best eligible model in this experiment, not that clustering or
+vine copulas are universally superior.
+
+The project's main contribution is experimental control. It separates grouping
+information, dependence specification, and integrated model selection while
+preserving the relevant economic target and estimation protocol. A substantial
+unsupervised-learning extension applies identical downstream risk evaluation to
+spectral and PCA-based groupings. The implementation also contributes a
+fail-closed audit of missing sessions, security lifecycles, corporate actions,
+extreme observations, numerical fallbacks, seeded inference, and artifact
+lineage. All findings remain provisional because the intended 2 January 2020
+S&P 100 universe and GICS labels are not corroborated by a licensed point-in-
+time extract.
+
+The remainder of the report reviews the relevant literature, defines the data
+and controlled portfolio target, explains the clustering and risk methods, and
+sets out the frozen inference rules. It then reports the core H1-H3 results,
+examines the ML and robustness extensions, and closes with interpretation,
+limitations, and future research priorities.
 
 ## 2. Literature Review
 
