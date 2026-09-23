@@ -2,16 +2,43 @@
 
 ## Evidence from a Provisional S&P 100 Research Universe
 
-> **Draft status:** Sections 1-9 are drafted from the frozen methodology and
-> audited project artifacts. The abstract remains to be
-> written. This
+> **Draft status:** The abstract and Sections 1-9 are drafted from the frozen
+> methodology and audited project artifacts. This
 > source document deliberately omits personal identifiers; the student's name,
 > student ID, recorded workload, and final filename will be inserted only into
 > the local submission documents.
 
 ## Abstract
 
-*To be drafted after the results, discussion, and conclusion are complete.*
+This study tests whether data-driven stock grouping and regular-vine dependence
+improve one-day portfolio Value-at-Risk (VaR) and Expected Shortfall (ES)
+forecasts. The design holds the realised daily-rebalanced equal-weight stock
+portfolio, marginal-model protocol, rolling information sets, and Monte Carlo
+draws constant wherever required. It compares historical simulation (M0) with
+Gaussian and tree-3 R-vine copulas applied to GICS sectors (M1-M2) and annual
+hierarchical clusters (M3-M4). Monthly marginal models attempt
+AR(1)-GARCH(1,1)-Student-t first, subject to deterministic quality-controlled
+fallbacks. Each copula refit uses 100,000 common-random-number scenarios.
+
+The provisional research universe contains 100 intended S&P 100 securities
+observed from 2017-2025; forecasts are evaluated on 1,508 trading dates from
+2020-2025. Hierarchical clusters do not improve the prespecified out-of-sample
+dependence gap relative to GICS: the equal-year mean difference is -0.005590,
+with a paired block-bootstrap 95% interval of [-0.018669, 0.006569]. H1 is
+therefore not supported. None of six Holm-adjusted matched Diebold-Mariano tests
+favours the vine, so H2 receives no support. M4 nevertheless ranks uniquely
+first across 95% quantile loss, 99% quantile loss, and the 97.5% joint VaR-ES
+FZ0 score, with an average rank of 1.333. It passes the vine-quality and frozen
+calibration-eligibility rules, supporting H3 as an integrated model-selection
+result rather than evidence of general vine superiority.
+
+Spectral clustering, PCA-plus-k-means, full-depth vines, alternative portfolio
+weights, constituent-history treatment, and WBA acquisition-value endpoints do
+not overturn the core conclusions. Results remain provisional because the
+universe and GICS labels lack licensed point-in-time corroboration, while the
+small number of expected 99% exceptions limits far-tail power. The study shows
+that controlled design and disciplined inference are essential when evaluating
+additional clustering and dependence flexibility.
 
 ## 1. Introduction
 
