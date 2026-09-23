@@ -249,8 +249,8 @@ added later.
 ## Main outputs
 
 - `report/main_report_draft.md`: privacy-safe working report source; Sections
-  3-9 currently contain the audited design, methods, results, robustness,
-  discussion, and conclusion draft;
+  2-9 currently contain the literature review, audited design and methods,
+  results, robustness, discussion, and conclusion draft;
 - `docs/project_report_blueprint.md`: FE5110-brief-aligned writing plan with
   section arguments, word allocations, evidence mapping, literature targets,
   interpretation guardrails, and submission checks;

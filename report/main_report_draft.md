@@ -2,8 +2,8 @@
 
 ## Evidence from a Provisional S&P 100 Research Universe
 
-> **Draft status:** Sections 3-9 are drafted from the frozen methodology and
-> audited project artifacts. The abstract and Sections 1-2 remain to be
+> **Draft status:** Sections 2-9 are drafted from the frozen methodology and
+> audited project artifacts. The abstract and Section 1 remain to be
 > written. This
 > source document deliberately omits personal identifiers; the student's name,
 > student ID, recorded workload, and final filename will be inserted only into
@@ -19,8 +19,133 @@
 
 ## 2. Literature Review
 
-*To be drafted as an integrated review of financial clustering, conditional
-volatility, copula dependence, and VaR/ES forecast evaluation.*
+### 2.1 Dependence-based stock grouping
+
+Industry classifications provide economically interpretable groupings, but
+they are not designed to maximise statistical separation in asset returns.
+Mantegna (1999) showed that a correlation-derived distance and hierarchical
+tree can recover a meaningful economic taxonomy from stock returns. This
+established a link between market dependence, network structure, and stock
+classification, while also motivating correlation-based grouping as an
+alternative to exogenous sectors. For risk modelling, however, a visually or
+statistically coherent taxonomy is useful only if it improves the downstream
+representation of portfolio dependence out of sample.
+
+Hierarchical clustering supplies nested, deterministic partitions once the
+distance and linkage rules are fixed. Spectral clustering offers a nonlinear
+alternative: it embeds a similarity graph using eigenvectors before separating
+the observations, allowing connected structures that need not be well
+represented by ordinary Euclidean clusters (Ng, Jordan and Weiss, 2002).
+PCA-plus-k-means takes a different route. PCA forms uncorrelated linear
+combinations that preserve as much sample variance as possible in a lower-
+dimensional representation (Jolliffe and Cadima, 2016), after which k-means
+seeks groups with low within-cluster dispersion (MacQueen, 1967). Spectral and
+PCA-based methods therefore encode different notions of structure and should be
+treated as competing unsupervised representations rather than interchangeable
+versions of the same algorithm.
+
+Cluster validation must also distinguish stability, similarity, and economic
+usefulness. The Adjusted Rand Index corrects pairwise partition agreement for
+chance (Hubert and Arabie, 1985), while normalised mutual-information measures
+quantify shared information between partitions (Vinh, Epps and Bailey, 2010).
+Neither establishes superior risk forecasts. A grouping can be stable yet
+economically unhelpful, or can separate average correlations without preserving
+the tail features relevant to VaR and ES. This motivates evaluating both an
+out-of-sample dependence gap and the performance of complete risk models.
+
+### 2.2 Conditional marginal dynamics
+
+Copula analysis does not remove the need to model each marginal return series.
+Engle's (1982) ARCH model formalised conditional heteroskedasticity, and
+Bollerslev's (1986) GARCH extension provided a parsimonious persistence
+mechanism widely suited to financial returns. Conditional Student-t innovations
+permit heavier tails than a Gaussian innovation law (Bollerslev, 1987), which
+is important when daily equity losses contain more extremes than a conditional
+normal model would imply.
+
+Marginal filtering and dependence estimation are sequentially connected. If
+conditional means, volatilities, or innovation tails are misspecified, the
+transformed series supplied to the copula need not have well-calibrated uniform
+margins, and residual serial structure can contaminate the dependence estimate.
+The probability-integral-transform principle maps a correctly specified
+continuous distribution to uniforms; its multivariate development is associated
+with Rosenblatt (1952). In practice, standardised residuals are mapped through
+their fitted innovation CDF and checked before dependence is estimated. The
+present project consequently holds the marginal protocol fixed across matched
+Gaussian and vine comparisons. Otherwise, an apparent copula gain could merely
+reflect different volatility filters.
+
+### 2.3 Copulas and regular vines
+
+Sklar's (1959) theorem separates continuous marginal distributions from their
+dependence structure. A Gaussian copula is an important benchmark because it is
+parsimonious, scalable, and fully described by a correlation matrix. That
+parsimony is also restrictive: dependence is symmetric, and non-degenerate
+Gaussian copulas have no asymptotic upper or lower tail dependence. A single
+elliptical structure may therefore miss pair-specific asymmetry or joint tail
+behaviour.
+
+Regular vines build a multivariate copula from conditional bivariate copulas
+(Bedford and Cooke, 2002). Pair-copula constructions allow each edge to choose
+a different family and parameterisation, making Gaussian, Student-t, Archimedean,
+and rotated relationships available within one model (Aas et al., 2009). The
+sequential Dißmann et al. (2013) procedure uses maximum-spanning trees based on
+absolute Kendall dependence and selects pair families edge by edge. This makes
+high-dimensional estimation feasible, but selection is greedy rather than a
+global guarantee of the optimal structure.
+
+Flexibility creates a direct complexity problem. An untruncated vine adds
+conditional pair copulas through every tree, so parameter counts and estimation
+uncertainty rise with dimension. Brechmann, Czado and Aas (2012) developed
+truncation and simplification as model-selection responses to this burden.
+Financial applications demonstrate that high-dimensional vines can be combined
+with GARCH margins for VaR and portfolio analysis (Brechmann and Czado, 2013),
+but richer in-sample dependence need not imply lower out-of-sample portfolio
+loss. A truncated-versus-full-vine comparison is therefore an essential check
+on the bias-variance trade-off.
+
+### 2.4 VaR, Expected Shortfall, and forecast evaluation
+
+VaR is an upper loss quantile and is operationally intuitive, but quantile risk
+measures need not be subadditive. The coherent-risk framework of Artzner et al.
+(1999) helped motivate Expected Shortfall, which averages losses beyond the VaR
+threshold and better reflects tail severity. Evaluation remains subtle because
+Expected Shortfall alone is not elicitable by a strictly consistent point-
+forecast score. VaR and Expected Shortfall are jointly elicitable, permitting
+joint scoring functions under appropriate conditions (Fissler and Ziegel,
+2016); the FZ0 form used here follows the dynamic risk-forecasting framework of
+Patton, Ziegel and Chen (2019).
+
+Coverage tests and scoring rules answer different questions. Kupiec (1995)
+tests whether the exception frequency matches the nominal probability, whereas
+Christoffersen (1998) tests whether exceptions are independent through time.
+Neither ranks the size of daily forecast errors. Quantile and joint VaR-ES
+losses provide that complementary ranking information. Matched loss
+differences can be tested using Diebold and Mariano (1995), with Newey-West
+(1987) covariance estimation allowing serial dependence in the daily score
+sequence.
+
+Testing several models, confidence levels, and scores creates scope for
+selective inference. Holm's (1979) step-down method controls the family-wise
+error rate for confirmatory families. For a broader exploratory family,
+Benjamini and Hochberg (1995) control the expected false-discovery proportion
+under their stated conditions and offer greater power than family-wise control.
+The distinction matches this project's separation of H1-H3 from its ML and
+robustness analyses.
+
+### 2.5 Research gap
+
+The individual building blocks are established; the unresolved question is how
+they interact under a controlled forecasting design. A clustering method may
+improve dependence separation without improving portfolio tails, and a vine may
+fit multivariate innovations better without lowering VaR or ES forecast loss.
+This study therefore holds the realised portfolio, marginal models, estimation
+windows, simulation draws, scoring rules, and inference procedures constant
+while varying grouping and copula dependence. It then extends the same controls
+to spectral clustering and PCA-plus-k-means. The contribution is not a new
+clustering or copula algorithm, but evidence on whether added representation
+and dependence flexibility survive genuinely out-of-sample, multiplicity-
+adjusted portfolio-risk evaluation.
 
 ## 3. Data and Research Design
 
@@ -914,7 +1039,7 @@ superiority. For portfolio-risk research, disciplined experimental control,
 loss-based evaluation, multiplicity correction, and reproducible data lineage
 are therefore as important as additional model flexibility.
 
-## Working References for Sections 3-5
+## Working References
 
 The final bibliography style remains to be selected. These entries are the
 verified working sources cited in the current draft.
@@ -923,9 +1048,31 @@ verified working sources cited in the current draft.
   constructions of multiple dependence. *Insurance: Mathematics and
   Economics*, 44(2), 182-198.
   <https://doi.org/10.1016/j.insmatheco.2007.02.001>
+- Artzner, P., Delbaen, F., Eber, J.-M. and Heath, D. (1999). Coherent
+  measures of risk. *Mathematical Finance*, 9(3), 203-228.
+  <https://doi.org/10.1111/1467-9965.00068>
+- Bedford, T. and Cooke, R.M. (2002). Vines: A new graphical model for
+  dependent random variables. *The Annals of Statistics*, 30(4), 1031-1068.
+  <https://doi.org/10.1214/aos/1031689016>
+- Benjamini, Y. and Hochberg, Y. (1995). Controlling the false discovery rate:
+  A practical and powerful approach to multiple testing. *Journal of the Royal
+  Statistical Society: Series B*, 57(1), 289-300.
+  <https://doi.org/10.1111/j.2517-6161.1995.tb02031.x>
 - Bollerslev, T. (1986). Generalized autoregressive conditional
   heteroskedasticity. *Journal of Econometrics*, 31(3), 307-327.
   <https://doi.org/10.1016/0304-4076(86)90063-1>
+- Bollerslev, T. (1987). A conditionally heteroskedastic time series model for
+  speculative prices and rates of return. *The Review of Economics and
+  Statistics*, 69(3), 542-547.
+  <https://doi.org/10.2307/1925546>
+- Brechmann, E.C., Czado, C. and Aas, K. (2012). Truncated regular vines in
+  high dimensions with application to financial data. *Canadian Journal of
+  Statistics*, 40(1), 68-85.
+  <https://doi.org/10.1002/cjs.10141>
+- Brechmann, E.C. and Czado, C. (2013). Risk management with high-dimensional
+  vine copulas: An analysis of the Euro Stoxx 50. *Statistics and Risk
+  Modeling*, 30(4), 307-342.
+  <https://doi.org/10.1524/strm.2013.2002>
 - Christoffersen, P.F. (1998). Evaluating interval forecasts.
   *International Economic Review*, 39(4), 841-862.
   <https://doi.org/10.2307/2527341>
@@ -946,9 +1093,20 @@ verified working sources cited in the current draft.
 - Holm, S. (1979). A simple sequentially rejective multiple test procedure.
   *Scandinavian Journal of Statistics*, 6(2), 65-70.
   <https://doi.org/10.2307/4615733>
+- Hubert, L. and Arabie, P. (1985). Comparing partitions. *Journal of
+  Classification*, 2, 193-218.
+  <https://doi.org/10.1007/BF01908075>
+- Jolliffe, I.T. and Cadima, J. (2016). Principal component analysis: A review
+  and recent developments. *Philosophical Transactions of the Royal Society
+  A*, 374(2065), 20150202.
+  <https://doi.org/10.1098/rsta.2015.0202>
 - Kupiec, P.H. (1995). Techniques for verifying the accuracy of risk
   measurement models. *The Journal of Derivatives*, 3(2), 73-84.
   <https://doi.org/10.3905/jod.1995.407942>
+- MacQueen, J. (1967). Some methods for classification and analysis of
+  multivariate observations. *Proceedings of the Fifth Berkeley Symposium on
+  Mathematical Statistics and Probability*, 1, 281-297.
+  <https://digicoll.lib.berkeley.edu/record/113015>
 - Mantegna, R.N. (1999). Hierarchical structure in financial markets.
   *The European Physical Journal B*, 11, 193-197.
   <https://doi.org/10.1007/s100510050929>
@@ -956,10 +1114,22 @@ verified working sources cited in the current draft.
   heteroskedasticity and autocorrelation consistent covariance matrix.
   *Econometrica*, 55(3), 703-708.
   <https://doi.org/10.2307/1913610>
+- Ng, A.Y., Jordan, M.I. and Weiss, Y. (2002). On spectral clustering: Analysis
+  and an algorithm. *Advances in Neural Information Processing Systems 14*,
+  849-856.
+  <https://ai.stanford.edu/~ang/papers/nips01-spectral.pdf>
 - Patton, A.J., Ziegel, J.F. and Chen, R. (2019). Dynamic semiparametric models
   for expected shortfall (and Value-at-Risk). *Journal of Econometrics*,
   211(2), 388-413.
   <https://doi.org/10.1016/j.jeconom.2018.10.008>
+- Rosenblatt, M. (1952). Remarks on a multivariate transformation. *The Annals
+  of Mathematical Statistics*, 23(3), 470-472.
+  <https://doi.org/10.1214/aoms/1177729394>
 - Sklar, A. (1959). Fonctions de répartition à n dimensions et leurs marges.
   *Publications de l'Institut de Statistique de l'Université de Paris*, 8,
   229-231.
+- Vinh, N.X., Epps, J. and Bailey, J. (2010). Information theoretic measures
+  for clusterings comparison: Variants, properties, normalization and
+  correction for chance. *Journal of Machine Learning Research*, 11,
+  2837-2854.
+  <https://www.jmlr.org/papers/v11/vinh10a.html>
