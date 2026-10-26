@@ -109,9 +109,11 @@ class ReportArtifactTests(unittest.TestCase):
         ]
         if issues:
             self.skipTest("ignored upstream modelling artifacts are unavailable in this clone")
+        test_output_root = ROOT / "outputs" / "test_report_artifacts"
+        test_output_root.mkdir(parents=True, exist_ok=True)
         with (
-            tempfile.TemporaryDirectory(dir=ROOT) as first_directory,
-            tempfile.TemporaryDirectory(dir=ROOT) as second_directory,
+            tempfile.TemporaryDirectory(dir=test_output_root) as first_directory,
+            tempfile.TemporaryDirectory(dir=test_output_root) as second_directory,
         ):
             first = build_report_artifacts(ROOT, output_root=Path(first_directory))
             second = build_report_artifacts(ROOT, output_root=Path(second_directory))
