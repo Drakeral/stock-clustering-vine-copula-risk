@@ -51,7 +51,8 @@ jobs:
           scripts/build_group_balanced_portfolios.py
           scripts/build_report_artifacts.py
           scripts/download_market_data.py
-          scripts/pipeline_io.py --select C901
+          scripts/pipeline_io.py
+          scripts/run_pipeline.py --select C901
 
       - name: Check security rules
         run: uv run ruff check scripts --select S

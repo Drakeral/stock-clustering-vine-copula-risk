@@ -192,6 +192,29 @@ uv run ruff format --check scripts tests
 uv run python -m unittest discover -s tests -v
 ```
 
+The same verified-input-to-final-artifact sequence is exposed through one main
+Python entry point, as required by the project brief. It is fail-fast and calls
+the independently testable stage programs above without a shell:
+
+```zsh
+# Inspect the complete sequence without changing any files.
+uv run python scripts/run_pipeline.py --profile reproduce --list-stages
+uv run python scripts/run_pipeline.py --profile reproduce --dry-run
+
+# Rebuild every derived artifact from already-downloaded, verified local inputs.
+uv run python scripts/run_pipeline.py --profile reproduce
+
+# Run the release-candidate validation profile on the current artifacts.
+uv run python scripts/run_pipeline.py --profile validate
+```
+
+The reproduction profile deliberately starts at independent input verification.
+Universe sourcing and credentialed provider download remain explicit prerequisite
+steps because they depend on the user's data entitlement. Long runs may resume
+at a named boundary, for example `--from-stage core-margins`; `--through-stage`
+provides the matching inclusive stop boundary. Every resumed stage still
+validates its own upstream hashes and protocol bindings.
+
 The download is resumable. Existing daily and reference files are schema-
 validated and hashed rather than overwritten. Use `--overwrite` only for an
 intentional provider refresh. The verifier recomputes every hash and row count;

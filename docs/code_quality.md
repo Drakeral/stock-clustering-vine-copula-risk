@@ -11,7 +11,7 @@ Run the checkpoint from the repository root:
 ```zsh
 uv sync --frozen
 uv run ruff check scripts tests
-uv run ruff check scripts/evaluate_risk_models.py scripts/evaluate_full_vine_robustness.py scripts/evaluate_ml_risk_models.py scripts/evaluate_group_balanced_robustness.py scripts/evaluate_current_composition_historical_simulation.py scripts/build_group_balanced_portfolios.py scripts/build_report_artifacts.py scripts/download_market_data.py scripts/pipeline_io.py --select C901
+uv run ruff check scripts/evaluate_risk_models.py scripts/evaluate_full_vine_robustness.py scripts/evaluate_ml_risk_models.py scripts/evaluate_group_balanced_robustness.py scripts/evaluate_current_composition_historical_simulation.py scripts/build_group_balanced_portfolios.py scripts/build_report_artifacts.py scripts/download_market_data.py scripts/pipeline_io.py scripts/run_pipeline.py --select C901
 uv run ruff check scripts --select S
 uv run ruff format --check scripts tests
 uv run python -m compileall -q scripts tests
@@ -22,6 +22,15 @@ uv run python scripts/generate_run_manifest.py --require-complete
 uv run python scripts/verify_artifact_lineage.py
 git status --short
 ```
+
+The equivalent single-program release-candidate path is:
+
+```zsh
+uv run python scripts/run_pipeline.py --profile validate
+```
+
+The orchestrator is intentionally thin: it invokes the same fail-closed stage
+programs and does not duplicate numerical logic or suppress a failed subprocess.
 
 The checkpoint is acceptable only when linting, formatting, compilation and all
 tests pass; the aggregate gate reports either strict or explicitly provisional

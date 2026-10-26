@@ -14,6 +14,29 @@ This conclusion is not a production-trading certification. All model outputs
 remain `provisional_research_results` because the Yahoo-supported universe does
 not satisfy the licensed point-in-time provenance requirement.
 
+## Release-candidate re-audit: 26 October 2026
+
+The final pre-submission sanity check reproduced the complete local quality
+checkpoint with all 189 tests passing, including every artifact-bound test.
+Ruff lint, formatting, security rules, maintained-module complexity limits, and
+Python compilation also passed. The live foundation gate remains an explicitly
+authorised `provisional_pass`; every modelling, robustness, and reporting audit
+passes with no listed issues, and recursive artifact-lineage verification finds
+no stale hashes or missing records.
+
+The re-audit also closed one grading-alignment gap in the software interface.
+`scripts/run_pipeline.py` is now the single fail-fast main program requested by
+the course brief. Its `reproduce` profile calls the 24 verified-input-to-report
+stages in dependency order; its `validate` profile runs the ten release checks.
+The orchestrator adds no numerical logic, invokes no shell, and is covered by
+tests for ordering, stage bounds, dry-run behavior, and failure propagation.
+
+No core estimate, hypothesis decision, table, figure, or frozen method changed
+during this re-audit. The only unresolved research boundary is the already
+disclosed absence of a licensed point-in-time universe/GICS extract. That
+boundary limits provenance strength but is not silently treated as passed under
+protocol amendment PA-001.
+
 ## Scope reviewed
 
 The review covered universe construction and provenance, market-input
