@@ -51,7 +51,7 @@ schemas, and fallback rules were not changed.
 The Ruff `C901` gate now covers every module under `scripts/` locally, in the
 single validation entry point, and in GitHub Actions. The completed checkpoint
 passed lint, repository-wide complexity, security, formatting, compilation, and
-all 189 tests without skips in the artifact-complete checkout. The provisional
+all 190 tests without skips in the artifact-complete checkout. The provisional
 foundation gate, deterministic report rebuild, and recursive lineage scan also
 passed; the latter verified 360 hash records across 33 documents with zero
 issues. No generated research result changed during the cleanup.

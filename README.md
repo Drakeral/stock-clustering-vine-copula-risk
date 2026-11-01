@@ -188,13 +188,17 @@ uv run python scripts/evaluate_wba_dap_sensitivity.py
 uv run python scripts/build_group_balanced_portfolios.py
 uv run python scripts/evaluate_group_balanced_robustness.py
 uv run ruff check scripts tests
+uv run ruff check scripts --select C901
+uv run ruff check scripts --select S
 uv run ruff format --check scripts tests
+uv run python -m compileall -q scripts tests
 uv run python -m unittest discover -s tests -v
 ```
 
-The same verified-input-to-final-artifact sequence is exposed through one main
-Python entry point, as required by the project brief. It is fail-fast and calls
-the independently testable stage programs above without a shell:
+`scripts/run_pipeline.py --profile reproduce` is the single main program for
+the verified-input-to-final-artifact sequence required by the project brief. It
+stops immediately if a stage fails and calls the independently testable stage
+programs above without a shell:
 
 ```zsh
 # Inspect the complete sequence without changing any files.

@@ -56,5 +56,7 @@ figures = [
   "annual_dependence_gaps.svg",
   "core_model_score_ranks.svg",
   "core_var_exception_rates.svg",
+  "daily_losses_var_99.svg",
+  "gics_hierarchical_contingency.svg",
 ]
 documents = ["results_summary.md"]

@@ -12,6 +12,8 @@ from pathlib import Path
 from typing import Any
 
 import matplotlib
+import numpy as np
+import pandas as pd
 
 matplotlib.use("Agg")
 from matplotlib import pyplot as plt
@@ -213,6 +215,61 @@ def load_audited_sources(project_root: Path, config: Mapping[str, Any]) -> dict[
         require_current_hash_records(payload, project_root=project_root, source_name=str(path))
         loaded[name] = payload
     return loaded
+
+
+def _bound_output_path(
+    project_root: Path,
+    audit: Mapping[str, Any],
+    output_name: str,
+) -> Path:
+    """Resolve one already-audited output without deriving a new research result."""
+
+    outputs = _require_mapping(audit.get("outputs"), "audit outputs")
+    record = _require_mapping(outputs.get(output_name), f"audit output {output_name}")
+    path = _resolve_project_file(project_root, record.get("path"), output_name)
+    if record.get("sha256") != sha256_file(path):
+        raise RuntimeError(f"audit output {output_name!r} has stale lineage")
+    return path
+
+
+def load_bound_daily_evaluation(
+    project_root: Path,
+    evaluation: Mapping[str, Any],
+) -> pd.DataFrame:
+    """Load the existing audited daily evaluation panel used by the VaR figure."""
+
+    path = _bound_output_path(project_root, evaluation, "risk_evaluation_daily")
+    frame = pd.read_parquet(path)
+    required = {"date", "model_id", "realised_loss", "var_99", "exception_99"}
+    missing = sorted(required - set(frame.columns))
+    if missing:
+        raise ValueError(f"daily evaluation panel is missing columns: {missing}")
+    selected = frame.loc[frame["model_id"].isin(["M0", "M4"]), sorted(required)].copy()
+    selected["date"] = pd.to_datetime(selected["date"], errors="coerce")
+    if selected["date"].isna().any() or selected.duplicated(["date", "model_id"]).any():
+        raise ValueError("daily evaluation panel has invalid or duplicate M0/M4 dates")
+    counts = selected.groupby("model_id")["date"].nunique().to_dict()
+    if counts != {"M0": 1508, "M4": 1508}:
+        raise ValueError(f"daily evaluation coverage differs from 1,508 dates: {counts}")
+    realised = selected.pivot(index="date", columns="model_id", values="realised_loss")
+    if not realised["M0"].equals(realised["M4"]):
+        maximum_error = float((realised["M0"] - realised["M4"]).abs().max())
+        if maximum_error > 1e-12:
+            raise ValueError("M0 and M4 realised losses differ in the daily evaluation panel")
+    return selected.sort_values(["date", "model_id"]).reset_index(drop=True)
+
+
+def load_bound_assignments(
+    project_root: Path,
+    clustering: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Load the existing audited annual assignments used by the heatmap."""
+
+    path = _bound_output_path(project_root, clustering, "annual_group_assignments")
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict) or payload.get("status") != "pass":
+        raise ValueError("annual group assignments are missing or not passed")
+    return payload
 
 
 def _ordered_records(
@@ -673,6 +730,158 @@ def plot_core_exception_rates(
     _save_svg(path, draw)
 
 
+def plot_daily_losses_and_var(
+    daily: pd.DataFrame,
+    path: Path,
+) -> None:
+    """Plot audited realised losses and M0/M4 99% VaR forecasts."""
+
+    m0 = daily.loc[daily["model_id"] == "M0"].set_index("date").sort_index()
+    m4 = daily.loc[daily["model_id"] == "M4"].set_index("date").sort_index()
+
+    def draw() -> Any:
+        figure, axis = plt.subplots(figsize=(7.2, 4.2), constrained_layout=True)
+        axis.plot(
+            m4.index,
+            m4["realised_loss"],
+            color="#777777",
+            linewidth=0.65,
+            alpha=0.72,
+            label="Realised loss",
+            zorder=1,
+        )
+        axis.plot(m0.index, m0["var_99"], color="#4C78A8", linewidth=1.1, label="M0 99% VaR")
+        axis.plot(m4.index, m4["var_99"], color="#F58518", linewidth=1.1, label="M4 99% VaR")
+        exceptions = m4.loc[m4["exception_99"].astype(bool)]
+        axis.scatter(
+            exceptions.index,
+            exceptions["realised_loss"],
+            color="#C44E52",
+            marker="x",
+            s=24,
+            linewidths=1.2,
+            label="M4 99% exception",
+            zorder=3,
+        )
+        covid_start = pd.Timestamp("2020-02-19")
+        covid_end = pd.Timestamp("2020-04-30")
+        axis.axvspan(covid_start, covid_end, color="#D9D9D9", alpha=0.55, zorder=0)
+        axis.text(
+            pd.Timestamp("2020-03-10"),
+            0.96,
+            "COVID-19 shock",
+            transform=axis.get_xaxis_transform(),
+            ha="center",
+            va="top",
+            fontsize=8,
+            color="#555555",
+        )
+        axis.axhline(0.0, color="#999999", linewidth=0.7)
+        axis.set_ylabel("Daily portfolio loss / VaR")
+        axis.set_title("Realised losses and 99% VaR forecasts", pad=24)
+        axis.grid(axis="y", color="#E5E5E5", linewidth=0.8)
+        axis.legend(frameon=False, ncols=2, loc="upper right")
+        _mark_provisional(axis)
+        return figure
+
+    _save_svg(path, draw)
+
+
+def _assignment_contingency(
+    assignments: Mapping[str, Any],
+    year: int,
+) -> pd.DataFrame:
+    years = _require_sequence(assignments.get("years"), "assignment years")
+    matching = [
+        _require_mapping(value, "assignment year")
+        for value in years
+        if int(_require_mapping(value, "assignment year").get("year", -1)) == year
+    ]
+    if len(matching) != 1:
+        raise ValueError(f"expected one assignment record for {year}")
+    records = _require_sequence(matching[0].get("assignments"), f"{year} assignments")
+    frame = pd.DataFrame(records)
+    required = {"ticker", "gics_sector", "hierarchical_cluster"}
+    if required - set(frame.columns) or frame.duplicated("ticker").any():
+        raise ValueError(f"{year} assignments are missing fields or duplicate securities")
+    contingency = pd.crosstab(frame["gics_sector"], frame["hierarchical_cluster"])
+    if int(contingency.to_numpy().sum()) != int(matching[0]["active_security_count"]):
+        raise ValueError(f"{year} contingency counts do not cover the active universe")
+    return contingency
+
+
+def plot_grouping_contingency(
+    assignments: Mapping[str, Any],
+    clustering: Mapping[str, Any],
+    path: Path,
+) -> None:
+    """Plot GICS-by-hierarchical-cluster counts for 2020 and 2025."""
+
+    years = (2020, 2025)
+    raw = {year: _assignment_contingency(assignments, year) for year in years}
+    sectors = sorted({label for table in raw.values() for label in table.index})
+    clusters = sorted({label for table in raw.values() for label in table.columns})
+    tables = {
+        year: table.reindex(index=sectors, columns=clusters, fill_value=0)
+        for year, table in raw.items()
+    }
+    diagnostic_years = {
+        int(row["year"]): _require_mapping(row, "clustering diagnostic year")
+        for row in _require_sequence(clustering.get("years"), "clustering diagnostic years")
+    }
+    nmi = {year: float(diagnostic_years[year]["nmi_hierarchical_vs_gics"]) for year in years}
+
+    def draw() -> Any:
+        figure, axes = plt.subplots(
+            1,
+            2,
+            figsize=(9.2, 4.8),
+            sharex=True,
+            sharey=True,
+            constrained_layout=True,
+        )
+        maximum = max(int(table.to_numpy().max()) for table in tables.values())
+        image = None
+        for axis, year in zip(axes, years, strict=True):
+            values = tables[year].to_numpy(dtype=int)
+            image = axis.imshow(values, cmap="Blues", vmin=0, vmax=maximum, aspect="auto")
+            for row_index, column_index in zip(*np.nonzero(values), strict=True):
+                count = int(values[row_index, column_index])
+                axis.text(
+                    column_index,
+                    row_index,
+                    str(count),
+                    ha="center",
+                    va="center",
+                    fontsize=7,
+                    color="white" if count > maximum / 2 else "#222222",
+                )
+            axis.set_title(f"{year}  (NMI = {nmi[year]:.3f})", pad=10)
+            axis.set_xticks(
+                range(len(clusters)), [label.replace("cluster_", "C") for label in clusters]
+            )
+            axis.tick_params(axis="x", labelrotation=45, labelsize=7)
+            axis.set_xlabel("Hierarchical cluster")
+        axes[0].set_yticks(range(len(sectors)), sectors)
+        axes[0].tick_params(axis="y", labelsize=7)
+        axes[0].set_ylabel("GICS sector")
+        figure.suptitle("GICS composition of hierarchical clusters", fontweight="bold")
+        if image is not None:
+            figure.colorbar(image, ax=axes, label="Number of securities", shrink=0.82)
+        figure.text(
+            0.995,
+            0.005,
+            "Provisional research results",
+            ha="right",
+            va="bottom",
+            fontsize=8,
+            color="#666666",
+        )
+        return figure
+
+    _save_svg(path, draw)
+
+
 def build_results_summary(
     sources: Mapping[str, Any], core_rows: Sequence[Mapping[str, Any]]
 ) -> str:
@@ -730,6 +939,8 @@ baseline grouping after Benjamini-Hochberg adjustment.
   results and full-period calibration diagnostics.
 - `tables/clustering_diagnostics.csv` and `annual_dependence_gaps.svg` report annual grouping
   separation for the core and exploratory clustering methods.
+- `gics_hierarchical_contingency.svg` displays the audited 2020 and 2025 assignment counts;
+  `daily_losses_var_99.svg` displays the audited M0/M4 forecasts and realised losses.
 - `report_manifest.json` binds every table, figure and this summary to the exact audited inputs.
 """
 
@@ -769,6 +980,8 @@ def build_report_artifacts(
     method_labels = _require_mapping(config["method_labels"], "method labels")
     palette = _require_mapping(config["palette"], "plot palette")
     digits = int(config["float_significant_digits"])
+    daily_evaluation = load_bound_daily_evaluation(project_root, sources["core_evaluation"])
+    annual_assignments = load_bound_assignments(project_root, sources["clustering"])
 
     core_rows = build_model_performance_rows(
         sources["core_evaluation"], config["core_model_order"], labels, ml=False
@@ -813,6 +1026,10 @@ def build_report_artifacts(
         ),
         "core_model_score_ranks.svg": lambda path: plot_core_model_score_ranks(core_rows, path),
         "core_var_exception_rates.svg": lambda path: plot_core_exception_rates(core_rows, path),
+        "daily_losses_var_99.svg": lambda path: plot_daily_losses_and_var(daily_evaluation, path),
+        "gics_hierarchical_contingency.svg": lambda path: plot_grouping_contingency(
+            annual_assignments, sources["clustering"], path
+        ),
     }
     configured_figures = list(config["artifacts"]["figures"])
     if set(configured_figures) != set(figure_specs):

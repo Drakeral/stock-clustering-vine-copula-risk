@@ -22,8 +22,8 @@ with a paired block-bootstrap 95% interval of [-0.018669, 0.006569]. H1 is
 therefore not supported. None of six Holm-adjusted matched Diebold-Mariano tests
 favours the vine, so H2 receives no support. M4 nevertheless ranks uniquely
 first across 95% quantile loss, 99% quantile loss, and the 97.5% joint VaR-ES
-FZ0 score, with an average rank of 1.333. It passes the vine-quality and frozen
-calibration-eligibility rules, supporting H3 as an integrated model-selection
+FZ0 score, with an average rank of 1.333. It passes the stated vine-diagnostic
+and prespecified calibration rules, supporting H3 as an integrated model-selection
 result rather than evidence of general vine superiority.
 
 Spectral clustering, PCA-plus-k-means, full-depth vines, alternative portfolio
@@ -77,7 +77,7 @@ within-minus-between dependence gap than GICS sectors. H2 states that truncated
 R-vines improve matched forecast loss over Gaussian copulas within both GICS
 and hierarchical representations; full support requires all six adjusted
 comparisons to favour the vine. H3 states that the complete hierarchical-vine
-model, M4, is the uniquely best eligible core model under the equal-weighted
+model, M4, is the uniquely best core model satisfying the stated diagnostics under the equal-weighted
 rank of 95% quantile loss, 99% quantile loss, and the joint 97.5% VaR-ES FZ0
 score, subject to model-quality and calibration restrictions. H2 and H3 are
 deliberately distinct: an integrated model can rank first without establishing
@@ -97,27 +97,28 @@ paired block bootstrap.
 
 The findings are deliberately mixed. H1 is not supported, and none of the six
 Holm-adjusted matched tests supports H2. M4 nevertheless has the best average
-primary-score rank and passes the frozen H3 eligibility conditions. Exploratory
+primary-score rank and passes the prespecified H3 conditions. Exploratory
 spectral clustering, PCA-plus-k-means, a full ten-tree vine, alternative
 portfolio weights, constituent-history treatment, and WBA acquisition-value
 endpoints do not overturn those conclusions. The defensible result is therefore
-that M4 is the best eligible model in this experiment, not that clustering or
+that M4 is the best model satisfying the stated diagnostics in this experiment, not that clustering or
 vine copulas are universally superior.
 
 The project's main contribution is experimental control. It separates grouping
 information, dependence specification, and integrated model selection while
 preserving the relevant economic target and estimation protocol. A substantial
 unsupervised-learning extension applies identical downstream risk evaluation to
-spectral and PCA-based groupings. The implementation also contributes a
-fail-closed audit of missing sessions, security lifecycles, corporate actions,
-extreme observations, numerical fallbacks, seeded inference, and artifact
-lineage. All findings remain provisional because the intended 2 January 2020
+spectral and PCA-based groupings. The implementation also contributes an audit
+framework that stops on errors rather than continuing silently when it encounters
+missing sessions, security-lifecycle problems, corporate actions, extreme
+observations, numerical failures, or inconsistent reproducibility records. All
+findings remain provisional because the intended 2 January 2020
 S&P 100 universe and GICS labels are not corroborated by a licensed point-in-
 time extract.
 
 The remainder of the report reviews the relevant literature, defines the data
 and controlled portfolio target, explains the clustering and risk methods, and
-sets out the frozen inference rules. It then reports the core H1-H3 results,
+sets out the inference rules fixed before the out-of-sample evaluation. It then reports the core H1-H3 results,
 examines the ML and robustness extensions, and closes with interpretation,
 limitations, and future research priorities.
 
@@ -134,6 +135,11 @@ classification, while also motivating correlation-based grouping as an
 alternative to exogenous sectors. For risk modelling, however, a visually or
 statistically coherent taxonomy is useful only if it improves the downstream
 representation of portfolio dependence out of sample.
+
+Marti et al. (2021) review two decades of correlation, hierarchy, network, and
+clustering methods in financial markets. Their synthesis supports treating
+financial clustering as a family of information-filtering representations,
+rather than assuming that one distance or partition is universally optimal.
 
 Hierarchical clustering supplies nested, deterministic partitions once the
 distance and linkage rules are fixed. Spectral clustering offers a nonlinear
@@ -198,6 +204,14 @@ absolute Kendall dependence and selects pair families edge by edge. This makes
 high-dimensional estimation feasible, but selection is greedy rather than a
 global guarantee of the optimal structure.
 
+Czado and Nagler (2022) show how vine copulas retain flexible pair-specific and
+tail dependence while supporting tractable estimation and model selection.
+Their review also emphasises sparsity and dimension reduction as central issues
+for modern high-dimensional applications. A complementary route is a latent
+factor copula: Oh and Patton (2017) demonstrate that factor structures can
+scale flexible dependence modelling to the full cross-section of the S&P 100.
+This motivates the factor-copula extension proposed in Section 8.4.
+
 Flexibility creates a direct complexity problem. An untruncated vine adds
 conditional pair copulas through every tree, so parameter counts and estimation
 uncertainty rise with dimension. Brechmann, Czado and Aas (2012) developed
@@ -229,6 +243,12 @@ differences can be tested using Diebold and Mariano (1995), with Newey-West
 (1987) covariance estimation allowing serial dependence in the daily score
 sequence.
 
+Nolde and Ziegel (2017) distinguish traditional calibration backtests from
+comparative backtests based on consistent scoring functions. That distinction
+supports this study's use of coverage and independence tests for calibration,
+while forecast-loss scores and matched tests carry the main comparative
+evidence.
+
 Testing several models, confidence levels, and scores creates scope for
 selective inference. Holm's (1979) step-down method controls the family-wise
 error rate for confirmatory families. For a broader exploratory family,
@@ -255,7 +275,7 @@ adjusted portfolio-risk evaluation.
 
 ### 3.1 Research universe and provenance
 
-The study uses a frozen large-cap US equity research universe intended to
+The study uses a fixed large-cap US equity research universe intended to
 represent the securities in the S&P 100 on 2 January 2020. The membership and
 GICS sector labels were fixed before the out-of-sample model comparisons. No
 later index additions were introduced. This design avoids changing the research
@@ -270,9 +290,10 @@ come from an archived S&P 500 constituent-table revision timestamped 2 January
 2020 (Wikipedia, 2019, 2020). Yahoo metadata and price availability on 2
 January 2020 provide only secondary checks. These sources do not constitute
 licensed point-in-time evidence of index membership, historical GICS
-classification, or permanent security identity. Protocol amendment PA-001
-permits modelling on this basis, but the universe gate remains provisional and
-every empirical result is therefore reported as a provisional research result.
+classification, or permanent security identity. A documented project decision
+permits modelling on this basis, but the universe provenance remains explicitly
+provisional and every empirical result is therefore reported as a provisional
+research result.
 Yahoo is not treated as an authoritative historical constituent source.
 
 The initial source table contained 101 candidate securities. A security entered
@@ -316,8 +337,8 @@ portfolio.
 An independently generated exchange-session grid is combined with explicit
 listing and terminal dates. Each absent security-date observation must be
 classified as pre-inception, a verified halt, terminal cash, removed, or an
-unexplained active-period absence. Unexplained active-period absences fail the
-construction gate. Two missing BIIB sessions, 6 November 2020 and 9 June 2023,
+unexplained active-period absence. The pipeline stops with an error if it finds
+an unexplained active-period absence. Two missing BIIB sessions, 6 November 2020 and 9 June 2023,
 were verified as trading halts (OCC, 2020; Biogen, 2023). Each receives a
 synthetic stale-price return of zero, while the cumulative market movement
 remains in the observed return when trading resumes. This treatment avoids both
@@ -375,7 +396,7 @@ window, \([t-3\text{ years},t)\), with at least 700 valid observations.
 
 **Table 1. Summary of the empirical design**
 
-| Design element | Frozen specification |
+| Design element | Specification fixed before evaluation |
 |---|---|
 | Candidate/final universe | 101/100 securities |
 | Group dimension | 11 non-empty groups |
@@ -412,7 +433,7 @@ merely by assigning the same stocks to different groups. Verified-halt and
 terminal-cash positions remain in \(n_{g,y}\) with a zero return until annual
 removal. Across 2,261 defined return dates, direct stock-level and group-size-
 weighted portfolio returns agree to a maximum error of
-\(5.55\times10^{-17}\), well inside the frozen \(10^{-12}\) tolerance.
+\(5.55\times10^{-17}\), well inside the prespecified \(10^{-12}\) tolerance.
 
 The realised loss used throughout the evaluation is
 
@@ -438,15 +459,21 @@ magnitude of a small number of extreme returns. Each pair must have valid joint
 observations on at least 80% of the annual training dates; the procedure fails
 rather than silently deleting an ineligible pair.
 
-Following the correlation-distance construction used in financial clustering
-(Mantegna, 1999), the annual correlation matrix is transformed as
+The annual correlation matrix is transformed using the normalized form of
+Mantegna's (1999) correlation distance,
 
 \[
 d_{ij}=\sqrt{\frac{1-\rho_{ij}}{2}}.
 \]
 
-This maps perfect positive correlation to zero distance and perfect negative
-correlation to one. Average-linkage agglomerative clustering is then applied.
+This equals Mantegna's original distance \(\sqrt{2(1-\rho_{ij})}\) divided by
+two, so it preserves its ordering while mapping perfect positive correlation
+to zero distance and perfect negative correlation to one. It retains the sign
+of correlation: a negative correlation is farther apart than zero correlation.
+Negative training-window correlations are limited in this universe: at most 84
+of 4,950 pairs in a year are negative, the minimum is -0.1824, and only 19 pairs
+fall below -0.1, all in the 2020 training window. Average-linkage agglomerative
+clustering is then applied.
 The Lance-Williams update is weighted by cluster size, so every original
 cross-cluster security pair receives equal weight. Exact distance ties and the
 final cluster labels are resolved by lexicographically ordered member tuples,
@@ -499,7 +526,7 @@ are multiplied by 100 during numerical estimation and converted back to decimal
 units in stored forecasts. An insignificant AR coefficient is not a reason to
 discard the AR term, because model selection based on repeated in-sample
 significance testing would make the forecast procedure data dependent in a way
-not specified by the protocol.
+not allowed by the prespecified procedure.
 
 Each fit must satisfy finite likelihood and information criteria,
 \(|\phi|<0.98\), non-negative variance parameters,
@@ -507,13 +534,13 @@ Each fit must satisfy finite likelihood and information criteria,
 finite forecast variance. Failure triggers a deterministic sequence: a second
 AR-GARCH-t attempt with controlled starting values, a constant-mean GARCH-t
 fit, and finally EWMA with decay parameter \(\lambda=0.94\) and empirical
-standardised innovations. A monthly EWMA fraction above 1% fails the modelling
-quality gate. Numerical fallbacks are therefore observable model outcomes, not
+standardised innovations. A monthly EWMA fraction above 1% violates the required
+model-quality condition. Numerical fallbacks are therefore observable model outcomes, not
 silent exception handling.
 
 For an accepted Student-t model, standardised residuals are mapped through the
 fitted unit-variance Student-t distribution. For EWMA, they are mapped through
-the frozen training-sample empirical distribution using midranks. Probability
+the fixed training-sample empirical distribution using midranks. Probability
 integral transforms (PITs) are clipped to
 \([10^{-6},1-10^{-6}]\) to avoid infinite inverse-CDF values. The monthly
 copula training panel retains only dates on which all 11 group PITs are
@@ -531,7 +558,7 @@ The estimated matrix is symmetrised before simulation. If its minimum
 eigenvalue is below \(10^{-8}\), eigenvalues are floored at \(10^{-8}\), the
 matrix is reconstructed, and the diagonal is rescaled to one. Any adjustment
 larger than \(10^{-12}\) is reported, and a repaired condition number above
-\(10^{10}\) fails the Gaussian quality gate. Cholesky factorisation generates
+\(10^{10}\) invalidates the Gaussian fit. Cholesky factorisation generates
 correlated Gaussian scores, which are transformed to uniforms and then through
 the inverse conditional marginal distributions. The Gaussian copula density
 also supplies a daily dependence log score, but that score is compared only
@@ -557,7 +584,7 @@ Failure of an individual pair fit replaces that pair with independence and is
 recorded. If more than 10% of a month's pair fits fail, or the monthly structure
 cannot be estimated, the corresponding Gaussian copula supplies that month's
 forecasts. If whole-vine fallback covers more than 1% of out-of-sample dates,
-the vine is ineligible to be declared the best model. A full ten-tree vine is
+the vine cannot be declared the best model. A full ten-tree vine is
 estimated separately as an exploratory robustness model using identical
 monthly information sets and simulation seeds; it does not overwrite the
 primary tree-3 artifacts.
@@ -574,7 +601,7 @@ the distribution implied by either copula.
 The simulated uniforms are inverted through each group's conditional marginal
 distribution. Student-t innovations are multiplied by
 \(\sqrt{(\nu-2)/\nu}\) to impose unit variance; an EWMA marginal uses the
-inverted empirical CDF of its complete frozen innovation sample. The resulting
+inverted empirical CDF of its complete training-window innovation sample. The resulting
 group log returns are converted to simple returns using `expm1` before they are
 aggregated with annual group-size weights. This reproduces the same economic
 portfolio convention used for realised returns.
@@ -633,7 +660,7 @@ Expected Shortfall cannot be ranked in isolation by a strictly consistent
 point-forecast score, but VaR and ES are jointly elicitable under regularity
 conditions (Fissler and Ziegel, 2016). At confidence
 \(c=0.975\), tail probability \(p=0.025\), VaR \(q_t\), and positive-loss ES
-\(e_t\), the project uses the frozen FZ0 score (Patton, Ziegel and Chen, 2019)
+\(e_t\), the project uses the prespecified FZ0 score (Patton, Ziegel and Chen, 2019)
 
 \[
 S_{FZ0}(L_t,q_t,e_t)=
@@ -712,14 +739,14 @@ all other patterns are classified as no support. This demanding rule prevents
 selective emphasis on one confidence level or scoring function.
 
 The overall model ranking gives equal weight to each model's rank on the three
-primary mean losses. H3 is supported only if M4 is uniquely first, passes the
-vine-quality gate, and has no Holm-adjusted Kupiec or Christoffersen-
+primary mean losses. H3 is supported only if M4 is uniquely first, satisfies the
+vine model-quality requirements, and has no Holm-adjusted Kupiec or Christoffersen-
 independence rejection at either primary VaR level. Any such adjusted rejection
 is the operational definition of systematic calibration failure.
 
 H2 and H3 answer different questions. H2 tests whether vines consistently
 improve matched forecast loss after multiplicity adjustment. H3 asks whether
-the complete hierarchical-vine specification is the best eligible model under
+the complete hierarchical-vine specification is the best model satisfying the stated diagnostics under
 the prespecified combined ranking and calibration rule. A favourable H3 result
 cannot be used to retroactively declare H1 or H2 supported.
 
@@ -767,10 +794,21 @@ singleton.
 the GICS and hierarchical series; the exploratory spectral and PCA-plus-k-means
 series are discussed in Section 7.*
 
+![GICS composition of hierarchical clusters](../reports/figures/gics_hierarchical_contingency.svg)
+
+*Figure 2. GICS-sector composition of the annual hierarchical clusters in 2020
+and 2025. Cell values are security counts. Normalised mutual information with
+GICS is 0.686 in 2020 and 0.537 in 2025.*
+
+The clusters preserve substantial sector structure, especially in 2020, but
+several columns combine securities from multiple GICS sectors. The lower 2025
+NMI also shows that the rolling assignments drift away from the original sector
+partition rather than acting as renamed GICS groups.
+
 The equally weighted mean hierarchical-minus-GICS difference is -0.005590.
 Its paired circular moving-block bootstrap 95% interval is
 [-0.018669, 0.006569]. The estimate therefore has the wrong sign for H1, and
-the interval includes zero. H1 is not supported under its frozen requirement
+the interval includes zero. H1 is not supported under its prespecified requirement
 of a positive point estimate and a strictly positive interval.
 
 This decision does not imply that hierarchical clustering contains no useful
@@ -802,7 +840,7 @@ does not provide a formal M0-versus-copula significance test.
 
 ![Average primary-score ranks](../reports/figures/core_model_score_ranks.svg)
 
-*Figure 2. Average rank across 95% quantile loss, 99% quantile loss, and 97.5%
+*Figure 3. Average rank across 95% quantile loss, 99% quantile loss, and 97.5%
 FZ0. Lower values indicate better average forecast performance.*
 
 M4 is uniquely first with an average rank of 1.333. It ranks first on 99%
@@ -854,7 +892,7 @@ calibration failure.
 
 ![Full-period VaR exception rates](../reports/figures/core_var_exception_rates.svg)
 
-*Figure 3. Full-period exception rates at the reported VaR confidence levels.
+*Figure 4. Full-period exception rates at the reported VaR confidence levels.
 Dashed reference levels indicate nominal exception probabilities.*
 
 M1-M4 record 87-94 exceptions at 95% and 22-24 at 99%. None has a Holm-adjusted
@@ -864,8 +902,21 @@ that their observed rates equal the nominal rates exactly. For example, M4 has
 99% exceptions. It means that the deviations do not cross the prespecified
 family-wise-adjusted rejection threshold in a sample of 1,508 dates.
 
+![Daily realised losses and 99% VaR forecasts](../reports/figures/daily_losses_var_99.svg)
+
+*Figure 5. Daily realised portfolio loss and 99% VaR forecasts from historical
+simulation (M0) and the hierarchical-vine model (M4) over all 1,508 evaluation
+dates. Crosses mark M4 exceptions; the shaded interval highlights the initial
+COVID-19 market shock from 19 February to 30 April 2020.*
+
+The largest realised losses and several exceptions occur during the 2020 shock,
+when risk changed faster than either rolling forecast could fully anticipate.
+Outside that episode, the figure shows how M4's daily volatility-state updates
+and monthly refits produce a more responsive VaR path than M0's rolling
+historical quantile.
+
 M4 satisfies all three parts of the H3 rule: it is uniquely first on average
-primary-score rank, the vine-quality audit declares it eligible with no
+primary-score rank, it satisfies the vine model-quality requirements with no
 whole-vine fallback dates, and it has no adjusted primary calibration rejection.
 H3 is consequently supported. This is an integrated, within-experiment model
 selection result. It does not establish that vines generally dominate Gaussian
@@ -876,17 +927,17 @@ advantage is not uniform across scores.
 
 **Table 6. Decisions on the prespecified hypotheses**
 
-| Hypothesis | Frozen question | Decision | Decisive evidence |
+| Hypothesis | Prespecified question | Decision | Decisive evidence |
 |---|---|---|---|
 | H1 | Do hierarchical clusters separate dependence better than GICS? | **Not supported** | Mean difference -0.005590; 95% interval [-0.018669, 0.006569] |
 | H2 | Do vines improve matched loss over Gaussian copulas? | **No support** | 0 of 6 Holm-adjusted DM tests favour the vine |
-| H3 | Is M4 the best eligible integrated core model? | **Supported** | Unique average-rank winner (1.333), vine-quality eligible, no systematic calibration failure |
+| H3 | Is M4 the best integrated core model satisfying the stated diagnostics? | **Supported** | Unique average-rank winner (1.333), vine requirements satisfied, no systematic calibration failure |
 
 Taken together, the core results favour restraint. Neither data-driven
 hierarchical grouping nor flexible vine dependence wins its isolated
 confirmatory test. Nevertheless, their combination produces the strongest
 prespecified integrated ranking without breaching the model-quality or
-calibration gates. The subsequent robustness analysis asks whether that narrow
+calibration requirements. The subsequent robustness analysis asks whether that narrow
 conclusion survives alternative unsupervised groupings, vine depth, portfolio
 weights, historical-simulation construction, and WBA terminal valuation.
 
@@ -901,7 +952,8 @@ ranked only within that portfolio target.
 
 The substantial ML extension replaces the hierarchical assignments with two
 additional unsupervised representations. Spectral clustering applies an RBF
-affinity to the Spearman correlation-distance matrix, while PCA-plus-k-means
+affinity to the same normalized Mantegna distance
+\(d_{ij}=\sqrt{(1-\rho_{ij})/2}\), while PCA-plus-k-means
 clusters stocks in a lower-dimensional principal-component embedding. Both
 methods use the same rolling three-calendar-year information sets, annual
 rebalance dates, 11-group constraint, daily portfolio arithmetic, and seeded
@@ -1007,7 +1059,7 @@ Both endpoints leave every model's exception counts unchanged. H2 remains
 unsupported, H3 remains supported, and the exploratory ML family still has no
 FDR-adjusted loss difference. These are deterministic endpoint sensitivities,
 not a probabilistic valuation model for the non-transferable right. Their role
-is to demonstrate that the core conclusions do not depend on the frozen USD
+is to demonstrate that the core conclusions do not depend on the fixed USD
 0.53 assumption.
 
 ### 7.7 Robustness synthesis
@@ -1021,12 +1073,12 @@ is to demonstrate that the core conclusions do not depend on the frozen USD
 | Full tree-10 vine | Better descriptive log score; 0 of 6 adjusted loss tests significant | No |
 | Equal-group portfolios | Gaussian ranks first within both targets; no adjusted matched difference | No |
 | Current-composition historical simulation | Realised history wins only the adjusted 99% score | No |
-| WBA DAP endpoints | Exception counts and frozen decisions unchanged | No |
+| WBA DAP endpoints | Exception counts and prespecified decisions unchanged | No |
 
 The common message is that representation, copula flexibility, and portfolio
 construction can move descriptive scores without producing stable adjusted
 forecast-loss differences. The robustness results consequently reinforce the
-narrow interpretation of Section 6: M4 is the best eligible model under the
+narrow interpretation of Section 6: M4 is the best model satisfying the stated diagnostics under the
 prespecified integrated ranking, but the evidence does not support a general
 claim that more flexible clustering or dependence models must forecast tail
 risk better.
@@ -1067,7 +1119,7 @@ supports truncation as a defensible regularisation choice.
 
 M4's H3 support must consequently be read as an operational selection result,
 not as proof of either H1 or H2. M4 is uniquely first under an equally weighted
-rank of three prespecified losses, passes the vine-quality gate, and has no
+rank of three prespecified losses, satisfies the vine model-quality requirements, and has no
 adjusted primary calibration rejection. Its lead over M3 is nonetheless
 score-dependent: M3 has the lower 95% quantile loss, and their matched loss
 differences are not statistically decisive. The main practical conclusion is
@@ -1089,9 +1141,9 @@ The implementation also makes numerical failure observable. Marginal models
 follow a deterministic fallback chain, only four of 1,584 core fits use EWMA,
 and all 144 primary vine refits complete without failed pairs or whole-vine
 fallback. Calibration and predictive-accuracy families use prespecified
-multiplicity controls. Finally, hashed manifests, fail-closed gates, seeded
-simulation and bootstrap streams, and executable artifact tests connect the
-reported values to reproducible outputs. These controls are an important part
+multiplicity controls. Finally, cryptographic file hashes, pipeline checks that
+stop on errors, seeded simulation and bootstrap streams, and executable tests
+connect the reported values to reproducible outputs. These controls are an important part
 of the contribution because flexible models are only useful when their data
 lineage and failure modes can be audited.
 
@@ -1145,10 +1197,10 @@ point-in-time constituent and GICS extract, retaining permanent security and
 issuer identifiers. A continuously reconstituted index variant could then be
 run beside the fixed-cohort design to quantify membership-selection effects.
 The second priority is external validation across another US index and at least
-one international market, using the same frozen scoring and inference rules.
+one international market, using the same scoring and inference rules fixed before evaluation.
 
 Methodological extensions should address specific limitations rather than add
-complexity for its own sake. A separately frozen regime-dependent or smoothly
+complexity for its own sake. A separately prespecified regime-dependent or smoothly
 time-varying copula could test whether monthly dependence updates are too slow.
 Sparse higher-dimensional vines or factor-copula hybrids could preserve more
 security-level tail information while controlling parameter growth. Portfolio
@@ -1177,9 +1229,9 @@ of the six Holm-adjusted DM comparisons favours the vine, so H2 receives no
 support.
 
 The complete hierarchical-vine system nevertheless ranks first across the five
-core models. M4 has an average primary-score rank of 1.333, passes the vine-
-quality gate, and has no adjusted systematic calibration failure; it therefore
-satisfies the frozen H3 rule. This finding is narrower than vine dominance. M4
+core models. M4 has an average primary-score rank of 1.333, satisfies the vine
+model-quality requirements, and has no adjusted systematic calibration failure;
+it therefore satisfies the prespecified H3 rule. This finding is narrower than vine dominance. M4
 does not have the lowest loss on every score, and its matched differences from
 the hierarchical Gaussian model are not statistically decisive. Spectral
 clustering, PCA-plus-k-means, full-depth vines, alternative portfolio weights,
@@ -1231,6 +1283,9 @@ are therefore as important as additional model flexibility.
 - Christoffersen, P.F. (1998). Evaluating interval forecasts.
   *International Economic Review*, 39(4), 841-862.
   <https://doi.org/10.2307/2527341>
+- Czado, C. and Nagler, T. (2022). Vine copula based modeling. *Annual Review
+  of Statistics and Its Application*, 9, 453-477.
+  <https://doi.org/10.1146/annurev-statistics-040220-101153>
 - Diebold, F.X. and Mariano, R.S. (1995). Comparing predictive accuracy.
   *Journal of Business & Economic Statistics*, 13(3), 253-263.
   <https://doi.org/10.1080/07350015.1995.10524599>
@@ -1265,6 +1320,11 @@ are therefore as important as additional model flexibility.
 - Mantegna, R.N. (1999). Hierarchical structure in financial markets.
   *The European Physical Journal B*, 11, 193-197.
   <https://doi.org/10.1007/s100510050929>
+- Marti, G., Nielsen, F., Bińkowski, M. and Donnat, P. (2021). A review of two
+  decades of correlations, hierarchies, networks and clustering in financial
+  markets. In F. Nielsen (ed.), *Progress in Information Geometry: Theory and
+  Applications*. Springer, 245-274.
+  <https://doi.org/10.1007/978-3-030-65459-7_10>
 - Newey, W.K. and West, K.D. (1987). A simple, positive semi-definite,
   heteroskedasticity and autocorrelation consistent covariance matrix.
   *Econometrica*, 55(3), 703-708.
@@ -1273,6 +1333,12 @@ are therefore as important as additional model flexibility.
   and an algorithm. *Advances in Neural Information Processing Systems 14*,
   849-856.
   <https://ai.stanford.edu/~ang/papers/nips01-spectral.pdf>
+- Nolde, N. and Ziegel, J.F. (2017). Elicitability and backtesting: Perspectives
+  for banking regulation. *The Annals of Applied Statistics*, 11(4), 1833-1874.
+  <https://doi.org/10.1214/17-AOAS1041>
+- Oh, D.H. and Patton, A.J. (2017). Modeling dependence in high dimensions with
+  factor copulas. *Journal of Business & Economic Statistics*, 35(1), 139-154.
+  <https://doi.org/10.1080/07350015.2015.1062384>
 - Patton, A.J., Ziegel, J.F. and Chen, R. (2019). Dynamic semiparametric models
   for expected shortfall (and Value-at-Risk). *Journal of Econometrics*,
   211(2), 388-413.
@@ -1320,7 +1386,7 @@ are therefore as important as additional model flexibility.
   <https://www.sec.gov/Archives/edgar/data/1618921/000119312525190603/d87240dex991.htm>
 - Wikipedia (2019). *S&P 100*, revision 929329274, 5 December 2019; component
   table dated 21 November 2019.
-  <https://en.wikipedia.org/w/index.php?title=S%26P_100&oldid=929329274>
+  <https://en.wikipedia.org/w/index.php?oldid=929329274>
 - Wikipedia (2020). *List of S&P 500 companies*, revision 933762580, 2 January
   2020.
-  <https://en.wikipedia.org/w/index.php?title=List_of_S%26P_500_companies&oldid=933762580>
+  <https://en.wikipedia.org/w/index.php?oldid=933762580>

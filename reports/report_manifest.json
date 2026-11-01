@@ -1,23 +1,23 @@
 {
   "analysis_role": "descriptive_reporting_only",
   "configuration": {
-    "bytes": 1741,
+    "bytes": 1809,
     "path": "config/reporting_config.toml",
-    "sha256": "ede3de901064eb12a25999b3654bfd5d456313370b24f1671e7331006d6e7a9d"
+    "sha256": "25d8b86c19ec84563642776011fae2871d5b3f91b462cbe2a2f17c0c1381561d"
   },
   "generator": {
-    "bytes": 34680,
+    "bytes": 43815,
     "path": "scripts/build_report_artifacts.py",
-    "sha256": "c99f96ba8e1059b451cd2038440d86cc7f7ada2277419f9806212a4077ef62eb"
+    "sha256": "21d396de16a62cdbb2d180579044a7df84034a2aab270d6303fcca03818da9c9"
   },
   "manifest_type": "deterministic_report_artifacts",
   "outputs": {
     "documents": [
       {
-        "bytes": 2155,
+        "bytes": 2333,
         "media_type": "text/markdown",
         "path": "reports/results_summary.md",
-        "sha256": "8a4a6395e6ea1472cdb358e930f066187bf1132fa00c69b24d78e6ff14956e42"
+        "sha256": "ba687693fce6e05741c7cd89ff4fa8365e882b09b4814e49154680a801090f78"
       }
     ],
     "figures": [
@@ -38,6 +38,18 @@
         "media_type": "image/svg+xml",
         "path": "reports/figures/core_var_exception_rates.svg",
         "sha256": "7f8c722f665763c467015a51d55a52a955f5236ffffb7210620356986842464a"
+      },
+      {
+        "bytes": 116582,
+        "media_type": "image/svg+xml",
+        "path": "reports/figures/daily_losses_var_99.svg",
+        "sha256": "214dec2f7dae616e81cc5389c0b6abbdc00806e806b23e0f96f5e7edabe14c9e"
+      },
+      {
+        "bytes": 95663,
+        "media_type": "image/svg+xml",
+        "path": "reports/figures/gics_hierarchical_contingency.svg",
+        "sha256": "9c8f8a3680986af809362d231e7d00cfecc954c6f6efa641f6518d17c03348a9"
       }
     ],
     "tables": [

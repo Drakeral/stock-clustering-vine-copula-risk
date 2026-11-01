@@ -40,4 +40,6 @@ baseline grouping after Benjamini-Hochberg adjustment.
   results and full-period calibration diagnostics.
 - `tables/clustering_diagnostics.csv` and `annual_dependence_gaps.svg` report annual grouping
   separation for the core and exploratory clustering methods.
+- `gics_hierarchical_contingency.svg` displays the audited 2020 and 2025 assignment counts;
+  `daily_losses_var_99.svg` displays the audited M0/M4 forecasts and realised losses.
 - `report_manifest.json` binds every table, figure and this summary to the exact audited inputs.

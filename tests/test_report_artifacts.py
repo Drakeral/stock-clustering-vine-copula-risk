@@ -11,6 +11,8 @@ from scripts.build_report_artifacts import (
     build_hypothesis_rows,
     build_model_performance_rows,
     build_report_artifacts,
+    load_bound_assignments,
+    load_bound_daily_evaluation,
     load_reporting_config,
 )
 from scripts.pipeline_io import artifact_hash_issues, require_current_hash_records
@@ -93,8 +95,19 @@ class ReportArtifactTests(unittest.TestCase):
         self.assertFalse(manifest["quality"]["new_inference_performed"])
         self.assertFalse(manifest["quality"]["model_refits_performed"])
         self.assertEqual(manifest["generator"]["path"], "scripts/build_report_artifacts.py")
-        self.assertEqual(sum(len(rows) for rows in manifest["outputs"].values()), 11)
+        self.assertEqual(sum(len(rows) for rows in manifest["outputs"].values()), 13)
         require_current_hash_records(manifest, project_root=ROOT, source_name="report_manifest")
+
+    def test_new_figures_use_only_bound_existing_outputs(self):
+        daily = load_bound_daily_evaluation(ROOT, self.core)
+        assignments = load_bound_assignments(ROOT, self.clustering)
+        self.assertEqual(len(daily), 3016)
+        self.assertEqual(set(daily["model_id"]), {"M0", "M4"})
+        self.assertEqual(daily["date"].nunique(), 1508)
+        self.assertEqual(
+            [record["year"] for record in assignments["years"]],
+            list(range(2020, 2026)),
+        )
 
     def test_full_report_generation_is_byte_reproducible_when_inputs_exist(self):
         source_payloads = [load_json(path) for path in self.config["sources"].values()]
