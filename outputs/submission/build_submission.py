@@ -107,7 +107,7 @@ def appendix_markdown() -> str:
 
 The reproducible project repository is available at
 <https://github.com/Drakeral/stock-clustering-vine-copula-risk>. This report is
-bound to artifact-producing Git commit `8278c67b192f90e703c9775281dabf8b094cbd93`.
+bound to artifact-producing Git commit `a40c000d5615ab1a2c6305cf0ad67136a33cd652`.
 This hash identifies the committed code and report figures; the later packaging
 commit only updates this reference and assembles the submission files.
 
