@@ -183,29 +183,23 @@ def _validate_protocol(model_config: Mapping[str, Any]) -> Mapping[str, Any]:
     lower = _finite_config_float(marginal, "pit_clip_lower")
     upper = _finite_config_float(marginal, "pit_clip_upper")
     maximum_ewma = _finite_config_float(marginal, "maximum_ewma_fit_fraction")
-    invalid: list[str] = []
-    if scale <= 0:
-        invalid.append("estimation_return_scale must be positive")
-    if tolerance <= 0:
-        invalid.append("optimizer_tolerance must be positive")
-    if not 0 < ar_limit < 1:
-        invalid.append("ar_absolute_limit must lie in (0, 1)")
-    if not 0 < phi_clip < ar_limit:
-        invalid.append("retry_start_phi_clip must lie in (0, ar_absolute_limit)")
-    if not 0 < persistence_limit < 1:
-        invalid.append("garch_persistence_limit must lie in (0, 1)")
-    if retry_alpha < 0 or retry_beta < 0 or retry_alpha + retry_beta >= persistence_limit:
-        invalid.append("retry GARCH starts must be nonnegative and below the persistence limit")
-    if df_minimum <= 2:
-        invalid.append("student_t_df_minimum must exceed 2")
-    if retry_df <= df_minimum:
-        invalid.append("retry_start_student_t_df must exceed student_t_df_minimum")
-    if not 0 < ewma_lambda < 1:
-        invalid.append("ewma_lambda must lie in (0, 1)")
-    if not 0 < lower < upper < 1:
-        invalid.append("PIT clipping bounds must satisfy 0 < lower < upper < 1")
-    if not 0 <= maximum_ewma <= 1:
-        invalid.append("maximum_ewma_fit_fraction must lie in [0, 1]")
+    checks = (
+        (scale > 0, "estimation_return_scale must be positive"),
+        (tolerance > 0, "optimizer_tolerance must be positive"),
+        (0 < ar_limit < 1, "ar_absolute_limit must lie in (0, 1)"),
+        (0 < phi_clip < ar_limit, "retry_start_phi_clip must lie in (0, ar_absolute_limit)"),
+        (0 < persistence_limit < 1, "garch_persistence_limit must lie in (0, 1)"),
+        (
+            retry_alpha >= 0 and retry_beta >= 0 and retry_alpha + retry_beta < persistence_limit,
+            "retry GARCH starts must be nonnegative and below the persistence limit",
+        ),
+        (df_minimum > 2, "student_t_df_minimum must exceed 2"),
+        (retry_df > df_minimum, "retry_start_student_t_df must exceed student_t_df_minimum"),
+        (0 < ewma_lambda < 1, "ewma_lambda must lie in (0, 1)"),
+        (0 < lower < upper < 1, "PIT clipping bounds must satisfy 0 < lower < upper < 1"),
+        (0 <= maximum_ewma <= 1, "maximum_ewma_fit_fraction must lie in [0, 1]"),
+    )
+    invalid = [message for valid, message in checks if not valid]
     if invalid:
         raise ValueError("invalid marginal configuration: " + "; ".join(invalid))
     return marginal
@@ -323,14 +317,13 @@ def _validate_group_metadata(frame: pd.DataFrame, portfolio_weight_rule: str) ->
             )
 
 
-def prepare_monthly_tasks(
+def _validated_group_return_frame(
     group_returns: pd.DataFrame,
-    model_config: Mapping[str, Any],
     *,
-    universe_variant: str = "security_primary",
-    portfolio_weight_rule: str = "group_size_daily_rebalanced",
-) -> list[MonthlyTask]:
-    """Validate the long panel and build leakage-free group-month tasks."""
+    universe_variant: str,
+    portfolio_weight_rule: str,
+) -> pd.DataFrame:
+    """Select and validate the long-form group panel used by marginal tasks."""
 
     required = [
         "date",
@@ -361,11 +354,27 @@ def prepare_monthly_tasks(
     key = ["date", "year", "universe_variant", "sample_role", "grouping_id", "group_id"]
     if frame.duplicated(key).any():
         raise ValueError("group-return panel has duplicate logical rows")
-    if not np.isfinite(
-        frame[["group_size", "portfolio_weight", "log_return"]].to_numpy(dtype=float)
-    ).all():
+    numeric = frame[["group_size", "portfolio_weight", "log_return"]].to_numpy(dtype=float)
+    if not np.isfinite(numeric).all():
         raise ValueError("group-return panel contains non-finite required values")
     _validate_group_metadata(frame, portfolio_weight_rule)
+    return frame
+
+
+def prepare_monthly_tasks(
+    group_returns: pd.DataFrame,
+    model_config: Mapping[str, Any],
+    *,
+    universe_variant: str = "security_primary",
+    portfolio_weight_rule: str = "group_size_daily_rebalanced",
+) -> list[MonthlyTask]:
+    """Validate the long panel and build leakage-free group-month tasks."""
+
+    frame = _validated_group_return_frame(
+        group_returns,
+        universe_variant=universe_variant,
+        portfolio_weight_rule=portfolio_weight_rule,
+    )
 
     calendar_years, minimum, start_year, end_year = _task_protocol(model_config)
     tasks: list[MonthlyTask] = []
@@ -919,6 +928,137 @@ def run_monthly_task(
     return record, daily, training_pits
 
 
+def _run_monthly_tasks(
+    tasks: list[MonthlyTask],
+    marginal: Mapping[str, Any],
+    progress_every: int,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Execute the deterministic task list and collect raw result frames."""
+
+    refits: list[dict[str, Any]] = []
+    daily_rows: list[dict[str, Any]] = []
+    training_frames: list[pd.DataFrame] = []
+    for index, task in enumerate(tasks, start=1):
+        refit, daily, training_pits = run_monthly_task(task, marginal)
+        refits.append(refit)
+        daily_rows.extend(daily)
+        training_frames.append(training_pits)
+        if progress_every and index % progress_every == 0:
+            print(f"marginal_progress={index}/{len(tasks)}")
+    refit_frame = pd.DataFrame(refits).sort_values(["year", "month", "grouping_id", "group_id"])
+    daily_frame = pd.DataFrame(daily_rows).sort_values(["date", "grouping_id", "group_id"])
+    return refit_frame, daily_frame, pd.concat(training_frames, ignore_index=True)
+
+
+def _marginal_quality_metrics(
+    refits: pd.DataFrame,
+    daily: pd.DataFrame,
+    training_pits: pd.DataFrame,
+    initial_issues: list[str],
+    marginal: Mapping[str, Any],
+    minimum_required: int,
+) -> tuple[list[str], pd.Series, int, int, int, float, dict[str, int]]:
+    """Evaluate cross-artifact invariants and return audit summary metrics."""
+
+    refit_key = ["year", "month", "universe_variant", "grouping_id", "group_id"]
+    daily_key = ["date", "universe_variant", "grouping_id", "group_id"]
+    expected_group_counts = (
+        refits.groupby(["year", "grouping_id"], sort=False)["group_id"].nunique().to_dict()
+    )
+    observed_group_counts = daily.groupby(["year", "date", "grouping_id"], sort=False)[
+        "group_id"
+    ].nunique()
+    daily_weight_sums = daily.groupby(["year", "date", "grouping_id"], sort=False)[
+        "portfolio_weight"
+    ].sum()
+    lower, upper = float(marginal["pit_clip_lower"]), float(marginal["pit_clip_upper"])
+    block_key = ["year", "month", "universe_variant", "grouping_id"]
+    aligned_counts = training_pits.groupby(block_key, sort=False)["training_date"].nunique()
+    minimum_aligned = int(aligned_counts.min()) if not aligned_counts.empty else 0
+    maximum_aligned = int(aligned_counts.max()) if not aligned_counts.empty else 0
+    ewma_count = int(refits["ewma_used"].sum())
+    maximum_ewma = float(marginal["maximum_ewma_fit_fraction"])
+    checks = (
+        (refits.duplicated(refit_key).any(), "duplicate_group_month_refit"),
+        (daily.duplicated(daily_key).any(), "duplicate_daily_margin_forecast"),
+        (
+            int(refits["evaluation_observations"].sum()) != len(daily),
+            "incomplete_monthly_evaluation_coverage",
+        ),
+        (
+            bool(
+                (
+                    refits.groupby(
+                        ["year", "universe_variant", "grouping_id", "group_id"], sort=False
+                    )["month"].nunique()
+                    != 12
+                ).any()
+            ),
+            "incomplete_annual_refit_schedule",
+        ),
+        (
+            any(
+                count != expected_group_counts[(year, grouping_id)]
+                for (year, _date, grouping_id), count in observed_group_counts.items()
+            ),
+            "incomplete_daily_group_coverage",
+        ),
+        (
+            not np.allclose(daily_weight_sums.to_numpy(dtype=float), 1.0, rtol=0.0, atol=1e-12),
+            "daily_portfolio_weights_do_not_sum_to_one",
+        ),
+        (
+            not np.isfinite(
+                daily[
+                    [
+                        "conditional_mean_log_return",
+                        "conditional_volatility_log_return",
+                        "conditional_variance_log_return",
+                        "realised_log_return",
+                        "standardized_residual",
+                        "pit",
+                    ]
+                ].to_numpy(dtype=float)
+            ).all(),
+            "nonfinite_daily_margin_output",
+        ),
+        (
+            bool(((daily["pit"] < lower) | (daily["pit"] > upper)).any()),
+            "pit_outside_frozen_bounds",
+        ),
+        (
+            not np.isfinite(
+                training_pits[["training_log_return", "standardized_residual", "pit"]].to_numpy(
+                    dtype=float
+                )
+            ).all(),
+            "nonfinite_training_pit_output",
+        ),
+        (
+            bool(((training_pits["pit"] < lower) | (training_pits["pit"] > upper)).any()),
+            "training_pit_outside_frozen_bounds",
+        ),
+        (minimum_aligned < minimum_required, "insufficient_aligned_training_pit_dates"),
+        (
+            not fallback_fraction_passes(ewma_count, len(refits), maximum=maximum_ewma),
+            "ewma_fit_fraction_exceeds_limit",
+        ),
+    )
+    issues = [*initial_issues, *(issue for failed, issue in checks if failed)]
+    selected_counts = {
+        str(key): int(value) for key, value in refits["selected_method"].value_counts().items()
+    }
+    return (
+        issues,
+        aligned_counts,
+        minimum_aligned,
+        maximum_aligned,
+        ewma_count,
+        maximum_ewma,
+        selected_counts,
+    )
+
+
 def build_marginal_outputs(
     group_returns: pd.DataFrame,
     model_config: Mapping[str, Any],
@@ -938,93 +1078,31 @@ def build_marginal_outputs(
         universe_variant=universe_variant,
         portfolio_weight_rule=portfolio_weight_rule,
     )
-    refits: list[dict[str, Any]] = []
-    daily_rows: list[dict[str, Any]] = []
-    training_frames: list[pd.DataFrame] = []
-    for index, task in enumerate(tasks, start=1):
-        refit, daily, training_pits = run_monthly_task(task, marginal)
-        refits.append(refit)
-        daily_rows.extend(daily)
-        training_frames.append(training_pits)
-        if progress_every and index % progress_every == 0:
-            print(f"marginal_progress={index}/{len(tasks)}")
-    refit_frame = pd.DataFrame(refits).sort_values(["year", "month", "grouping_id", "group_id"])
-    daily_frame = pd.DataFrame(daily_rows).sort_values(["date", "grouping_id", "group_id"])
-    raw_training_pits = pd.concat(training_frames, ignore_index=True)
+    refit_frame, daily_frame, raw_training_pits = _run_monthly_tasks(
+        tasks, marginal, progress_every
+    )
     training_pit_panel, training_pit_issues = align_training_pits(
         raw_training_pits,
         refit_frame,
         expected_dimension=expected_dimension,
     )
-    refit_key = ["year", "month", "universe_variant", "grouping_id", "group_id"]
-    daily_key = ["date", "universe_variant", "grouping_id", "group_id"]
-    issues: list[str] = list(training_pit_issues)
-    if refit_frame.duplicated(refit_key).any():
-        issues.append("duplicate_group_month_refit")
-    if daily_frame.duplicated(daily_key).any():
-        issues.append("duplicate_daily_margin_forecast")
-    if int(refit_frame["evaluation_observations"].sum()) != len(daily_frame):
-        issues.append("incomplete_monthly_evaluation_coverage")
-    month_counts = refit_frame.groupby(
-        ["year", "universe_variant", "grouping_id", "group_id"], sort=False
-    )["month"].nunique()
-    if bool((month_counts != 12).any()):
-        issues.append("incomplete_annual_refit_schedule")
-    expected_group_counts = (
-        refit_frame.groupby(["year", "grouping_id"], sort=False)["group_id"].nunique().to_dict()
-    )
-    observed_group_counts = daily_frame.groupby(["year", "date", "grouping_id"], sort=False)[
-        "group_id"
-    ].nunique()
-    if any(
-        count != expected_group_counts[(year, grouping_id)]
-        for (year, _date, grouping_id), count in observed_group_counts.items()
-    ):
-        issues.append("incomplete_daily_group_coverage")
-    daily_weight_sums = daily_frame.groupby(["year", "date", "grouping_id"], sort=False)[
-        "portfolio_weight"
-    ].sum()
-    if not np.allclose(daily_weight_sums.to_numpy(dtype=float), 1.0, rtol=0.0, atol=1e-12):
-        issues.append("daily_portfolio_weights_do_not_sum_to_one")
-    numeric_daily = daily_frame[
-        [
-            "conditional_mean_log_return",
-            "conditional_volatility_log_return",
-            "conditional_variance_log_return",
-            "realised_log_return",
-            "standardized_residual",
-            "pit",
-        ]
-    ].to_numpy(dtype=float)
-    if not np.isfinite(numeric_daily).all():
-        issues.append("nonfinite_daily_margin_output")
-    lower = float(marginal["pit_clip_lower"])
-    upper = float(marginal["pit_clip_upper"])
-    if bool(((daily_frame["pit"] < lower) | (daily_frame["pit"] > upper)).any()):
-        issues.append("pit_outside_frozen_bounds")
-    numeric_training = training_pit_panel[
-        ["training_log_return", "standardized_residual", "pit"]
-    ].to_numpy(dtype=float)
-    if not np.isfinite(numeric_training).all():
-        issues.append("nonfinite_training_pit_output")
-    if bool(((training_pit_panel["pit"] < lower) | (training_pit_panel["pit"] > upper)).any()):
-        issues.append("training_pit_outside_frozen_bounds")
-    block_key = ["year", "month", "universe_variant", "grouping_id"]
-    aligned_date_counts = training_pit_panel.groupby(block_key, sort=False)[
-        "training_date"
-    ].nunique()
-    minimum_aligned = int(aligned_date_counts.min()) if not aligned_date_counts.empty else 0
-    maximum_aligned = int(aligned_date_counts.max()) if not aligned_date_counts.empty else 0
     minimum_required = int(model_config["forecast"]["minimum_training_observations"])
-    if minimum_aligned < minimum_required:
-        issues.append("insufficient_aligned_training_pit_dates")
-    ewma_count = int(refit_frame["ewma_used"].sum())
-    maximum_ewma = float(marginal["maximum_ewma_fit_fraction"])
-    if not fallback_fraction_passes(ewma_count, len(refit_frame), maximum=maximum_ewma):
-        issues.append("ewma_fit_fraction_exceeds_limit")
-    selected_counts = {
-        str(key): int(value) for key, value in refit_frame["selected_method"].value_counts().items()
-    }
+    (
+        issues,
+        aligned_date_counts,
+        minimum_aligned,
+        maximum_aligned,
+        ewma_count,
+        maximum_ewma,
+        selected_counts,
+    ) = _marginal_quality_metrics(
+        refit_frame,
+        daily_frame,
+        training_pit_panel,
+        training_pit_issues,
+        marginal,
+        minimum_required,
+    )
     audit = {
         "schema_version": 2,
         "gate_name": "marginal_model_quality_v2",

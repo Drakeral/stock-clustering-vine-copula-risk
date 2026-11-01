@@ -250,22 +250,16 @@ def _wba_group(assignments: Mapping[str, Any], year: int, field: str) -> tuple[s
     return str(matches[0][field]), tickers
 
 
-def construct_scenario_inputs(
+def _apply_wba_stock_shock(
     stock_returns: pd.DataFrame,
     security_daily: pd.DataFrame,
-    core_group_returns: pd.DataFrame,
-    ml_group_returns: pd.DataFrame,
-    core_assignments: Mapping[str, Any],
-    ml_assignments: Mapping[str, Any],
     scenario: Scenario,
     event: Mapping[str, Any],
-    *,
     tolerance: float,
-) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
-    """Apply exactly one stock-return shock and propagate it through fixed groups."""
+) -> tuple[pd.DataFrame, pd.Timestamp, str, float, float, float, float, float]:
+    """Validate the frozen event and change exactly its one stock-return cell."""
 
     date = pd.Timestamp(str(event["effective_date"]))
-    year = int(date.year)
     ticker = str(event["research_ticker"])
     stock = stock_returns.copy()
     stock.index = pd.to_datetime(stock.index, errors="raise")
@@ -289,14 +283,14 @@ def construct_scenario_inputs(
         raise ValueError("WBA event previous close must be positive and finite")
     cash = float(event["cash_per_old_share"])
     primary_dap = float(event["contingent_value_per_old_share"])
-    primary_return = (cash + primary_dap) / previous_close - 1.0
-    observed_primary_return = float(stock.at[date, ticker])
-    if not np.isclose(observed_primary_return, primary_return, rtol=0.0, atol=tolerance):
+    expected_primary = (cash + primary_dap) / previous_close - 1.0
+    observed_primary = float(stock.at[date, ticker])
+    if not np.isclose(observed_primary, expected_primary, rtol=0.0, atol=tolerance):
         raise ValueError("primary WBA panel return does not reproduce the frozen formula")
     scenario_return = (cash + scenario.dap_value_per_old_share) / previous_close - 1.0
-    return_delta = scenario_return - observed_primary_return
+    return_delta = scenario_return - observed_primary
     stock.at[date, ticker] = scenario_return
-    changed_stock_cells = int(
+    changed_cells = int(
         np.count_nonzero(
             ~np.isclose(
                 stock.to_numpy(dtype=float),
@@ -307,8 +301,30 @@ def construct_scenario_inputs(
             )
         )
     )
-    if changed_stock_cells != 1:
+    if changed_cells != 1:
         raise AssertionError("the scenario must change exactly one stock-return cell")
+    return (
+        stock,
+        date,
+        ticker,
+        cash,
+        previous_close,
+        observed_primary,
+        scenario_return,
+        return_delta,
+    )
+
+
+def _apply_group_return_shocks(
+    core_group_returns: pd.DataFrame,
+    ml_group_returns: pd.DataFrame,
+    core_assignments: Mapping[str, Any],
+    ml_assignments: Mapping[str, Any],
+    *,
+    date: pd.Timestamp,
+    return_delta: float,
+) -> tuple[pd.DataFrame, list[dict[str, Any]], dict[str, list[str]]]:
+    """Propagate one security shock through every fixed grouping."""
 
     core = core_group_returns.loc[
         core_group_returns["universe_variant"].eq("security_primary")
@@ -316,17 +332,17 @@ def construct_scenario_inputs(
     ml = ml_group_returns.loc[ml_group_returns["universe_variant"].eq("security_primary")].copy()
     groups = pd.concat([core, ml], ignore_index=True)
     groups["date"] = pd.to_datetime(groups["date"], errors="raise")
-    group_records: list[dict[str, Any]] = []
-    group_ticker_sets: dict[str, list[str]] = {}
+    records: list[dict[str, Any]] = []
+    ticker_sets: dict[str, list[str]] = {}
     for grouping_id, field in GROUP_ASSIGNMENT_FIELDS.items():
         source = (
             ml_assignments if grouping_id in ML_GAUSSIAN_MODEL_BY_GROUPING else core_assignments
         )
-        group_id, tickers = _wba_group(source, year, field)
-        group_ticker_sets[grouping_id] = tickers
+        group_id, tickers = _wba_group(source, date.year, field)
+        ticker_sets[grouping_id] = tickers
         mask = (
             groups["date"].eq(date)
-            & groups["year"].eq(year)
+            & groups["year"].eq(date.year)
             & groups["sample_role"].eq("evaluation")
             & groups["grouping_id"].eq(grouping_id)
             & groups["group_id"].eq(group_id)
@@ -335,40 +351,92 @@ def construct_scenario_inputs(
             raise ValueError(f"no unique affected group-return row for {grouping_id}")
         row_index = groups.index[mask][0]
         group_size = int(groups.at[row_index, "group_size"])
-        old_group_return = float(groups.at[row_index, "simple_return"])
-        new_group_return = old_group_return + return_delta / group_size
-        if new_group_return <= -1.0 or not np.isfinite(new_group_return):
+        old_return = float(groups.at[row_index, "simple_return"])
+        new_return = old_return + return_delta / group_size
+        if new_return <= -1.0 or not np.isfinite(new_return):
             raise ValueError("scenario creates an invalid affected group return")
-        groups.at[row_index, "simple_return"] = new_group_return
-        groups.at[row_index, "log_return"] = np.log1p(new_group_return)
-        group_records.append(
+        groups.at[row_index, "simple_return"] = new_return
+        groups.at[row_index, "log_return"] = np.log1p(new_return)
+        records.append(
             {
                 "grouping_id": grouping_id,
                 "group_id": group_id,
                 "group_size": group_size,
-                "primary_group_simple_return": old_group_return,
-                "scenario_group_simple_return": new_group_return,
-                "group_simple_return_delta": new_group_return - old_group_return,
+                "primary_group_simple_return": old_return,
+                "scenario_group_simple_return": new_return,
+                "group_simple_return_delta": new_return - old_return,
             }
         )
+    return groups, records, ticker_sets
 
-    reference_tickers = group_ticker_sets["gics_sector"]
-    if any(tickers != reference_tickers for tickers in group_ticker_sets.values()):
+
+def _scenario_identity_errors(
+    stock: pd.DataFrame,
+    groups: pd.DataFrame,
+    date: pd.Timestamp,
+    ticker_sets: Mapping[str, list[str]],
+    tolerance: float,
+) -> tuple[float, dict[str, float]]:
+    reference_tickers = ticker_sets["gics_sector"]
+    if any(tickers != reference_tickers for tickers in ticker_sets.values()):
         raise ValueError("fixed grouping artifacts disagree on the annual active security set")
-    direct_portfolio_return = float(stock.loc[date, reference_tickers].mean())
-    identity_errors: dict[str, float] = {}
+    direct_return = float(stock.loc[date, reference_tickers].mean())
+    errors: dict[str, float] = {}
     for grouping_id in GROUP_ASSIGNMENT_FIELDS:
         rows = groups.loc[
             groups["date"].eq(date)
-            & groups["year"].eq(year)
+            & groups["year"].eq(date.year)
             & groups["sample_role"].eq("evaluation")
             & groups["grouping_id"].eq(grouping_id)
         ]
-        grouped_portfolio_return = float((rows["portfolio_weight"] * rows["simple_return"]).sum())
-        error = abs(grouped_portfolio_return - direct_portfolio_return)
-        identity_errors[grouping_id] = error
+        grouped_return = float((rows["portfolio_weight"] * rows["simple_return"]).sum())
+        error = abs(grouped_return - direct_return)
+        errors[grouping_id] = error
         if error > tolerance:
             raise ValueError(f"{grouping_id} scenario portfolio identity failed")
+    return direct_return, errors
+
+
+def construct_scenario_inputs(
+    stock_returns: pd.DataFrame,
+    security_daily: pd.DataFrame,
+    core_group_returns: pd.DataFrame,
+    ml_group_returns: pd.DataFrame,
+    core_assignments: Mapping[str, Any],
+    ml_assignments: Mapping[str, Any],
+    scenario: Scenario,
+    event: Mapping[str, Any],
+    *,
+    tolerance: float,
+) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
+    """Apply exactly one stock-return shock and propagate it through fixed groups."""
+
+    (
+        stock,
+        date,
+        ticker,
+        cash,
+        previous_close,
+        observed_primary_return,
+        scenario_return,
+        return_delta,
+    ) = _apply_wba_stock_shock(stock_returns, security_daily, scenario, event, tolerance)
+    groups, group_records, group_ticker_sets = _apply_group_return_shocks(
+        core_group_returns,
+        ml_group_returns,
+        core_assignments,
+        ml_assignments,
+        date=date,
+        return_delta=return_delta,
+    )
+    direct_portfolio_return, identity_errors = _scenario_identity_errors(
+        stock,
+        groups,
+        date,
+        group_ticker_sets,
+        tolerance,
+    )
+    reference_tickers = group_ticker_sets["gics_sector"]
     construction = {
         "scenario_id": scenario.scenario_id,
         "event_date": date.date().isoformat(),
@@ -380,7 +448,7 @@ def construct_scenario_inputs(
         "primary_simple_return": observed_primary_return,
         "scenario_simple_return": scenario_return,
         "simple_return_delta": return_delta,
-        "changed_stock_return_cell_count": changed_stock_cells,
+        "changed_stock_return_cell_count": 1,
         "annual_active_security_count": len(reference_tickers),
         "scenario_portfolio_simple_return": direct_portfolio_return,
         "maximum_group_portfolio_identity_error": max(identity_errors.values()),

@@ -86,6 +86,17 @@ def _positive_integer(section: Mapping[str, Any], key: str, section_name: str) -
     return value
 
 
+def _protocol_mismatches(
+    sections: Mapping[str, tuple[Mapping[str, Any], Mapping[str, Any]]],
+) -> dict[str, Any]:
+    return {
+        f"{section_name}.{key}": {"expected": expected, "observed": observed.get(key)}
+        for section_name, (observed, required) in sections.items()
+        for key, expected in required.items()
+        if observed.get(key) != expected
+    }
+
+
 def _validate_protocol(
     model_config: Mapping[str, Any],
 ) -> tuple[Mapping[str, Any], Mapping[str, Any], Mapping[str, Any], Mapping[str, Any]]:
@@ -124,22 +135,13 @@ def _validate_protocol(
         "group_weighting": "group_size",
         "realised_loss_definition": "negative_simple_portfolio_return",
     }
-    mismatches: dict[str, Any] = {}
-    for key, expected in expected_gaussian.items():
-        if gaussian.get(key) != expected:
-            mismatches[f"gaussian.{key}"] = {"expected": expected, "observed": gaussian.get(key)}
-    for key, expected in expected_simulation.items():
-        if simulation.get(key) != expected:
-            mismatches[f"simulation.{key}"] = {
-                "expected": expected,
-                "observed": simulation.get(key),
-            }
-    for key, expected in expected_portfolio.items():
-        if portfolio.get(key) != expected:
-            mismatches[f"portfolio.{key}"] = {
-                "expected": expected,
-                "observed": portfolio.get(key),
-            }
+    mismatches = _protocol_mismatches(
+        {
+            "gaussian": (gaussian, expected_gaussian),
+            "simulation": (simulation, expected_simulation),
+            "portfolio": (portfolio, expected_portfolio),
+        }
+    )
     if mismatches:
         raise ValueError(f"unsupported Gaussian risk protocol: {mismatches}")
 
@@ -147,32 +149,36 @@ def _validate_protocol(
     draws = _positive_integer(simulation, "draws_per_month", "simulation")
     base_seed = _positive_integer(simulation, "base_seed", "simulation")
     vine_dimension = _positive_integer(vine, "dimension", "vine")
-    if dimension != vine_dimension:
-        raise ValueError("simulation and vine dimensions must agree")
-    if draws < 100:
-        raise ValueError("simulation.draws_per_month must be at least 100")
-    if base_seed != 5110:
-        raise ValueError("simulation.base_seed must remain 5110")
     confidence_levels = [float(value) for value in forecast.get("var_confidence_levels", [])]
-    if confidence_levels != [0.95, 0.975, 0.99]:
-        raise ValueError("forecast.var_confidence_levels differs from the frozen protocol")
-    if float(forecast.get("es_confidence_level", float("nan"))) != 0.975:
-        raise ValueError("forecast.es_confidence_level must be 0.975")
-    if _positive_integer(forecast, "horizon_trading_days", "forecast") != 1:
-        raise ValueError("only one-day forecasts are supported")
+    es_confidence = float(forecast.get("es_confidence_level", float("nan")))
+    horizon = _positive_integer(forecast, "horizon_trading_days", "forecast")
     lower = _finite_float(marginal, "pit_clip_lower", "marginal")
     upper = _finite_float(marginal, "pit_clip_upper", "marginal")
-    if not 0 < lower < upper < 1:
-        raise ValueError("marginal PIT bounds must lie strictly inside (0, 1)")
     scale = _finite_float(marginal, "estimation_return_scale", "marginal")
     smoothing = _finite_float(marginal, "ewma_lambda", "marginal")
-    if scale <= 0 or not 0 < smoothing < 1:
-        raise ValueError("invalid marginal inversion parameters")
     eigenvalue_floor = _finite_float(gaussian, "eigenvalue_floor", "gaussian")
     repair_tolerance = _finite_float(gaussian, "repair_tolerance", "gaussian")
     maximum_condition = _finite_float(gaussian, "maximum_condition_number", "gaussian")
-    if eigenvalue_floor <= 0 or repair_tolerance < 0 or maximum_condition <= 1:
-        raise ValueError("invalid Gaussian numerical-stability thresholds")
+    numerical_checks = (
+        (dimension == vine_dimension, "simulation and vine dimensions must agree"),
+        (draws >= 100, "simulation.draws_per_month must be at least 100"),
+        (base_seed == 5110, "simulation.base_seed must remain 5110"),
+        (
+            confidence_levels == [0.95, 0.975, 0.99],
+            "forecast.var_confidence_levels differs from the frozen protocol",
+        ),
+        (es_confidence == 0.975, "forecast.es_confidence_level must be 0.975"),
+        (horizon == 1, "only one-day forecasts are supported"),
+        (0 < lower < upper < 1, "marginal PIT bounds must lie strictly inside (0, 1)"),
+        (scale > 0 and 0 < smoothing < 1, "invalid marginal inversion parameters"),
+        (
+            eigenvalue_floor > 0 and repair_tolerance >= 0 and maximum_condition > 1,
+            "invalid Gaussian numerical-stability thresholds",
+        ),
+    )
+    failures = [message for valid, message in numerical_checks if not valid]
+    if failures:
+        raise ValueError("; ".join(failures))
     return gaussian, simulation, forecast, marginal
 
 
@@ -524,58 +530,47 @@ def _validate_block_bindings(
         raise ValueError(f"daily margin precedes its refit date for {copula_refit_id}")
 
 
-def build_gaussian_outputs(
+def _validated_model_registry(
+    model_by_grouping: Mapping[str, tuple[str, str]] | None,
+) -> tuple[dict[str, tuple[str, str]], set[str]]:
+    registry = dict(MODEL_BY_GROUPING if model_by_grouping is None else model_by_grouping)
+    valid = registry and all(
+        isinstance(input_grouping, str)
+        and bool(input_grouping)
+        and isinstance(value, tuple)
+        and len(value) == 2
+        and all(isinstance(item, str) and bool(item) for item in value)
+        for input_grouping, value in registry.items()
+    )
+    if not valid:
+        raise ValueError("Gaussian model registry must map groupings to model/grouping pairs")
+    expected_models = {model_id for model_id, _ in registry.values()}
+    if len(expected_models) != len(registry):
+        raise ValueError("Gaussian model registry contains duplicate model IDs")
+    if len({grouping_id for _, grouping_id in registry.values()}) != len(registry):
+        raise ValueError("Gaussian model registry contains duplicate output groupings")
+    return registry, expected_models
+
+
+def _validated_modelling_frames(
     training_pits: pd.DataFrame,
     marginal_refits: pd.DataFrame,
     daily_margins: pd.DataFrame,
     group_returns: pd.DataFrame,
-    model_config: Mapping[str, Any],
     *,
-    universe_variant: str = "security_primary",
-    progress_every: int = 12,
-    model_by_grouping: Mapping[str, tuple[str, str]] | None = None,
-) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any], dict[str, Any]]:
-    """Build all monthly Gaussian fits, daily forecasts, seeds, and quality checks."""
-
-    model_registry = dict(MODEL_BY_GROUPING if model_by_grouping is None else model_by_grouping)
-    if not model_registry or any(
-        not isinstance(input_grouping, str)
-        or not input_grouping
-        or not isinstance(value, tuple)
-        or len(value) != 2
-        or any(not isinstance(item, str) or not item for item in value)
-        for input_grouping, value in model_registry.items()
-    ):
-        raise ValueError("Gaussian model registry must map groupings to model/grouping pairs")
-    expected_models = {model_id for model_id, _ in model_registry.values()}
-    if len(expected_models) != len(model_registry):
-        raise ValueError("Gaussian model registry contains duplicate model IDs")
-    output_groupings = {grouping_id for _, grouping_id in model_registry.values()}
-    if len(output_groupings) != len(model_registry):
-        raise ValueError("Gaussian model registry contains duplicate output groupings")
-    gaussian, simulation, forecast, marginal = _validate_protocol(model_config)
-    _validate_input_frames(training_pits, marginal_refits, daily_margins, group_returns)
-    dimension = int(simulation["dimension"])
-    draws = int(simulation["draws_per_month"])
-    base_seed = int(simulation["base_seed"])
-    lower = float(marginal["pit_clip_lower"])
-    upper = float(marginal["pit_clip_upper"])
-    confidence_levels = [float(value) for value in forecast["var_confidence_levels"]]
-    es_confidence = float(forecast["es_confidence_level"])
-    eigenvalue_floor = float(gaussian["eigenvalue_floor"])
-    repair_tolerance = float(gaussian["repair_tolerance"])
-    maximum_condition = float(gaussian["maximum_condition_number"])
-
+    universe_variant: str,
+    model_registry: Mapping[str, tuple[str, str]],
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     training = training_pits.loc[training_pits["universe_variant"] == universe_variant].copy()
     refits = marginal_refits.loc[marginal_refits["universe_variant"] == universe_variant].copy()
     daily = daily_margins.loc[daily_margins["universe_variant"] == universe_variant].copy()
     returns = group_returns.loc[group_returns["universe_variant"] == universe_variant].copy()
-    for frame, columns in [
-        (training, ["training_date", "refit_date"]),
-        (refits, ["refit_date", "requested_training_start"]),
-        (daily, ["date"]),
-        (returns, ["date"]),
-    ]:
+    for frame, columns in (
+        (training, ("training_date", "refit_date")),
+        (refits, ("refit_date", "requested_training_start")),
+        (daily, ("date",)),
+        (returns, ("date",)),
+    ):
         for column in columns:
             frame[column] = pd.to_datetime(frame[column], errors="coerce")
             if frame[column].isna().any():
@@ -596,6 +591,161 @@ def build_gaussian_outputs(
         raise ValueError("training PIT panel contains duplicate logical rows")
     if bool((training["training_date"] >= training["refit_date"]).any()):
         raise ValueError("training PIT panel contains look-ahead observations")
+    return training, refits, daily, returns
+
+
+def _gaussian_daily_forecast(
+    date: pd.Timestamp,
+    day: pd.DataFrame,
+    *,
+    group_order: list[str],
+    innovations: np.ndarray,
+    confidence_levels: list[float],
+    es_confidence: float,
+    fit: GaussianCopulaFit,
+    model_id: str,
+    output_grouping: str,
+    copula_refit_id: str,
+    base_seed: int,
+    year: int,
+    month: int,
+    fallback_count: int,
+) -> dict[str, Any]:
+    ordered = day.set_index("group_id", verify_integrity=True).reindex(group_order)
+    if ordered.isna().any().any():
+        raise ValueError(f"incomplete daily margin vector for {date}/{copula_refit_id}")
+    means = ordered["conditional_mean_log_return"].to_numpy(dtype=float)
+    volatilities = ordered["conditional_volatility_log_return"].to_numpy(dtype=float)
+    weights = ordered["portfolio_weight"].to_numpy(dtype=float)
+    if not np.isclose(weights.sum(), 1.0, rtol=0.0, atol=1e-12):
+        raise ValueError(f"portfolio weights do not sum to one for {date}/{model_id}")
+    simulated_losses = -(np.expm1(means + innovations * volatilities) @ weights)
+    risks = empirical_risk_levels(simulated_losses, confidence_levels)
+    realised_log = ordered["realised_log_return"].to_numpy(dtype=float)
+    realised_simple = float(np.expm1(realised_log) @ weights)
+    observed_pits = ordered["pit"].to_numpy(dtype=float)
+    log_score = float(gaussian_copula_log_density(observed_pits, fit.correlation)[0])
+    return {
+        "date": pd.Timestamp(date),
+        "model_id": model_id,
+        "grouping_id": output_grouping,
+        "refit_id": copula_refit_id,
+        "var_95": risks[0.95][0],
+        "var_975": risks[0.975][0],
+        "var_99": risks[0.99][0],
+        "es_975": risks[es_confidence][1],
+        "realised_simple_return": realised_simple,
+        "realised_loss": -realised_simple,
+        "seed_components": [base_seed, year, month],
+        "margin_fallback_count": fallback_count,
+        "whole_vine_fallback": False,
+        "copula_log_score": log_score,
+        "forecast_status": "fallback" if fallback_count else "ok",
+    }
+
+
+def _gaussian_quality_metrics(
+    fit_frame: pd.DataFrame,
+    forecast_frame: pd.DataFrame,
+    expected_models: set[str],
+    initial_issues: list[str],
+    reconstruction_tolerance: float,
+) -> tuple[list[str], dict[str, int], float]:
+    numeric_columns = (
+        "var_95",
+        "var_975",
+        "var_99",
+        "es_975",
+        "realised_simple_return",
+        "realised_loss",
+        "copula_log_score",
+    )
+    date_counts = {
+        str(key): int(value)
+        for key, value in forecast_frame.groupby("model_id")["date"].nunique().items()
+    }
+    checks = [
+        (fit_frame.duplicated(["year", "month", "model_id"]).any(), "duplicate_gaussian_refit"),
+        (forecast_frame.duplicated(["date", "model_id"]).any(), "duplicate_gaussian_forecast"),
+        (
+            not np.isfinite(forecast_frame[list(numeric_columns)].to_numpy(dtype=float)).all(),
+            "nonfinite_gaussian_forecast",
+        ),
+        (
+            bool(
+                (
+                    (forecast_frame["var_95"] > forecast_frame["var_975"])
+                    | (forecast_frame["var_975"] > forecast_frame["var_99"])
+                ).any()
+            ),
+            "nonmonotone_var_forecast",
+        ),
+        (bool((forecast_frame["es_975"] < forecast_frame["var_975"]).any()), "es_below_var"),
+        (
+            set(date_counts) != expected_models or len(set(date_counts.values())) != 1,
+            "incomplete_matched_model_coverage",
+        ),
+    ]
+    realised = forecast_frame.pivot(
+        index="date", columns="model_id", values="realised_simple_return"
+    )
+    if realised.isna().any().any() or not expected_models.issubset(realised.columns):
+        checks.append((True, "incomplete_realised_portfolio_identity"))
+        maximum_identity_error = float("inf")
+    else:
+        reference_model = sorted(expected_models)[0]
+        maximum_identity_error = float(
+            realised.loc[:, sorted(expected_models)]
+            .sub(realised[reference_model], axis="index")
+            .abs()
+            .to_numpy(dtype=float)
+            .max()
+        )
+        checks.append(
+            (
+                maximum_identity_error > reconstruction_tolerance,
+                "grouping_portfolio_identity_failed",
+            )
+        )
+    issues = [*initial_issues, *(issue for failed, issue in checks if failed)]
+    return issues, date_counts, maximum_identity_error
+
+
+def build_gaussian_outputs(
+    training_pits: pd.DataFrame,
+    marginal_refits: pd.DataFrame,
+    daily_margins: pd.DataFrame,
+    group_returns: pd.DataFrame,
+    model_config: Mapping[str, Any],
+    *,
+    universe_variant: str = "security_primary",
+    progress_every: int = 12,
+    model_by_grouping: Mapping[str, tuple[str, str]] | None = None,
+) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any], dict[str, Any]]:
+    """Build all monthly Gaussian fits, daily forecasts, seeds, and quality checks."""
+
+    model_registry, expected_models = _validated_model_registry(model_by_grouping)
+    gaussian, simulation, forecast, marginal = _validate_protocol(model_config)
+    _validate_input_frames(training_pits, marginal_refits, daily_margins, group_returns)
+    dimension = int(simulation["dimension"])
+    draws = int(simulation["draws_per_month"])
+    base_seed = int(simulation["base_seed"])
+    lower = float(marginal["pit_clip_lower"])
+    upper = float(marginal["pit_clip_upper"])
+    confidence_levels = [float(value) for value in forecast["var_confidence_levels"]]
+    es_confidence = float(forecast["es_confidence_level"])
+    eigenvalue_floor = float(gaussian["eigenvalue_floor"])
+    repair_tolerance = float(gaussian["repair_tolerance"])
+    maximum_condition = float(gaussian["maximum_condition_number"])
+
+    training, refits, daily, returns = _validated_modelling_frames(
+        training_pits,
+        marginal_refits,
+        daily_margins,
+        group_returns,
+        universe_variant=universe_variant,
+        model_registry=model_registry,
+    )
 
     fit_rows: list[dict[str, Any]] = []
     forecast_rows: list[dict[str, Any]] = []
@@ -712,95 +862,36 @@ def build_gaussian_outputs(
         )
 
         for date, day in daily_block.groupby("date", sort=True):
-            ordered = day.set_index("group_id", verify_integrity=True).reindex(group_order)
-            if ordered.isna().any().any():
-                raise ValueError(f"incomplete daily margin vector for {date}/{copula_refit_id}")
-            means = ordered["conditional_mean_log_return"].to_numpy(dtype=float)
-            volatilities = ordered["conditional_volatility_log_return"].to_numpy(dtype=float)
-            weights = ordered["portfolio_weight"].to_numpy(dtype=float)
-            realised_log = ordered["realised_log_return"].to_numpy(dtype=float)
-            if not np.isclose(weights.sum(), 1.0, rtol=0.0, atol=1e-12):
-                raise ValueError(f"portfolio weights do not sum to one for {date}/{model_id}")
-            simulated_log = means + innovations * volatilities
-            simulated_losses = -(np.expm1(simulated_log) @ weights)
-            risks = empirical_risk_levels(simulated_losses, confidence_levels)
-            realised_simple = float(np.expm1(realised_log) @ weights)
-            observed_pits = ordered["pit"].to_numpy(dtype=float)
-            log_score = float(gaussian_copula_log_density(observed_pits, fit.correlation)[0])
             forecast_rows.append(
-                {
-                    "date": pd.Timestamp(date),
-                    "model_id": model_id,
-                    "grouping_id": output_grouping,
-                    "refit_id": copula_refit_id,
-                    "var_95": risks[0.95][0],
-                    "var_975": risks[0.975][0],
-                    "var_99": risks[0.99][0],
-                    "es_975": risks[es_confidence][1],
-                    "realised_simple_return": realised_simple,
-                    "realised_loss": -realised_simple,
-                    "seed_components": [base_seed, year, month],
-                    "margin_fallback_count": fallback_count,
-                    "whole_vine_fallback": False,
-                    "copula_log_score": log_score,
-                    "forecast_status": "fallback" if fallback_count else "ok",
-                }
+                _gaussian_daily_forecast(
+                    pd.Timestamp(date),
+                    day,
+                    group_order=group_order,
+                    innovations=innovations,
+                    confidence_levels=confidence_levels,
+                    es_confidence=es_confidence,
+                    fit=fit,
+                    model_id=model_id,
+                    output_grouping=output_grouping,
+                    copula_refit_id=copula_refit_id,
+                    base_seed=base_seed,
+                    year=year,
+                    month=month,
+                    fallback_count=fallback_count,
+                )
             )
         if progress_every and block_index % progress_every == 0:
             print(f"gaussian_progress={block_index}/{len(grouped)}")
 
     fit_frame = pd.DataFrame(fit_rows).sort_values(["year", "month", "model_id"])
     forecast_frame = pd.DataFrame(forecast_rows).sort_values(["date", "model_id"])
-    forecast_key = ["date", "model_id"]
-    if fit_frame.duplicated(["year", "month", "model_id"]).any():
-        issues.append("duplicate_gaussian_refit")
-    if forecast_frame.duplicated(forecast_key).any():
-        issues.append("duplicate_gaussian_forecast")
-    numeric = forecast_frame[
-        [
-            "var_95",
-            "var_975",
-            "var_99",
-            "es_975",
-            "realised_simple_return",
-            "realised_loss",
-            "copula_log_score",
-        ]
-    ].to_numpy(dtype=float)
-    if not np.isfinite(numeric).all():
-        issues.append("nonfinite_gaussian_forecast")
-    if bool(
-        (
-            (forecast_frame["var_95"] > forecast_frame["var_975"])
-            | (forecast_frame["var_975"] > forecast_frame["var_99"])
-        ).any()
-    ):
-        issues.append("nonmonotone_var_forecast")
-    if bool((forecast_frame["es_975"] < forecast_frame["var_975"]).any()):
-        issues.append("es_below_var")
-    date_counts = {
-        str(key): int(value)
-        for key, value in forecast_frame.groupby("model_id")["date"].nunique().items()
-    }
-    if set(date_counts) != expected_models or len(set(date_counts.values())) != 1:
-        issues.append("incomplete_matched_model_coverage")
-    realised_wide = forecast_frame.pivot(
-        index="date", columns="model_id", values="realised_simple_return"
+    issues, date_counts, maximum_identity_error = _gaussian_quality_metrics(
+        fit_frame,
+        forecast_frame,
+        expected_models,
+        issues,
+        float(model_config["portfolio"]["reconstruction_tolerance"]),
     )
-    if realised_wide.isna().any().any() or not expected_models.issubset(realised_wide.columns):
-        issues.append("incomplete_realised_portfolio_identity")
-        maximum_identity_error = float("inf")
-    else:
-        reference_model = sorted(expected_models)[0]
-        maximum_identity_error = float(
-            realised_wide.loc[:, sorted(expected_models)]
-            .sub(realised_wide[reference_model], axis="index")
-            .abs()
-            .to_numpy(dtype=float)
-            .max()
-        )
-        if maximum_identity_error > float(model_config["portfolio"]["reconstruction_tolerance"]):
-            issues.append("grouping_portfolio_identity_failed")
     repaired_count = int(fit_frame["correlation_repaired"].sum())
     seed_manifest = {
         "schema_version": 1,

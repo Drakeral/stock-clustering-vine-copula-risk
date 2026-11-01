@@ -193,6 +193,85 @@ def _group_return_records(
     return pd.concat(records, ignore_index=True)
 
 
+def _validated_grouping_panel(stock_simple_returns: pd.DataFrame) -> pd.DataFrame:
+    panel = stock_simple_returns.copy()
+    panel.index = pd.DatetimeIndex(pd.to_datetime(panel.index), name="date")
+    if panel.empty or panel.index.has_duplicates or not panel.index.is_monotonic_increasing:
+        raise ValueError("return panel must be non-empty with unique sorted dates")
+    if panel.columns.has_duplicates:
+        raise ValueError("return panel security columns must be unique")
+    return panel
+
+
+def _active_set_for_year(
+    year: int,
+    schedule: Mapping[int, Mapping[str, Any]],
+    panel: pd.DataFrame,
+    gics_labels: Mapping[str, str],
+) -> tuple[Mapping[str, Any], list[str]]:
+    if year not in schedule:
+        raise ValueError(f"active-universe schedule is missing evaluation year {year}")
+    row = schedule[year]
+    active = [str(value) for value in row["active_tickers"]]
+    if len(active) != len(set(active)) or int(row["security_count"]) != len(active):
+        raise ValueError(f"invalid active set for {year}")
+    missing_panel = sorted(set(active) - set(panel.columns))
+    missing_gics = sorted(set(active) - set(gics_labels))
+    if missing_panel or missing_gics:
+        raise ValueError(
+            f"active set is not represented for {year}; panel={missing_panel}, gics={missing_gics}"
+        )
+    return row, sorted(active)
+
+
+def _training_windows(
+    panel: pd.DataFrame,
+    active: list[str],
+    training_start: pd.Timestamp,
+    rebalance_date: pd.Timestamp,
+    year: int,
+) -> tuple[pd.DataFrame, pd.DataFrame, np.ndarray]:
+    training = panel.loc[(panel.index >= training_start) & (panel.index < rebalance_date), active]
+    if training.empty:
+        raise ValueError(f"empty training window for {year}")
+    finite = np.isfinite(training.to_numpy(dtype=float)).all(axis=1)
+    complete = training.loc[finite]
+    if complete.empty:
+        raise ValueError(f"training window has no complete return rows for {year}")
+    return training, complete, finite
+
+
+def _evaluation_window(
+    panel: pd.DataFrame,
+    active: list[str],
+    rebalance_date: pd.Timestamp,
+    year: int,
+) -> pd.DataFrame:
+    annual = panel.loc[(panel.index >= rebalance_date) & (panel.index.year == year), active]
+    if annual.empty:
+        raise ValueError(f"empty evaluation window for {year}")
+    finite = np.isfinite(annual.to_numpy(dtype=float)).all(axis=1)
+    if not finite.all():
+        bad_dates = annual.index[~finite]
+        dates = ",".join(date.date().isoformat() for date in bad_dates[:10])
+        raise ValueError(f"non-finite active returns in {year}: {dates}")
+    return annual
+
+
+def _consecutive_ari(
+    previous: Mapping[str, str] | None,
+    current: Mapping[str, str],
+) -> tuple[int | None, float | None]:
+    if previous is None:
+        return None, None
+    common = sorted(set(previous) & set(current))
+    score = adjusted_rand_index(
+        {ticker: previous[ticker] for ticker in common},
+        {ticker: current[ticker] for ticker in common},
+    )
+    return len(common), score
+
+
 def build_annual_groupings(
     stock_simple_returns: pd.DataFrame,
     active_schedule: Mapping[str, Any],
@@ -203,12 +282,7 @@ def build_annual_groupings(
 ) -> tuple[dict[str, Any], pd.DataFrame, dict[str, Any]]:
     """Return assignments, long-form group returns, and clustering diagnostics."""
 
-    panel = stock_simple_returns.copy()
-    panel.index = pd.DatetimeIndex(pd.to_datetime(panel.index), name="date")
-    if panel.empty or panel.index.has_duplicates or not panel.index.is_monotonic_increasing:
-        raise ValueError("return panel must be non-empty with unique sorted dates")
-    if panel.columns.has_duplicates:
-        raise ValueError("return panel security columns must be unique")
+    panel = _validated_grouping_panel(stock_simple_returns)
 
     schedule = _schedule_by_year(active_schedule)
     start_year = int(clustering_config["evaluation_start_year"])
@@ -226,32 +300,18 @@ def build_annual_groupings(
     previous_year: int | None = None
 
     for year in range(start_year, end_year + 1):
-        if year not in schedule:
-            raise ValueError(f"active-universe schedule is missing evaluation year {year}")
-        schedule_row = schedule[year]
-        active = [str(value) for value in schedule_row["active_tickers"]]
-        if len(active) != len(set(active)) or int(schedule_row["security_count"]) != len(active):
-            raise ValueError(f"invalid active set for {year}")
-        missing_panel = sorted(set(active) - set(panel.columns))
-        missing_gics = sorted(set(active) - set(gics_labels))
-        if missing_panel or missing_gics:
-            raise ValueError(
-                f"active set is not represented for {year}; panel={missing_panel}, gics={missing_gics}"
-            )
-        active = sorted(active)
+        schedule_row, active = _active_set_for_year(year, schedule, panel, gics_labels)
         annual_gics = {ticker: str(gics_labels[ticker]) for ticker in active}
         group_count = len(set(annual_gics.values()))
         rebalance_date = pd.Timestamp(str(schedule_row["rebalance_date"]))
         training_start = rebalance_date - pd.DateOffset(years=training_years)
-        training = panel.loc[
-            (panel.index >= training_start) & (panel.index < rebalance_date), active
-        ]
-        if training.empty:
-            raise ValueError(f"empty training window for {year}")
-        training_finite = np.isfinite(training.to_numpy(dtype=float)).all(axis=1)
-        training_complete = training.loc[training_finite]
-        if training_complete.empty:
-            raise ValueError(f"training window has no complete return rows for {year}")
+        training, training_complete, training_finite = _training_windows(
+            panel,
+            active,
+            training_start,
+            rebalance_date,
+            year,
+        )
         training_correlation = pairwise_spearman(training, minimum_paired_fraction=paired_fraction)
         cluster_labels, merges = average_linkage_clusters(
             correlation_distance(training_correlation), group_count
@@ -267,15 +327,7 @@ def build_annual_groupings(
             correlation_distance(issuer_training_correlation), group_count
         )
 
-        annual = panel.loc[(panel.index >= rebalance_date) & (panel.index.year == year), active]
-        if annual.empty:
-            raise ValueError(f"empty evaluation window for {year}")
-        if not np.isfinite(annual.to_numpy(dtype=float)).all():
-            bad_dates = annual.index[~np.isfinite(annual.to_numpy(dtype=float)).all(axis=1)]
-            raise ValueError(
-                f"non-finite active returns in {year}: "
-                + ",".join(date.date().isoformat() for date in bad_dates[:10])
-            )
+        annual = _evaluation_window(panel, active, rebalance_date, year)
         evaluation_correlation = pairwise_spearman(annual, minimum_paired_fraction=paired_fraction)
         issuer_annual, issuer_evaluation_gics = alphabet_issuer_composite(annual, annual_gics)
         if issuer_evaluation_gics != issuer_gics:
@@ -321,24 +373,10 @@ def build_annual_groupings(
         ):
             raise AssertionError(f"annual portfolio identity failed in {year}")
 
-        intersection_count = None
-        consecutive_ari = None
-        if previous_clusters is not None:
-            common = sorted(set(previous_clusters) & set(cluster_labels))
-            intersection_count = len(common)
-            consecutive_ari = adjusted_rand_index(
-                {ticker: previous_clusters[ticker] for ticker in common},
-                {ticker: cluster_labels[ticker] for ticker in common},
-            )
-        issuer_intersection_count = None
-        issuer_consecutive_ari = None
-        if previous_issuer_clusters is not None:
-            issuer_common = sorted(set(previous_issuer_clusters) & set(issuer_cluster_labels))
-            issuer_intersection_count = len(issuer_common)
-            issuer_consecutive_ari = adjusted_rand_index(
-                {ticker: previous_issuer_clusters[ticker] for ticker in issuer_common},
-                {ticker: issuer_cluster_labels[ticker] for ticker in issuer_common},
-            )
+        intersection_count, consecutive_ari = _consecutive_ari(previous_clusters, cluster_labels)
+        issuer_intersection_count, issuer_consecutive_ari = _consecutive_ari(
+            previous_issuer_clusters, issuer_cluster_labels
+        )
         nmi = normalized_mutual_information(cluster_labels, annual_gics)
         issuer_nmi = normalized_mutual_information(issuer_cluster_labels, issuer_evaluation_gics)
         cluster_sizes = {

@@ -209,6 +209,172 @@ def retrieval_timestamp(
     return current_timestamp
 
 
+def _fetch_cached_payload(
+    path: Path,
+    url: str,
+    *,
+    refresh: bool,
+    delay_seconds: float,
+) -> tuple[dict[str, Any], bool, str]:
+    """Fetch one payload without losing a recoverable per-symbol failure."""
+
+    try:
+        payload, fetched = cached_or_fetched(path, url, refresh)
+    except RuntimeError as exc:
+        return {}, False, str(exc)
+    if fetched:
+        time.sleep(delay_seconds)
+    return payload, fetched, ""
+
+
+def _candidate_quote(
+    candidate: dict[str, str],
+    yahoo_symbol: str,
+    search_payload: dict[str, Any],
+    raw_root: Path,
+    *,
+    refresh: bool,
+    delay_seconds: float,
+) -> tuple[dict[str, Any] | None, bool, str]:
+    """Select an exact quote, retrying with the company name when needed."""
+
+    quote = select_quote(search_payload, yahoo_symbol)
+    if quote is not None:
+        return quote, False, ""
+    fallback_url = source_url(
+        SEARCH_ENDPOINT,
+        {
+            "q": f"{yahoo_symbol} {candidate['company_name']}",
+            "quotesCount": 10,
+            "newsCount": 0,
+        },
+    )
+    payload, fetched, error = _fetch_cached_payload(
+        raw_path(raw_root, candidate["ticker"], "search_fallback"),
+        fallback_url,
+        refresh=refresh,
+        delay_seconds=delay_seconds,
+    )
+    return select_quote(payload, yahoo_symbol), fetched, error
+
+
+def _reference_row(
+    candidate: dict[str, str],
+    yahoo_symbol: str,
+    quote: dict[str, Any] | None,
+    chart_meta: dict[str, Any],
+    observation: dict[str, Any] | None,
+    search_url: str,
+    chart_url: str,
+) -> dict[str, Any]:
+    limitations = [
+        "Yahoo metadata is current, not point-in-time as of 2020-01-02",
+        "Yahoo sector/industry labels are not accepted as point-in-time GICS corroboration",
+        "Yahoo ticker is not a permanent security or issuer identifier",
+    ]
+    if candidate["ticker"] in YAHOO_SYMBOL_ALIASES:
+        limitations.append(f"Yahoo symbol alias applied: {candidate['ticker']}->{yahoo_symbol}")
+    quote = quote or {}
+    observation = observation or {}
+    return {
+        "reference_ticker": candidate["ticker"],
+        "reference_company_name": candidate["company_name"],
+        "reference_gics_sector_2020": candidate["gics_sector"],
+        "reference_gics_sub_industry_2020": candidate["gics_sub_industry"],
+        "reference_as_of_date": candidate["as_of_date"],
+        "yahoo_query_symbol": yahoo_symbol,
+        "yahoo_symbol": quote.get("symbol") or chart_meta.get("symbol") or "",
+        "yahoo_short_name_current": quote.get("shortname") or chart_meta.get("shortName") or "",
+        "yahoo_long_name_current": quote.get("longname") or chart_meta.get("longName") or "",
+        "yahoo_exchange_current": quote.get("exchDisp") or quote.get("exchange") or "",
+        "yahoo_quote_type_current": quote.get("quoteType")
+        or chart_meta.get("instrumentType")
+        or "",
+        "yahoo_sector_current": quote.get("sector") or "",
+        "yahoo_industry_current": quote.get("industry") or "",
+        "yahoo_price_date": observation.get("date") or "",
+        "yahoo_close_2020_01_02": observation.get("close"),
+        "yahoo_adjusted_close_2020_01_02": observation.get("adjusted_close"),
+        "yahoo_currency": chart_meta.get("currency") or "",
+        "yahoo_chart_exchange": chart_meta.get("fullExchangeName")
+        or chart_meta.get("exchangeName")
+        or "",
+        "yahoo_first_trade_date": (
+            dt.datetime.fromtimestamp(chart_meta["firstTradeDate"], tz=dt.UTC).date().isoformat()
+            if chart_meta.get("firstTradeDate")
+            else ""
+        ),
+        "metadata_status": (
+            "found_current_search"
+            if quote
+            else "found_chart_only"
+            if chart_meta
+            else "not_found_or_inactive"
+        ),
+        "price_status": "found_2020_01_02" if observation else "not_found_2020_01_02",
+        "provenance_status": "provisional_non_licensed",
+        "limitations": "; ".join(limitations),
+        "search_source_url": search_url,
+        "chart_source_url": chart_url,
+    }
+
+
+def _build_candidate_reference(
+    candidate: dict[str, str],
+    raw_root: Path,
+    *,
+    delay_seconds: float,
+    refresh: bool,
+) -> tuple[dict[str, Any], dict[str, str] | None, bool]:
+    ticker = candidate["ticker"]
+    yahoo_symbol = YAHOO_SYMBOL_ALIASES.get(ticker, ticker)
+    search_url = source_url(
+        SEARCH_ENDPOINT,
+        {"q": yahoo_symbol, "quotesCount": 5, "newsCount": 0},
+    )
+    chart_url = source_url(
+        CHART_ENDPOINT.format(symbol=yahoo_symbol),
+        {"period1": PERIOD1, "period2": PERIOD2, "interval": "1d", "events": "history"},
+    )
+    search_payload, search_fetched, search_error = _fetch_cached_payload(
+        raw_path(raw_root, ticker, "search"),
+        search_url,
+        refresh=refresh,
+        delay_seconds=delay_seconds,
+    )
+    chart_payload, chart_fetched, chart_error = _fetch_cached_payload(
+        raw_path(raw_root, ticker, "chart"),
+        chart_url,
+        refresh=refresh,
+        delay_seconds=delay_seconds,
+    )
+    quote, fallback_fetched, fallback_error = _candidate_quote(
+        candidate,
+        yahoo_symbol,
+        search_payload,
+        raw_root,
+        refresh=refresh,
+        delay_seconds=delay_seconds,
+    )
+    search_error = search_error or fallback_error
+    chart_meta, observation = chart_observation(chart_payload)
+    failure = (
+        {"ticker": ticker, "search_error": search_error, "chart_error": chart_error}
+        if search_error or chart_error
+        else None
+    )
+    row = _reference_row(
+        candidate,
+        yahoo_symbol,
+        quote,
+        chart_meta,
+        observation,
+        search_url,
+        chart_url,
+    )
+    return row, failure, search_fetched or chart_fetched or fallback_fetched
+
+
 def build_reference(
     candidate_path: Path,
     output_path: Path,
@@ -224,125 +390,16 @@ def build_reference(
     failures: list[dict[str, str]] = []
 
     for candidate in candidates:
-        ticker = candidate["ticker"]
-        yahoo_symbol = YAHOO_SYMBOL_ALIASES.get(ticker, ticker)
-        search_params = {"q": yahoo_symbol, "quotesCount": 5, "newsCount": 0}
-        chart_params = {
-            "period1": PERIOD1,
-            "period2": PERIOD2,
-            "interval": "1d",
-            "events": "history",
-        }
-        search_url = source_url(SEARCH_ENDPOINT, search_params)
-        chart_url = source_url(CHART_ENDPOINT.format(symbol=yahoo_symbol), chart_params)
-
-        search_payload: dict[str, Any] = {}
-        chart_payload: dict[str, Any] = {}
-        search_error = ""
-        chart_error = ""
-        search_fetched = False
-        chart_fetched = False
-        try:
-            search_payload, search_fetched = cached_or_fetched(
-                raw_path(raw_root, ticker, "search"), search_url, refresh
-            )
-        except RuntimeError as exc:
-            search_error = str(exc)
-        if search_fetched:
-            fetched_any_payload = True
-            time.sleep(delay_seconds)
-        try:
-            chart_payload, chart_fetched = cached_or_fetched(
-                raw_path(raw_root, ticker, "chart"), chart_url, refresh
-            )
-        except RuntimeError as exc:
-            chart_error = str(exc)
-        if chart_fetched:
-            fetched_any_payload = True
-            time.sleep(delay_seconds)
-
-        quote = select_quote(search_payload, yahoo_symbol)
-        if quote is None:
-            fallback_params = {
-                "q": f"{yahoo_symbol} {candidate['company_name']}",
-                "quotesCount": 10,
-                "newsCount": 0,
-            }
-            fallback_url = source_url(SEARCH_ENDPOINT, fallback_params)
-            try:
-                fallback_payload, fallback_fetched = cached_or_fetched(
-                    raw_path(raw_root, ticker, "search_fallback"), fallback_url, refresh
-                )
-                quote = select_quote(fallback_payload, yahoo_symbol)
-                if fallback_fetched:
-                    fetched_any_payload = True
-                    time.sleep(delay_seconds)
-            except RuntimeError as exc:
-                if not search_error:
-                    search_error = str(exc)
-        chart_meta, observation = chart_observation(chart_payload)
-        if search_error or chart_error:
-            failures.append(
-                {"ticker": ticker, "search_error": search_error, "chart_error": chart_error}
-            )
-        limitations = [
-            "Yahoo metadata is current, not point-in-time as of 2020-01-02",
-            "Yahoo sector/industry labels are not accepted as point-in-time GICS corroboration",
-            "Yahoo ticker is not a permanent security or issuer identifier",
-        ]
-        if ticker in YAHOO_SYMBOL_ALIASES:
-            limitations.append(f"Yahoo symbol alias applied: {ticker}->{yahoo_symbol}")
-        rows.append(
-            {
-                "reference_ticker": ticker,
-                "reference_company_name": candidate["company_name"],
-                "reference_gics_sector_2020": candidate["gics_sector"],
-                "reference_gics_sub_industry_2020": candidate["gics_sub_industry"],
-                "reference_as_of_date": candidate["as_of_date"],
-                "yahoo_query_symbol": yahoo_symbol,
-                "yahoo_symbol": (quote or {}).get("symbol") or chart_meta.get("symbol") or "",
-                "yahoo_short_name_current": (quote or {}).get("shortname")
-                or chart_meta.get("shortName")
-                or "",
-                "yahoo_long_name_current": (quote or {}).get("longname")
-                or chart_meta.get("longName")
-                or "",
-                "yahoo_exchange_current": (quote or {}).get("exchDisp")
-                or (quote or {}).get("exchange")
-                or "",
-                "yahoo_quote_type_current": (quote or {}).get("quoteType")
-                or chart_meta.get("instrumentType")
-                or "",
-                "yahoo_sector_current": (quote or {}).get("sector") or "",
-                "yahoo_industry_current": (quote or {}).get("industry") or "",
-                "yahoo_price_date": (observation or {}).get("date") or "",
-                "yahoo_close_2020_01_02": (observation or {}).get("close"),
-                "yahoo_adjusted_close_2020_01_02": (observation or {}).get("adjusted_close"),
-                "yahoo_currency": chart_meta.get("currency") or "",
-                "yahoo_chart_exchange": chart_meta.get("fullExchangeName")
-                or chart_meta.get("exchangeName")
-                or "",
-                "yahoo_first_trade_date": (
-                    dt.datetime.fromtimestamp(chart_meta["firstTradeDate"], tz=dt.UTC)
-                    .date()
-                    .isoformat()
-                    if chart_meta.get("firstTradeDate")
-                    else ""
-                ),
-                "metadata_status": (
-                    "found_current_search"
-                    if quote
-                    else "found_chart_only"
-                    if chart_meta
-                    else "not_found_or_inactive"
-                ),
-                "price_status": "found_2020_01_02" if observation else "not_found_2020_01_02",
-                "provenance_status": "provisional_non_licensed",
-                "limitations": "; ".join(limitations),
-                "search_source_url": search_url,
-                "chart_source_url": chart_url,
-            }
+        row, failure, fetched = _build_candidate_reference(
+            candidate,
+            raw_root,
+            delay_seconds=delay_seconds,
+            refresh=refresh,
         )
+        rows.append(row)
+        if failure is not None:
+            failures.append(failure)
+        fetched_any_payload = fetched_any_payload or fetched
 
     buffer = io.StringIO(newline="")
     writer = csv.DictWriter(buffer, fieldnames=OUTPUT_COLUMNS)

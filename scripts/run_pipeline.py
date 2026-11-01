@@ -17,18 +17,6 @@ from pathlib import Path
 from typing import Final
 
 PROJECT_ROOT: Final = Path(__file__).resolve().parents[1]
-COMPLEXITY_MODULES: Final[tuple[str, ...]] = (
-    "scripts/evaluate_risk_models.py",
-    "scripts/evaluate_full_vine_robustness.py",
-    "scripts/evaluate_ml_risk_models.py",
-    "scripts/evaluate_group_balanced_robustness.py",
-    "scripts/evaluate_current_composition_historical_simulation.py",
-    "scripts/build_group_balanced_portfolios.py",
-    "scripts/build_report_artifacts.py",
-    "scripts/download_market_data.py",
-    "scripts/pipeline_io.py",
-    "scripts/run_pipeline.py",
-)
 
 
 @dataclass(frozen=True)
@@ -159,8 +147,8 @@ VALIDATE_STAGES: Final[tuple[Stage, ...]] = (
     ),
     Stage(
         "complexity",
-        "Enforce complexity limits on maintained orchestration modules",
-        ("-m", "ruff", "check", *COMPLEXITY_MODULES, "--select", "C901"),
+        "Enforce complexity limits across all pipeline code",
+        ("-m", "ruff", "check", "scripts", "--select", "C901"),
     ),
     Stage(
         "security",

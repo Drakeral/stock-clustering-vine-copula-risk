@@ -320,6 +320,102 @@ def aggregate_actions(
     return split_daily, dividend_daily
 
 
+def _aggregate_split_events(
+    splits: pd.DataFrame,
+    manual_by_provider_event: dict[str, dict[str, Any]],
+) -> pd.DataFrame:
+    if splits.empty:
+        return pd.DataFrame(columns=["research_ticker", "date", "split_factor"])
+    splits["split_factor"] = pd.to_numeric(splits["split_to"]) / pd.to_numeric(splits["split_from"])
+    splits["manual_action_id"] = splits["_event_uid"].map(
+        lambda event_id: manual_by_provider_event.get(str(event_id), {}).get("action_id")
+    )
+    applied = splits.loc[splits["manual_action_id"].isna()].copy()
+    return (
+        applied.groupby(["research_ticker", "date"], as_index=False)["split_factor"]
+        .prod()
+        .sort_values(["research_ticker", "date"])
+    )
+
+
+def _aggregate_dividend_events(dividends: pd.DataFrame) -> pd.DataFrame:
+    if dividends.empty:
+        return pd.DataFrame(columns=["research_ticker", "date", "cash_dividend"])
+    dividends["cash_amount"] = pd.to_numeric(dividends["cash_amount"])
+    return (
+        dividends.groupby(["research_ticker", "date"], as_index=False)["cash_amount"]
+        .sum()
+        .rename(columns={"cash_amount": "cash_dividend"})
+        .sort_values(["research_ticker", "date"])
+    )
+
+
+def _event_reconciliation_records(
+    event_type: str,
+    raw: pd.DataFrame,
+    mapped: pd.DataFrame,
+    manual_by_provider_event: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Build event-level provenance rows before price reconciliation."""
+
+    if raw.empty:
+        return []
+    mapped_counts = {
+        (str(key[0]), pd.Timestamp(key[1])): int(count)
+        for key, count in mapped.groupby(["research_ticker", "date"]).size().items()
+    }
+    records: list[dict[str, Any]] = []
+    for raw_row in raw.to_dict("records"):
+        event_id = str(raw_row["_event_uid"])
+        selected = mapped.loc[mapped["_event_uid"].astype(str).eq(event_id)]
+        if selected.empty:
+            records.append(
+                {
+                    "event_id": event_id,
+                    "event_type": event_type,
+                    "provider_ticker": raw_row.get("ticker"),
+                    "research_ticker": None,
+                    "date": raw_row.get("execution_date") or raw_row.get("ex_dividend_date"),
+                    "typed_event": "literal_split" if event_type == "split" else "cash_dividend",
+                    "application_method": "not_applicable",
+                    "aggregation_count": 0,
+                    "mapping_status": "out_of_segment",
+                }
+            )
+            continue
+        for mapped_row in selected.to_dict("records"):
+            manual = manual_by_provider_event.get(event_id)
+            typed_event = (
+                str(manual["event_type"])
+                if manual
+                else ("literal_split" if event_type == "split" else "cash_dividend")
+            )
+            record = {
+                "event_id": event_id,
+                "event_type": event_type,
+                "provider_ticker": mapped_row.get("provider_event_ticker"),
+                "research_ticker": mapped_row["research_ticker"],
+                "date": pd.Timestamp(mapped_row["date"]).strftime("%Y-%m-%d"),
+                "typed_event": typed_event,
+                "application_method": (
+                    "manual_action_replacement" if manual else "provider_event_aggregation"
+                ),
+                "manual_action_id": manual.get("action_id") if manual else None,
+                "aggregation_count": mapped_counts[
+                    (str(mapped_row["research_ticker"]), pd.Timestamp(mapped_row["date"]))
+                ],
+                "mapping_status": "mapped",
+            }
+            value_field = (
+                ("provider_continuity_factor", "split_factor")
+                if event_type == "split"
+                else ("cash_amount", "cash_amount")
+            )
+            record[value_field[0]] = float(mapped_row[value_field[1]])
+            records.append(record)
+    return records
+
+
 def aggregate_actions_v2(
     reference_dir: Path,
     segments: pd.DataFrame,
@@ -344,96 +440,22 @@ def aggregate_actions_v2(
         if action.get("provider_event_id")
     }
 
-    if splits.empty:
-        split_daily = pd.DataFrame(columns=["research_ticker", "date", "split_factor"])
-    else:
-        splits["split_factor"] = pd.to_numeric(splits["split_to"]) / pd.to_numeric(
-            splits["split_from"]
-        )
-        splits["manual_action_id"] = splits["_event_uid"].map(
-            lambda event_id: manual_by_provider_event.get(str(event_id), {}).get("action_id")
-        )
-        applied_splits = splits.loc[splits["manual_action_id"].isna()].copy()
-        split_daily = (
-            applied_splits.groupby(["research_ticker", "date"], as_index=False)["split_factor"]
-            .prod()
-            .sort_values(["research_ticker", "date"])
-        )
-
-    if dividends.empty:
-        dividend_daily = pd.DataFrame(columns=["research_ticker", "date", "cash_dividend"])
-    else:
-        dividends["cash_amount"] = pd.to_numeric(dividends["cash_amount"])
-        dividend_daily = (
-            dividends.groupby(["research_ticker", "date"], as_index=False)["cash_amount"]
-            .sum()
-            .rename(columns={"cash_amount": "cash_dividend"})
-            .sort_values(["research_ticker", "date"])
-        )
+    split_daily = _aggregate_split_events(splits, manual_by_provider_event)
+    dividend_daily = _aggregate_dividend_events(dividends)
 
     records: list[dict[str, Any]] = []
     for event_type, raw, mapped in (
         ("split", read_reference_events(reference_dir, "splits"), splits),
         ("dividend", read_reference_events(reference_dir, "dividends"), dividends),
     ):
-        if raw.empty:
-            continue
-        mapped_counts: dict[tuple[str, pd.Timestamp], int] = defaultdict(int)
-        if not mapped.empty:
-            for key, count in mapped.groupby(["research_ticker", "date"]).size().items():
-                mapped_counts[(str(key[0]), pd.Timestamp(key[1]))] = int(count)
-        for raw_row in raw.to_dict("records"):
-            event_id = str(raw_row["_event_uid"])
-            selected = (
-                mapped.loc[mapped["_event_uid"].astype(str).eq(event_id)]
-                if not mapped.empty
-                else pd.DataFrame()
+        records.extend(
+            _event_reconciliation_records(
+                event_type,
+                raw,
+                mapped,
+                manual_by_provider_event,
             )
-            if selected.empty:
-                records.append(
-                    {
-                        "event_id": event_id,
-                        "event_type": event_type,
-                        "provider_ticker": raw_row.get("ticker"),
-                        "research_ticker": None,
-                        "date": raw_row.get("execution_date") or raw_row.get("ex_dividend_date"),
-                        "typed_event": "literal_split"
-                        if event_type == "split"
-                        else "cash_dividend",
-                        "application_method": "not_applicable",
-                        "aggregation_count": 0,
-                        "mapping_status": "out_of_segment",
-                    }
-                )
-                continue
-            for mapped_row in selected.to_dict("records"):
-                manual = manual_by_provider_event.get(event_id)
-                typed_event = (
-                    str(manual["event_type"])
-                    if manual
-                    else ("literal_split" if event_type == "split" else "cash_dividend")
-                )
-                record = {
-                    "event_id": event_id,
-                    "event_type": event_type,
-                    "provider_ticker": mapped_row.get("provider_event_ticker"),
-                    "research_ticker": mapped_row["research_ticker"],
-                    "date": pd.Timestamp(mapped_row["date"]).strftime("%Y-%m-%d"),
-                    "typed_event": typed_event,
-                    "application_method": (
-                        "manual_action_replacement" if manual else "provider_event_aggregation"
-                    ),
-                    "manual_action_id": manual.get("action_id") if manual else None,
-                    "aggregation_count": mapped_counts[
-                        (str(mapped_row["research_ticker"]), pd.Timestamp(mapped_row["date"]))
-                    ],
-                    "mapping_status": "mapped",
-                }
-                if event_type == "split":
-                    record["provider_continuity_factor"] = float(mapped_row["split_factor"])
-                else:
-                    record["cash_amount"] = float(mapped_row["cash_amount"])
-                records.append(record)
+        )
     return split_daily, dividend_daily, records
 
 
@@ -527,6 +549,161 @@ def manual_action_table(
     return pd.DataFrame(rows)
 
 
+def _lifecycle_boundary_handled(
+    *,
+    ticker: str,
+    date: pd.Timestamp,
+    listing_date: pd.Timestamp,
+    terminal_date: pd.Timestamp,
+    remove_date: pd.Timestamp,
+    cash_start_date: pd.Timestamp | None,
+    has_observation: bool,
+    counts: defaultdict[str, int],
+    missing_dates: list[dict[str, Any]],
+    issues: list[str],
+) -> bool:
+    """Classify dates outside a security's active market-observation interval."""
+
+    if date < listing_date:
+        counts["pre_inception"] += 1
+        return True
+    if date >= remove_date:
+        counts["removed"] += 1
+        if has_observation:
+            issues.append(f"{ticker} {date.date()}: observed after removal date")
+        return True
+    if cash_start_date is not None and date >= cash_start_date:
+        counts["terminal_cash"] += 1
+        if has_observation:
+            issues.append(f"{ticker} {date.date()}: market row overlaps terminal-cash period")
+        return True
+    if date <= terminal_date:
+        return False
+    counts["unexplained_missing"] += 1
+    missing_dates.append(
+        {
+            "research_ticker": ticker,
+            "date": date.strftime("%Y-%m-%d"),
+            "classification": "unexplained_missing",
+            "reason": "series ended without terminal-cash or removal classification",
+        }
+    )
+    issues.append(f"{ticker} {date.date()}: unexplained post-terminal absence")
+    return True
+
+
+def _append_observed_lifecycle_row(
+    row: dict[str, Any],
+    output_rows: list[dict[str, Any]],
+    counts: defaultdict[str, int],
+) -> float | None:
+    """Normalize one observed row and return a usable closing price, if present."""
+
+    row["observation_status"] = row.get("observation_status") or "observed"
+    row["lifecycle_classification"] = "active_price"
+    row["is_synthetic"] = bool(row.get("is_synthetic", False))
+    output_rows.append(row)
+    close = pd.to_numeric(pd.Series([row.get("close")]), errors="coerce").iloc[0]
+    count_key = (
+        "synthetic_terminal_consideration"
+        if row["observation_status"] == "synthetic_terminal_consideration"
+        else "observed"
+    )
+    counts[count_key] += 1
+    return float(close) if pd.notna(close) else None
+
+
+def _append_missing_lifecycle_row(
+    *,
+    ticker: str,
+    date: pd.Timestamp,
+    ticker_segments: pd.DataFrame,
+    halt: dict[str, Any] | None,
+    has_action: bool,
+    last_close: float | None,
+    output_rows: list[dict[str, Any]],
+    counts: defaultdict[str, int],
+    missing_dates: list[dict[str, Any]],
+    issues: list[str],
+    configured_halts_used: set[tuple[str, pd.Timestamp]],
+) -> None:
+    """Materialize either a verified halt or an unexplained active-session gap."""
+
+    segment_rows = ticker_segments.loc[
+        ticker_segments["start"].le(date) & ticker_segments["end"].ge(date)
+    ]
+    if halt and not has_action and last_close is not None and len(segment_rows) == 1:
+        segment = segment_rows.iloc[0]
+        output_rows.append(
+            {
+                "date": date,
+                "research_ticker": ticker,
+                "ticker": segment["provider_ticker"],
+                "continuity_event": segment["event"],
+                "open": last_close,
+                "high": last_close,
+                "low": last_close,
+                "close": last_close,
+                "volume": 0,
+                "transactions": 0,
+                "window_start": int(date.value),
+                "observation_status": "verified_halt",
+                "lifecycle_classification": "verified_halt",
+                "is_synthetic": True,
+            }
+        )
+        configured_halts_used.add((ticker, date))
+        counts["verified_halt"] += 1
+        missing_dates.append(
+            {
+                "research_ticker": ticker,
+                "date": date.strftime("%Y-%m-%d"),
+                "classification": "verified_halt",
+                "reason": halt["reason"],
+            }
+        )
+        return
+
+    if halt and has_action:
+        reason = "verified halt overlaps a corporate action and cannot be stale-filled"
+    elif len(segment_rows) != 1:
+        reason = "no unique provider segment covers active session"
+    else:
+        reason = "unconfigured active-session absence"
+    unique_segment = segment_rows.iloc[0] if len(segment_rows) == 1 else None
+    output_rows.append(
+        {
+            "date": date,
+            "research_ticker": ticker,
+            "ticker": unique_segment["provider_ticker"] if unique_segment is not None else pd.NA,
+            "continuity_event": unique_segment["event"]
+            if unique_segment is not None
+            else "segment_gap",
+            "open": np.nan,
+            "high": np.nan,
+            "low": np.nan,
+            "close": np.nan,
+            "volume": np.nan,
+            "transactions": np.nan,
+            "window_start": np.nan,
+            "observation_status": "unexplained_missing",
+            "lifecycle_classification": "unexplained_missing",
+            "is_synthetic": True,
+        }
+    )
+    counts["unexplained_missing"] += 1
+    missing_dates.append(
+        {
+            "research_ticker": ticker,
+            "date": date.strftime("%Y-%m-%d"),
+            "classification": "unexplained_missing",
+            "reason": reason,
+            "corporate_action_on_missing_date": has_action,
+        }
+    )
+    issues.append(f"{ticker} {date.date()}: {reason}")
+
+
 def complete_lifecycle_grid(
     prices: pd.DataFrame,
     trading_dates: pd.DatetimeIndex,
@@ -591,125 +768,45 @@ def complete_lifecycle_grid(
         }
         last_close: float | None = None
         for date in trading_dates:
-            if date < listing_date:
-                classification_counts["pre_inception"] += 1
-                continue
-            if date >= remove_date:
-                classification_counts["removed"] += 1
-                if date in actual:
-                    issues.append(f"{ticker} {date.date()}: observed after removal date")
-                continue
-            if cash_start_date is not None and date >= cash_start_date:
-                classification_counts["terminal_cash"] += 1
-                if date in actual:
-                    issues.append(
-                        f"{ticker} {date.date()}: market row overlaps terminal-cash period"
-                    )
-                continue
-            if date > terminal_date:
-                classification_counts["unexplained_missing"] += 1
-                missing_active_dates.append(
-                    {
-                        "research_ticker": ticker,
-                        "date": date.strftime("%Y-%m-%d"),
-                        "classification": "unexplained_missing",
-                        "reason": "series ended without terminal-cash or removal classification",
-                    }
-                )
-                issues.append(f"{ticker} {date.date()}: unexplained post-terminal absence")
+            if _lifecycle_boundary_handled(
+                ticker=ticker,
+                date=date,
+                listing_date=listing_date,
+                terminal_date=terminal_date,
+                remove_date=remove_date,
+                cash_start_date=cash_start_date,
+                has_observation=date in actual,
+                counts=classification_counts,
+                missing_dates=missing_active_dates,
+                issues=issues,
+            ):
                 continue
 
             if date in actual:
-                row = actual[date]
-                row["observation_status"] = row.get("observation_status") or "observed"
-                row["lifecycle_classification"] = "active_price"
-                row["is_synthetic"] = bool(row.get("is_synthetic", False))
-                output_rows.append(row)
-                close = pd.to_numeric(pd.Series([row.get("close")]), errors="coerce").iloc[0]
-                if pd.notna(close):
-                    last_close = float(close)
-                classification_counts[
-                    "synthetic_terminal_consideration"
-                    if row["observation_status"] == "synthetic_terminal_consideration"
-                    else "observed"
-                ] += 1
+                observed_close = _append_observed_lifecycle_row(
+                    actual[date],
+                    output_rows,
+                    classification_counts,
+                )
+                if observed_close is not None:
+                    last_close = observed_close
                 continue
 
-            segment_rows = ticker_segments.loc[
-                ticker_segments["start"].le(date) & ticker_segments["end"].ge(date)
-            ]
             halt = halt_lookup.get((ticker, date))
             has_action = (ticker, date) in corporate_action_keys
-            if halt and not has_action and last_close is not None and len(segment_rows) == 1:
-                segment = segment_rows.iloc[0]
-                output_rows.append(
-                    {
-                        "date": date,
-                        "research_ticker": ticker,
-                        "ticker": segment["provider_ticker"],
-                        "continuity_event": segment["event"],
-                        "open": last_close,
-                        "high": last_close,
-                        "low": last_close,
-                        "close": last_close,
-                        "volume": 0,
-                        "transactions": 0,
-                        "window_start": int(date.value),
-                        "observation_status": "verified_halt",
-                        "lifecycle_classification": "verified_halt",
-                        "is_synthetic": True,
-                    }
-                )
-                configured_halts_used.add((ticker, date))
-                classification_counts["verified_halt"] += 1
-                missing_active_dates.append(
-                    {
-                        "research_ticker": ticker,
-                        "date": date.strftime("%Y-%m-%d"),
-                        "classification": "verified_halt",
-                        "reason": halt["reason"],
-                    }
-                )
-                continue
-
-            reason = "unconfigured active-session absence"
-            if halt and has_action:
-                reason = "verified halt overlaps a corporate action and cannot be stale-filled"
-            elif len(segment_rows) != 1:
-                reason = "no unique provider segment covers active session"
-            provider_ticker = (
-                segment_rows.iloc[0]["provider_ticker"] if len(segment_rows) == 1 else pd.NA
+            _append_missing_lifecycle_row(
+                ticker=ticker,
+                date=date,
+                ticker_segments=ticker_segments,
+                halt=halt,
+                has_action=has_action,
+                last_close=last_close,
+                output_rows=output_rows,
+                counts=classification_counts,
+                missing_dates=missing_active_dates,
+                issues=issues,
+                configured_halts_used=configured_halts_used,
             )
-            continuity = segment_rows.iloc[0]["event"] if len(segment_rows) == 1 else "segment_gap"
-            output_rows.append(
-                {
-                    "date": date,
-                    "research_ticker": ticker,
-                    "ticker": provider_ticker,
-                    "continuity_event": continuity,
-                    "open": np.nan,
-                    "high": np.nan,
-                    "low": np.nan,
-                    "close": np.nan,
-                    "volume": np.nan,
-                    "transactions": np.nan,
-                    "window_start": np.nan,
-                    "observation_status": "unexplained_missing",
-                    "lifecycle_classification": "unexplained_missing",
-                    "is_synthetic": True,
-                }
-            )
-            classification_counts["unexplained_missing"] += 1
-            missing_active_dates.append(
-                {
-                    "research_ticker": ticker,
-                    "date": date.strftime("%Y-%m-%d"),
-                    "classification": "unexplained_missing",
-                    "reason": reason,
-                    "corporate_action_on_missing_date": has_action,
-                }
-            )
-            issues.append(f"{ticker} {date.date()}: {reason}")
 
     unused_halts = sorted(
         f"{ticker} {date.strftime('%Y-%m-%d')}"

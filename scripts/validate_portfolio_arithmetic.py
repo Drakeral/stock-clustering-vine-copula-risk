@@ -49,6 +49,130 @@ def _issue(code: str, **details: object) -> dict[str, object]:
     return {"code": code, **details}
 
 
+def _validated_return_panel(stock_simple_returns: pd.DataFrame) -> pd.DataFrame:
+    """Return a date-indexed copy after enforcing panel-level invariants."""
+
+    if stock_simple_returns.empty:
+        raise ValueError("simple-return panel must not be empty")
+    panel = stock_simple_returns.copy()
+    panel.index = pd.DatetimeIndex(pd.to_datetime(panel.index), name=panel.index.name or "date")
+    if panel.index.has_duplicates:
+        raise ValueError("simple-return panel has duplicate dates")
+    if not panel.index.is_monotonic_increasing:
+        raise ValueError("simple-return panel dates must be sorted")
+    if panel.columns.has_duplicates:
+        raise ValueError("simple-return panel has duplicate security columns")
+    return panel
+
+
+def _schedule_by_year(active_schedule: Mapping[str, object]) -> dict[int, Mapping[str, object]]:
+    """Index validated annual active-set rows by year."""
+
+    schedule_rows = active_schedule.get("years")
+    if not isinstance(schedule_rows, list) or not schedule_rows:
+        raise ValueError("active schedule must contain a non-empty years list")
+    indexed: dict[int, Mapping[str, object]] = {}
+    for row in schedule_rows:
+        if not isinstance(row, Mapping) or "year" not in row:
+            raise ValueError("each active-schedule row must contain a year")
+        year = int(row["year"])
+        if year in indexed:
+            raise ValueError(f"active schedule contains duplicate year {year}")
+        indexed[year] = row
+    return indexed
+
+
+def _active_tickers_for_year(
+    row: Mapping[str, object],
+    year: int,
+    panel: pd.DataFrame,
+    labels: Mapping[str, str],
+    issues: list[dict[str, object]],
+) -> list[str] | None:
+    """Validate one annual active set and return tickers when it is usable."""
+
+    active_value = row.get("active_tickers")
+    if not isinstance(active_value, list) or not active_value:
+        issues.append(_issue("empty_annual_active_set", year=year))
+        return None
+    active = [str(ticker) for ticker in active_value]
+    if len(active) != len(set(active)):
+        issues.append(_issue("duplicate_annual_active_security", year=year))
+        return None
+    declared_count = row.get("security_count")
+    if declared_count is None or int(declared_count) != len(active):
+        issues.append(
+            _issue(
+                "annual_security_count_mismatch",
+                year=year,
+                declared=declared_count,
+                observed=len(active),
+            )
+        )
+    missing_columns = sorted(set(active) - set(panel.columns))
+    missing_labels = sorted(set(active) - set(labels))
+    if missing_columns:
+        issues.append(
+            _issue("active_security_missing_from_panel", year=year, tickers=missing_columns)
+        )
+    if missing_labels:
+        issues.append(
+            _issue("active_security_missing_group_label", year=year, tickers=missing_labels)
+        )
+    return None if missing_columns or missing_labels else active
+
+
+def _complete_annual_returns(
+    annual: pd.DataFrame,
+    year: int,
+    earliest_date: pd.Timestamp,
+    issues: list[dict[str, object]],
+) -> tuple[pd.DataFrame, list[str]]:
+    """Select complete return rows and record invalid active-period observations."""
+
+    values = annual.to_numpy(dtype=float)
+    complete_rows = np.isfinite(values).all(axis=1)
+    allowed_undefined = np.isnan(values).all(axis=1) & (annual.index == earliest_date)
+    bad_rows = ~(complete_rows | allowed_undefined)
+    if bool(bad_rows.any()):
+        bad_dates = [date.date().isoformat() for date in annual.index[bad_rows]]
+        issues.append(
+            _issue("nonfinite_active_return", year=year, dates=bad_dates, count=len(bad_dates))
+        )
+    undefined_dates = [date.date().isoformat() for date in annual.index[allowed_undefined]]
+    return annual.loc[complete_rows], undefined_dates
+
+
+def _reconstruction_metrics(
+    checked: pd.DataFrame,
+    active: list[str],
+    labels: Mapping[str, str],
+    year: int,
+    tolerance: float,
+    issues: list[dict[str, object]],
+) -> tuple[dict[str, int], float | None, list[float]]:
+    """Reconstruct the equal-weight portfolio from groups and measure its error."""
+
+    grouped = group_simple_returns(checked, {ticker: labels[ticker] for ticker in active})
+    direct = checked.mean(axis=1)
+    weights = grouped.group_sizes / len(active)
+    reconstructed = grouped.simple_returns.mul(weights, axis="columns").sum(axis=1)
+    errors = (direct - reconstructed).abs()
+    maximum_error = float(errors.max()) if len(errors) else None
+    if maximum_error is not None and maximum_error > tolerance:
+        issues.append(
+            _issue(
+                "portfolio_reconstruction_tolerance_exceeded",
+                year=year,
+                date=errors.idxmax().date().isoformat(),
+                maximum_absolute_error=maximum_error,
+                tolerance=tolerance,
+            )
+        )
+    group_sizes = {key: int(value) for key, value in grouped.group_sizes.items()}
+    return group_sizes, maximum_error, [float(value) for value in errors]
+
+
 def validate_annual_reconstruction(
     stock_simple_returns: pd.DataFrame,
     active_schedule: Mapping[str, object],
@@ -67,29 +191,8 @@ def validate_annual_reconstruction(
 
     if tolerance <= 0 or not np.isfinite(tolerance):
         raise ValueError("tolerance must be finite and positive")
-    if stock_simple_returns.empty:
-        raise ValueError("simple-return panel must not be empty")
-
-    panel = stock_simple_returns.copy()
-    panel.index = pd.DatetimeIndex(pd.to_datetime(panel.index), name=panel.index.name or "date")
-    if panel.index.has_duplicates:
-        raise ValueError("simple-return panel has duplicate dates")
-    if not panel.index.is_monotonic_increasing:
-        raise ValueError("simple-return panel dates must be sorted")
-    if panel.columns.has_duplicates:
-        raise ValueError("simple-return panel has duplicate security columns")
-
-    schedule_rows = active_schedule.get("years")
-    if not isinstance(schedule_rows, list) or not schedule_rows:
-        raise ValueError("active schedule must contain a non-empty years list")
-    schedule_by_year: dict[int, Mapping[str, object]] = {}
-    for row in schedule_rows:
-        if not isinstance(row, Mapping) or "year" not in row:
-            raise ValueError("each active-schedule row must contain a year")
-        year = int(row["year"])
-        if year in schedule_by_year:
-            raise ValueError(f"active schedule contains duplicate year {year}")
-        schedule_by_year[year] = row
+    panel = _validated_return_panel(stock_simple_returns)
+    schedule_by_year = _schedule_by_year(active_schedule)
 
     panel_years = sorted(int(year) for year in panel.index.year.unique())
     issues: list[dict[str, object]] = []
@@ -111,79 +214,27 @@ def validate_annual_reconstruction(
         row = schedule_by_year.get(year)
         if row is None:
             continue
-        active_value = row.get("active_tickers")
-        if not isinstance(active_value, list) or not active_value:
-            issues.append(_issue("empty_annual_active_set", year=year))
-            continue
-        active = [str(ticker) for ticker in active_value]
-        if len(active) != len(set(active)):
-            issues.append(_issue("duplicate_annual_active_security", year=year))
-            continue
-        declared_count = row.get("security_count")
-        if declared_count is None or int(declared_count) != len(active):
-            issues.append(
-                _issue(
-                    "annual_security_count_mismatch",
-                    year=year,
-                    declared=declared_count,
-                    observed=len(active),
-                )
-            )
-
-        missing_columns = sorted(set(active) - set(panel.columns))
-        missing_labels = sorted(set(active) - set(labels))
-        if missing_columns:
-            issues.append(
-                _issue("active_security_missing_from_panel", year=year, tickers=missing_columns)
-            )
-        if missing_labels:
-            issues.append(
-                _issue("active_security_missing_group_label", year=year, tickers=missing_labels)
-            )
-        if missing_columns or missing_labels:
+        active = _active_tickers_for_year(row, year, panel, labels, issues)
+        if active is None:
             continue
 
         annual = panel.loc[panel.index.year == year, active]
-        values = annual.to_numpy(dtype=float)
-        finite = np.isfinite(values)
-        complete_rows = finite.all(axis=1)
-        all_nan_rows = np.isnan(values).all(axis=1)
-        allowed_undefined = all_nan_rows & (annual.index == earliest_date)
-        bad_rows = ~(complete_rows | allowed_undefined)
-        if bool(bad_rows.any()):
-            bad_dates = [date.date().isoformat() for date in annual.index[bad_rows]]
-            issues.append(
-                _issue(
-                    "nonfinite_active_return",
-                    year=year,
-                    dates=bad_dates,
-                    count=len(bad_dates),
-                )
-            )
-        year_undefined = [date.date().isoformat() for date in annual.index[allowed_undefined]]
+        checked, year_undefined = _complete_annual_returns(
+            annual,
+            year,
+            earliest_date,
+            issues,
+        )
         undefined_dates.extend(year_undefined)
-
-        checked = annual.loc[complete_rows]
-        year_labels = {ticker: labels[ticker] for ticker in active}
-        grouped = group_simple_returns(checked, year_labels)
-        direct = checked.mean(axis=1)
-        group_weights = grouped.group_sizes / len(active)
-        reconstructed = grouped.simple_returns.mul(group_weights, axis="columns").sum(axis=1)
-        errors = (direct - reconstructed).abs()
-        maximum_error = float(errors.max()) if len(errors) else None
-        if maximum_error is not None:
-            all_errors.extend(float(value) for value in errors)
-            if maximum_error > tolerance:
-                worst_date = errors.idxmax().date().isoformat()
-                issues.append(
-                    _issue(
-                        "portfolio_reconstruction_tolerance_exceeded",
-                        year=year,
-                        date=worst_date,
-                        maximum_absolute_error=maximum_error,
-                        tolerance=tolerance,
-                    )
-                )
+        group_sizes, maximum_error, errors = _reconstruction_metrics(
+            checked,
+            active,
+            labels,
+            year,
+            tolerance,
+            issues,
+        )
+        all_errors.extend(errors)
 
         annual_results.append(
             {
@@ -193,8 +244,8 @@ def validate_annual_reconstruction(
                 "checked_return_dates": len(checked),
                 "undefined_initial_dates": year_undefined,
                 "active_security_count": len(active),
-                "group_count": len(grouped.group_sizes),
-                "group_sizes": {key: int(value) for key, value in grouped.group_sizes.items()},
+                "group_count": len(group_sizes),
+                "group_sizes": group_sizes,
                 "maximum_absolute_error": maximum_error,
                 "status": "pass"
                 if not any(issue.get("year") == year for issue in issues)

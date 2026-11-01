@@ -411,14 +411,10 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def main() -> None:
-    args = parse_args()
-    frozen_cli_values = {
+def _validate_frozen_arguments(args: argparse.Namespace) -> None:
+    frozen_values = {
         "as_of_date": (args.as_of_date, FROZEN_AS_OF_DATE),
-        "membership_table_date": (
-            args.membership_table_date,
-            FROZEN_MEMBERSHIP_TABLE_DATE,
-        ),
+        "membership_table_date": (args.membership_table_date, FROZEN_MEMBERSHIP_TABLE_DATE),
         "expected_securities": (args.expected_securities, FROZEN_SECURITY_COUNT),
         "expected_sectors": (args.expected_sectors, FROZEN_SECTOR_COUNT),
         "expected_sp100_revision": (args.expected_sp100_revision, EXPECTED_SP100_REVISION),
@@ -426,47 +422,61 @@ def main() -> None:
     }
     changed = {
         name: {"received": received, "frozen": frozen}
-        for name, (received, frozen) in frozen_cli_values.items()
+        for name, (received, frozen) in frozen_values.items()
         if received != frozen
     }
     if changed:
         raise ValueError(f"Protocol-critical universe parameters cannot be overridden: {changed}")
 
-    project_root = Path(__file__).resolve().parents[1]
+
+def _validated_revision_sources(
+    args: argparse.Namespace, project_root: Path
+) -> tuple[dict[str, Any], str, dict[str, Any], str]:
     sp100_meta, sp100_content = revision_record(args.sp100_json, project_root)
     sp500_meta, sp500_content = revision_record(args.sp500_json, project_root)
-    if sp100_meta["revision_id"] != args.expected_sp100_revision:
-        raise ValueError(
-            f"S&P 100 revision mismatch: expected {args.expected_sp100_revision}, "
-            f"found {sp100_meta['revision_id']}"
-        )
-    if sp500_meta["revision_id"] != args.expected_sp500_revision:
-        raise ValueError(
-            f"S&P 500 revision mismatch: expected {args.expected_sp500_revision}, "
-            f"found {sp500_meta['revision_id']}"
-        )
-    expected_source_identity = (
-        (sp100_meta, EXPECTED_SP100_TITLE, EXPECTED_SP100_TIMESTAMP, "S&P 100"),
-        (sp500_meta, EXPECTED_SP500_TITLE, EXPECTED_SP500_TIMESTAMP, "S&P 500"),
+    expected_sources = (
+        (
+            sp100_meta,
+            args.expected_sp100_revision,
+            EXPECTED_SP100_TITLE,
+            EXPECTED_SP100_TIMESTAMP,
+            "S&P 100",
+        ),
+        (
+            sp500_meta,
+            args.expected_sp500_revision,
+            EXPECTED_SP500_TITLE,
+            EXPECTED_SP500_TIMESTAMP,
+            "S&P 500",
+        ),
     )
-    for metadata, expected_title, expected_timestamp, label in expected_source_identity:
-        if (
-            metadata["page_title"] != expected_title
-            or metadata["revision_timestamp"] != expected_timestamp
-        ):
+    for metadata, revision, title, timestamp, label in expected_sources:
+        if metadata["revision_id"] != revision:
+            raise ValueError(
+                f"{label} revision mismatch: expected {revision}, found {metadata['revision_id']}"
+            )
+        if metadata["page_title"] != title or metadata["revision_timestamp"] != timestamp:
             raise ValueError(
                 f"{label} source identity differs: expected title/timestamp "
-                f"{expected_title!r}/{expected_timestamp}, found "
+                f"{title!r}/{timestamp}, found "
                 f"{metadata['page_title']!r}/{metadata['revision_timestamp']}"
             )
-    membership = parse_sp100(sp100_content)
-    gics = parse_sp500_gics(sp500_content)
+    return sp100_meta, sp100_content, sp500_meta, sp500_content
+
+
+def _validated_secondary_records(
+    args: argparse.Namespace,
+    sp100_content: str,
+    sp500_content: str,
+) -> tuple[list[dict[str, Any]], list[str]]:
     records, unmatched = build_secondary_records(
-        membership, gics, args.as_of_date, args.membership_table_date
+        parse_sp100(sp100_content),
+        parse_sp500_gics(sp500_content),
+        args.as_of_date,
+        args.membership_table_date,
     )
     if unmatched:
         raise ValueError(f"Missing GICS mapping: {unmatched}")
-
     sectors = sorted({row["gics_sector"] for row in records})
     if len(records) != args.expected_securities:
         raise ValueError(f"Expected {args.expected_securities} securities, found {len(records)}")
@@ -474,58 +484,87 @@ def main() -> None:
         raise ValueError(
             f"Expected {args.expected_sectors} sectors, found {len(sectors)}: {sectors}"
         )
+    return records, sectors
 
-    licensed = (
-        read_licensed_universe(args.licensed_universe_csv) if args.licensed_universe_csv else None
-    )
-    reconciliation = reconcile_licensed_universe(records, licensed, args.as_of_date)
-    license_metadata_complete = bool(args.licensed_source_name and args.licensed_license_reference)
-    provenance_pass = reconciliation["status"] == "pass" and license_metadata_complete
-    provenance_status = "pass" if provenance_pass else "blocked"
+
+def _provenance_state(
+    licensed: list[dict[str, Any]] | None,
+    reconciliation: dict[str, Any],
+    args: argparse.Namespace,
+) -> tuple[bool, str, list[str]]:
+    metadata_complete = bool(args.licensed_source_name and args.licensed_license_reference)
+    passed = reconciliation["status"] == "pass" and metadata_complete
     if licensed is None:
         blockers = ["authorized_point_in_time_universe_extract_absent"]
-    elif not license_metadata_complete:
+    elif not metadata_complete:
         blockers = ["licensed_source_or_license_metadata_absent"]
     elif reconciliation["status"] != "pass":
         blockers = ["unresolved_universe_reconciliation_differences"]
     else:
         blockers = []
+    return passed, "pass" if passed else "blocked", blockers
+
+
+def _normalized_licensed_payload(
+    licensed: list[dict[str, Any]] | None,
+    records: list[dict[str, Any]],
+    args: argparse.Namespace,
+    provenance_pass: bool,
+) -> dict[str, Any] | None:
+    if licensed is None:
+        return None
+    secondary_by_ticker = {row["ticker"]: row for row in records}
+    normalized_records = [
+        {
+            **secondary_by_ticker.get(corroborated["ticker"], {}),
+            **corroborated,
+            "membership_as_of": corroborated["as_of_date"],
+            "membership_table_date": corroborated["membership_date"],
+            "initial_universe_status": (
+                "candidate_pending_full_coverage_test"
+                if provenance_pass
+                else "provisional_not_reconciled"
+            ),
+        }
+        for corroborated in licensed
+    ]
+    return {
+        "schema_version": 2,
+        "universe_name": "Licensed normalized S&P 100 point-in-time extract",
+        "as_of_date": args.as_of_date,
+        "status": "reconciled" if provenance_pass else "provisional_not_reconciled",
+        "source_name": args.licensed_source_name or None,
+        "license_reference": args.licensed_license_reference or None,
+        "raw_payload_publishable": False,
+        "security_count": len(normalized_records),
+        "constituents": normalized_records,
+    }
+
+
+def main() -> None:
+    args = parse_args()
+    _validate_frozen_arguments(args)
+    project_root = Path(__file__).resolve().parents[1]
+    sp100_meta, sp100_content, sp500_meta, sp500_content = _validated_revision_sources(
+        args, project_root
+    )
+    records, sectors = _validated_secondary_records(args, sp100_content, sp500_content)
+    unmatched: list[str] = []
+
+    licensed = (
+        read_licensed_universe(args.licensed_universe_csv) if args.licensed_universe_csv else None
+    )
+    reconciliation = reconcile_licensed_universe(records, licensed, args.as_of_date)
+    provenance_pass, provenance_status, blockers = _provenance_state(licensed, reconciliation, args)
 
     public_records = [dict(row) for row in records]
     if provenance_pass:
         for row in public_records:
             row["initial_universe_status"] = "candidate_pending_full_coverage_test"
 
-    normalized_licensed_universe: dict[str, Any] | None = None
-    if licensed is not None:
-        secondary_by_ticker = {row["ticker"]: row for row in records}
-        normalized_records = []
-        for corroborated in licensed:
-            row = secondary_by_ticker.get(corroborated["ticker"], {})
-            normalized_records.append(
-                {
-                    **row,
-                    **corroborated,
-                    "membership_as_of": corroborated["as_of_date"],
-                    "membership_table_date": corroborated["membership_date"],
-                    "initial_universe_status": (
-                        "candidate_pending_full_coverage_test"
-                        if provenance_pass
-                        else "provisional_not_reconciled"
-                    ),
-                }
-            )
-        normalized_licensed_universe = {
-            "schema_version": 2,
-            "universe_name": "Licensed normalized S&P 100 point-in-time extract",
-            "as_of_date": args.as_of_date,
-            "status": "reconciled" if provenance_pass else "provisional_not_reconciled",
-            "source_name": args.licensed_source_name or None,
-            "license_reference": args.licensed_license_reference or None,
-            "raw_payload_publishable": False,
-            "security_count": len(normalized_records),
-            "constituents": normalized_records,
-        }
+    normalized_licensed_universe = _normalized_licensed_payload(
+        licensed, records, args, provenance_pass
+    )
 
     checks = {
         "unmatched_tickers": unmatched,

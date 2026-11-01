@@ -39,6 +39,14 @@ class PipelineRegistryTests(unittest.TestCase):
         ):
             self.assertIn(required, names)
 
+        complexity = next(
+            stage for stage in run_pipeline.VALIDATE_STAGES if stage.name == "complexity"
+        )
+        self.assertEqual(
+            complexity.arguments,
+            ("-m", "ruff", "check", "scripts", "--select", "C901"),
+        )
+
     def test_select_stages_is_inclusive_and_rejects_reverse_bounds(self) -> None:
         chosen = run_pipeline.select_stages(run_pipeline.VALIDATE_STAGES, "compile", "tests")
         self.assertEqual([stage.name for stage in chosen], ["compile", "tests"])

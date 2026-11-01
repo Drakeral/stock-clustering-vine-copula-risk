@@ -145,6 +145,99 @@ def _positive_integer(section: Mapping[str, Any], key: str, section_name: str) -
     return value
 
 
+def _vine_protocol_mismatches(
+    vine: Mapping[str, Any], portfolio: Mapping[str, Any]
+) -> dict[str, dict[str, Any]]:
+    expected_vine = {
+        "structure_selection": "dissmann_abs_kendall_tau_mst",
+        "family_selection": "aic_sequential_mle",
+        "pair_failure_action": "independence",
+        "monthly_structure_failure_action": "matched_gaussian",
+        "families": list(FAMILY_BY_CONFIG),
+        "rotations_degrees": [0, 90, 180, 270],
+    }
+    expected_portfolio = {
+        "primary_return_scale": "simple",
+        "primary_rebalancing": "daily",
+        "group_weighting": "group_size",
+        "realised_loss_definition": "negative_simple_portfolio_return",
+    }
+    observed_vine = {
+        **vine,
+        "families": list(vine.get("families", [])),
+        "rotations_degrees": list(vine.get("rotations_degrees", [])),
+    }
+    mismatches = {
+        key: {"expected": expected, "observed": observed_vine.get(key)}
+        for key, expected in expected_vine.items()
+        if observed_vine.get(key) != expected
+    }
+    mismatches.update(
+        {
+            f"portfolio.{key}": {"expected": expected, "observed": portfolio.get(key)}
+            for key, expected in expected_portfolio.items()
+            if portfolio.get(key) != expected
+        }
+    )
+    return mismatches
+
+
+def _validate_vine_numerical_protocol(
+    vine: Mapping[str, Any],
+    simulation: Mapping[str, Any],
+    forecast: Mapping[str, Any],
+) -> None:
+    lower = _finite_float(vine, "pit_clip_lower", "vine")
+    upper = _finite_float(vine, "pit_clip_upper", "vine")
+    failed_pair_limit = _finite_float(vine, "maximum_failed_pair_fraction", "vine")
+    fallback_limit = _finite_float(vine, "maximum_whole_vine_fallback_date_fraction", "vine")
+    checks = (
+        (
+            [float(value) for value in forecast.get("var_confidence_levels", [])]
+            == [0.95, 0.975, 0.99],
+            "forecast confidence levels differ from the frozen protocol",
+        ),
+        (
+            float(forecast.get("es_confidence_level", float("nan"))) == 0.975,
+            "forecast ES confidence level must be 0.975",
+        ),
+        (
+            _positive_integer(simulation, "base_seed", "simulation") == 5110,
+            "simulation.base_seed must remain 5110",
+        ),
+        (
+            simulation.get("bit_generator") == "PCG64DXSM",
+            "simulation bit generator differs from the frozen protocol",
+        ),
+        (
+            simulation.get("seed_components") == ["base_seed", "year", "month"],
+            "simulation seed components differ from the frozen protocol",
+        ),
+        (
+            simulation.get("common_random_numbers") is True,
+            "common random numbers must remain enabled",
+        ),
+        (
+            _positive_integer(simulation, "draws_per_month", "simulation") >= 100,
+            "simulation.draws_per_month must be at least 100",
+        ),
+        (0 < lower < upper < 1, "vine PIT bounds must lie strictly inside (0, 1)"),
+        (
+            _finite_float(vine, "student_t_df_minimum", "vine") == 2.1,
+            "vine Student-t lower bound must remain 2.1",
+        ),
+        (
+            _finite_float(vine, "student_t_df_maximum", "vine") == 50.0,
+            "vine Student-t upper bound must remain 50",
+        ),
+        (0 <= failed_pair_limit <= 1, "invalid maximum failed-pair fraction"),
+        (0 <= fallback_limit <= 1, "invalid maximum whole-vine fallback fraction"),
+    )
+    for passed, message in checks:
+        if not passed:
+            raise ValueError(message)
+
+
 def validate_vine_protocol(
     model_config: Mapping[str, Any],
     *,
@@ -166,40 +259,7 @@ def validate_vine_protocol(
     marginal = cast(Mapping[str, Any], marginal)
     portfolio = cast(Mapping[str, Any], portfolio)
 
-    expected = {
-        "structure_selection": "dissmann_abs_kendall_tau_mst",
-        "family_selection": "aic_sequential_mle",
-        "pair_failure_action": "independence",
-        "monthly_structure_failure_action": "matched_gaussian",
-    }
-    mismatches = {
-        key: {"expected": value, "observed": vine.get(key)}
-        for key, value in expected.items()
-        if vine.get(key) != value
-    }
-    expected_portfolio = {
-        "primary_return_scale": "simple",
-        "primary_rebalancing": "daily",
-        "group_weighting": "group_size",
-        "realised_loss_definition": "negative_simple_portfolio_return",
-    }
-    mismatches.update(
-        {
-            f"portfolio.{key}": {"expected": value, "observed": portfolio.get(key)}
-            for key, value in expected_portfolio.items()
-            if portfolio.get(key) != value
-        }
-    )
-    if list(vine.get("families", [])) != list(FAMILY_BY_CONFIG):
-        mismatches["families"] = {
-            "expected": list(FAMILY_BY_CONFIG),
-            "observed": vine.get("families"),
-        }
-    if list(vine.get("rotations_degrees", [])) != [0, 90, 180, 270]:
-        mismatches["rotations_degrees"] = {
-            "expected": [0, 90, 180, 270],
-            "observed": vine.get("rotations_degrees"),
-        }
+    mismatches = _vine_protocol_mismatches(vine, portfolio)
     if mismatches:
         raise ValueError(f"unsupported vine protocol: {mismatches}")
 
@@ -211,39 +271,7 @@ def validate_vine_protocol(
     selected_truncation = primary if truncation_level is None else truncation_level
     if selected_truncation not in {primary, robustness} or selected_truncation >= dimension:
         raise ValueError("truncation level is not one of the frozen protocol levels")
-    if [float(value) for value in forecast.get("var_confidence_levels", [])] != [
-        0.95,
-        0.975,
-        0.99,
-    ]:
-        raise ValueError("forecast confidence levels differ from the frozen protocol")
-    if float(forecast.get("es_confidence_level", float("nan"))) != 0.975:
-        raise ValueError("forecast ES confidence level must be 0.975")
-    if _positive_integer(simulation, "base_seed", "simulation") != 5110:
-        raise ValueError("simulation.base_seed must remain 5110")
-    if simulation.get("bit_generator") != "PCG64DXSM":
-        raise ValueError("simulation bit generator differs from the frozen protocol")
-    if simulation.get("seed_components") != ["base_seed", "year", "month"]:
-        raise ValueError("simulation seed components differ from the frozen protocol")
-    if simulation.get("common_random_numbers") is not True:
-        raise ValueError("common random numbers must remain enabled")
-    if _positive_integer(simulation, "draws_per_month", "simulation") < 100:
-        raise ValueError("simulation.draws_per_month must be at least 100")
-    if (
-        not 0
-        < _finite_float(vine, "pit_clip_lower", "vine")
-        < _finite_float(vine, "pit_clip_upper", "vine")
-        < 1
-    ):
-        raise ValueError("vine PIT bounds must lie strictly inside (0, 1)")
-    if _finite_float(vine, "student_t_df_minimum", "vine") != 2.1:
-        raise ValueError("vine Student-t lower bound must remain 2.1")
-    if _finite_float(vine, "student_t_df_maximum", "vine") != 50.0:
-        raise ValueError("vine Student-t upper bound must remain 50")
-    if not 0 <= _finite_float(vine, "maximum_failed_pair_fraction", "vine") <= 1:
-        raise ValueError("invalid maximum failed-pair fraction")
-    if not 0 <= _finite_float(vine, "maximum_whole_vine_fallback_date_fraction", "vine") <= 1:
-        raise ValueError("invalid maximum whole-vine fallback fraction")
+    _validate_vine_numerical_protocol(vine, simulation, forecast)
     return vine, simulation, forecast, marginal, selected_truncation
 
 
@@ -543,57 +571,82 @@ def _prepare_frames(
     return training, refits, daily, returns, gaussian
 
 
+def _validated_seed_record(
+    raw: Any,
+    simulation: Mapping[str, Any],
+    existing_keys: set[tuple[int, int]],
+) -> tuple[tuple[int, int], Mapping[str, Any]]:
+    if not isinstance(raw, Mapping):
+        raise TypeError("seed manifest record must be an object")
+    record = cast(Mapping[str, Any], raw)
+    year = record.get("year")
+    month = record.get("month")
+    valid_date = (
+        not isinstance(year, bool)
+        and isinstance(year, int)
+        and not isinstance(month, bool)
+        and isinstance(month, int)
+        and 1 <= month <= 12
+    )
+    if not valid_date:
+        raise ValueError("seed manifest record has an invalid year or month")
+    key = cast(int, year), cast(int, month)
+    if key in existing_keys:
+        raise ValueError(f"duplicate seed manifest month: {key}")
+    expected_fields = {
+        "seed_components": [simulation["base_seed"], *key],
+        "draws": simulation["draws_per_month"],
+        "dimension": simulation["dimension"],
+    }
+    mismatches = [
+        field for field, expected in expected_fields.items() if record.get(field) != expected
+    ]
+    if mismatches:
+        raise ValueError(
+            f"seed manifest record differs from simulation config: {key}/{mismatches[0]}"
+        )
+    uniform_hash = record.get("base_uniform_sha256")
+    valid_hash = (
+        isinstance(uniform_hash, str)
+        and len(uniform_hash) == 64
+        and all(character in "0123456789abcdef" for character in uniform_hash)
+    )
+    if not valid_hash:
+        raise ValueError(f"seed manifest record has an invalid uniform hash: {key}")
+    return key, record
+
+
 def _validated_seed_records(
     seed_manifest: Mapping[str, Any],
     simulation: Mapping[str, Any],
 ) -> dict[tuple[int, int], Mapping[str, Any]]:
-    if seed_manifest.get("schema_version") != 1:
-        raise ValueError("unexpected common-random-number manifest schema version")
-    if seed_manifest.get("manifest_type") != "monthly_common_random_numbers":
-        raise ValueError("unexpected common-random-number manifest type")
-    if seed_manifest.get("seed_sequence") != "SeedSequence([base_seed, year, month])":
-        raise ValueError("unexpected common-random-number seed sequence")
-    for key in ("bit_generator", "base_seed", "draws_per_month", "dimension"):
-        if seed_manifest.get(key) != simulation.get(key):
-            raise ValueError(f"seed manifest differs from simulation config: {key}")
+    expected_manifest = {
+        "schema_version": 1,
+        "manifest_type": "monthly_common_random_numbers",
+        "seed_sequence": "SeedSequence([base_seed, year, month])",
+        **{
+            key: simulation.get(key)
+            for key in ("bit_generator", "base_seed", "draws_per_month", "dimension")
+        },
+    }
+    mismatches = [
+        key for key, expected in expected_manifest.items() if seed_manifest.get(key) != expected
+    ]
+    if mismatches:
+        key = mismatches[0]
+        if key == "schema_version":
+            raise ValueError("unexpected common-random-number manifest schema version")
+        if key == "manifest_type":
+            raise ValueError("unexpected common-random-number manifest type")
+        if key == "seed_sequence":
+            raise ValueError("unexpected common-random-number seed sequence")
+        raise ValueError(f"seed manifest differs from simulation config: {key}")
     raw_records = seed_manifest.get("records")
     if not isinstance(raw_records, list):
         raise TypeError("seed manifest records must be an array")
     records: dict[tuple[int, int], Mapping[str, Any]] = {}
     for raw in raw_records:
-        if not isinstance(raw, Mapping):
-            raise TypeError("seed manifest record must be an object")
-        record = cast(Mapping[str, Any], raw)
-        year = record.get("year")
-        month = record.get("month")
-        if (
-            isinstance(year, bool)
-            or not isinstance(year, int)
-            or isinstance(month, bool)
-            or not isinstance(month, int)
-            or not 1 <= month <= 12
-        ):
-            raise ValueError("seed manifest record has an invalid year or month")
-        key = year, month
-        if key in records:
-            raise ValueError(f"duplicate seed manifest month: {key}")
-        expected_record = {
-            "seed_components": [simulation["base_seed"], year, month],
-            "draws": simulation["draws_per_month"],
-            "dimension": simulation["dimension"],
-        }
-        for field, expected in expected_record.items():
-            if record.get(field) != expected:
-                raise ValueError(
-                    f"seed manifest record differs from simulation config: {key}/{field}"
-                )
-        uniform_hash = record.get("base_uniform_sha256")
-        if (
-            not isinstance(uniform_hash, str)
-            or len(uniform_hash) != 64
-            or any(character not in "0123456789abcdef" for character in uniform_hash)
-        ):
-            raise ValueError(f"seed manifest record has an invalid uniform hash: {key}")
+        key, record = _validated_seed_record(raw, simulation, set(records))
         records[key] = record
     return records
 
@@ -682,6 +735,282 @@ def _forecast_rows(
     return rows
 
 
+def _validated_vine_registry(
+    model_by_grouping: Mapping[str, tuple[str, str, str]] | None,
+) -> tuple[dict[str, tuple[str, str, str]], set[str]]:
+    registry = dict(VINE_MODEL_BY_GROUPING if model_by_grouping is None else model_by_grouping)
+    valid = registry and all(
+        isinstance(input_grouping, str)
+        and bool(input_grouping)
+        and isinstance(value, tuple)
+        and len(value) == 3
+        and all(isinstance(item, str) and bool(item) for item in value)
+        for input_grouping, value in registry.items()
+    )
+    if not valid:
+        raise ValueError(
+            "vine model registry must map groupings to model/grouping/baseline triples"
+        )
+    expected_models = {model_id for model_id, _, _ in registry.values()}
+    unique_fields = (
+        expected_models,
+        {grouping_id for _, grouping_id, _ in registry.values()},
+        {baseline_id for _, _, baseline_id in registry.values()},
+    )
+    messages = (
+        "vine model registry contains duplicate model IDs",
+        "vine model registry contains duplicate output groupings",
+        "vine model registry contains duplicate Gaussian baselines",
+    )
+    for values, message in zip(unique_fields, messages, strict=True):
+        if len(values) != len(registry):
+            raise ValueError(message)
+    return registry, expected_models
+
+
+def _validated_vine_training_block(
+    identifiers: tuple[Any, ...],
+    block: pd.DataFrame,
+    dimension: int,
+) -> tuple[list[str], pd.DataFrame, pd.Timestamp, str]:
+    group_order = sorted(str(value) for value in block["group_id"].unique())
+    if len(group_order) != dimension:
+        raise ValueError(f"{identifiers} has {len(group_order)} groups; expected {dimension}")
+    pivot = block.pivot(index="training_date", columns="group_id", values="pit")
+    pivot = pivot.reindex(columns=group_order).sort_index()
+    if pivot.isna().any().any() or pivot.shape[1] != dimension:
+        raise ValueError(f"{identifiers} does not form a complete PIT matrix")
+    refit_dates = block["refit_date"].drop_duplicates()
+    copula_ids = block["copula_refit_id"].drop_duplicates()
+    if len(refit_dates) != 1 or len(copula_ids) != 1:
+        raise ValueError(f"{identifiers} has inconsistent refit metadata")
+    return group_order, pivot, pd.Timestamp(refit_dates.iloc[0]), str(copula_ids.iloc[0])
+
+
+def _validated_common_uniforms(
+    year: int,
+    month: int,
+    *,
+    seed_records: Mapping[tuple[int, int], Mapping[str, Any]],
+    draws: int,
+    dimension: int,
+    base_seed: int,
+) -> tuple[np.ndarray, str]:
+    seed_key = year, month
+    if seed_key not in seed_records:
+        raise ValueError(f"missing common-random-number record for {seed_key}")
+    independent = common_uniforms(
+        year,
+        month,
+        draws=draws,
+        dimension=dimension,
+        base_seed=base_seed,
+    )
+    uniform_hash = _array_sha256(independent)
+    if seed_records[seed_key].get("base_uniform_sha256") != uniform_hash:
+        raise ValueError(f"common-random-number hash differs for {seed_key}")
+    return independent, uniform_hash
+
+
+def _attempt_vine_fit(
+    pivot: pd.DataFrame,
+    vine: Mapping[str, Any],
+    *,
+    truncation: int,
+    fit_seeds: list[int],
+    maximum_pair_failure: float,
+    vine_fitter: VineFitFunction,
+) -> tuple[VineFitResult | None, str | None]:
+    try:
+        result = vine_fitter(
+            pivot.to_numpy(dtype=float),
+            vine,
+            truncation_level=truncation,
+            fit_seeds=fit_seeds,
+        )
+    except VineFitError as exc:
+        return None, f"structure_or_fit_failure:{type(exc).__name__}"
+    reason = (
+        "failed_pair_fraction_exceeded"
+        if result.failed_pair_fraction > maximum_pair_failure
+        else None
+    )
+    return result, reason
+
+
+def _vine_or_gaussian_dependence(
+    independent: np.ndarray,
+    daily_pits: pd.DataFrame,
+    fit_result: VineFitResult | None,
+    fallback_reason: str | None,
+    gaussian_correlation: np.ndarray,
+    *,
+    lower: float,
+    upper: float,
+) -> tuple[np.ndarray, np.ndarray, bool, str | None]:
+    whole_vine_fallback = fallback_reason is not None
+    if not whole_vine_fallback:
+        if fit_result is None:
+            raise RuntimeError("successful vine fit has no result")
+        try:
+            dependent = vine_dependence_uniforms(
+                independent, fit_result.model, lower=lower, upper=upper
+            )
+            log_density = vine_log_density(daily_pits.to_numpy(dtype=float), fit_result.model)
+            return dependent, log_density, False, None
+        except VineEvaluationError as exc:
+            fallback_reason = f"vine_evaluation_failure:{type(exc).__name__}"
+    dependent = gaussian_dependence_uniforms(
+        independent, gaussian_correlation, lower=lower, upper=upper
+    )
+    log_density = gaussian_copula_log_density(
+        daily_pits.to_numpy(dtype=float), gaussian_correlation
+    )
+    return dependent, log_density, True, fallback_reason
+
+
+def _vine_refit_row(
+    *,
+    fit_result: VineFitResult | None,
+    fallback_reason: str | None,
+    pair_count: int,
+    vine_refit_id: str,
+    source_copula_refit_id: str,
+    matched_gaussian_id: str,
+    refit_date: pd.Timestamp,
+    year: int,
+    month: int,
+    universe_variant: str,
+    model_id: str,
+    output_grouping: str,
+    pivot: pd.DataFrame,
+    dimension: int,
+    truncation: int,
+    group_order: Sequence[str],
+    base_seed: int,
+    uniform_hash: str,
+    whole_vine_fallback: bool,
+) -> dict[str, Any]:
+    failed_pairs = () if fit_result is None else fit_result.failed_pairs
+    family_counts = {} if fit_result is None else fit_result.family_counts
+    rotation_counts = {} if fit_result is None else fit_result.rotation_counts
+    if fit_result is not None:
+        pair_count = fit_result.pair_count
+    return {
+        "vine_refit_id": vine_refit_id,
+        "source_copula_refit_id": source_copula_refit_id,
+        "matched_gaussian_refit_id": matched_gaussian_id,
+        "refit_date": refit_date,
+        "year": year,
+        "month": month,
+        "universe_variant": universe_variant,
+        "model_id": model_id,
+        "grouping_id": output_grouping,
+        "training_start": pivot.index.min(),
+        "training_end": pivot.index.max(),
+        "training_observations": len(pivot),
+        "dimension": dimension,
+        "truncation_level": truncation,
+        "group_order_json": json.dumps(group_order, separators=(",", ":")),
+        "structure_matrix_json": (
+            None
+            if fit_result is None
+            else json.dumps(
+                np.asarray(fit_result.model.matrix, dtype=int).tolist(), separators=(",", ":")
+            )
+        ),
+        "vine_model_json": None if fit_result is None else fit_result.model.to_json(),
+        "pair_count": pair_count,
+        "failed_pair_count": len(failed_pairs),
+        "failed_pair_fraction": len(failed_pairs) / pair_count,
+        "failed_pairs_json": json.dumps(failed_pairs, separators=(",", ":")),
+        "family_counts_json": json.dumps(family_counts, separators=(",", ":")),
+        "rotation_counts_json": json.dumps(rotation_counts, separators=(",", ":")),
+        "number_parameters": None if fit_result is None else float(fit_result.model.npars),
+        "loglikelihood": None if fit_result is None else fit_result.loglikelihood,
+        "aic": None if fit_result is None else fit_result.aic,
+        "bic": None if fit_result is None else fit_result.bic,
+        "library": "pyvinecopulib",
+        "library_version": pv.__version__,
+        "fit_seed_components": [base_seed, year, month],
+        "base_uniform_sha256": uniform_hash,
+        "whole_vine_fallback": whole_vine_fallback,
+        "fallback_reason": fallback_reason,
+        "fit_status": (
+            "gaussian_fallback"
+            if whole_vine_fallback
+            else "pair_fallback"
+            if failed_pairs
+            else "ok"
+        ),
+    }
+
+
+def _vine_quality_metrics(
+    fit_frame: pd.DataFrame,
+    forecast_frame: pd.DataFrame,
+    expected_models: set[str],
+    reconstruction_tolerance: float,
+) -> tuple[list[str], dict[str, int], float]:
+    numeric_columns = (
+        "var_95",
+        "var_975",
+        "var_99",
+        "es_975",
+        "realised_simple_return",
+        "realised_loss",
+        "copula_log_score",
+    )
+    date_counts = {
+        str(key): int(value)
+        for key, value in forecast_frame.groupby("model_id")["date"].nunique().items()
+    }
+    checks = [
+        (fit_frame.duplicated(["year", "month", "model_id"]).any(), "duplicate_vine_refit"),
+        (forecast_frame.duplicated(["date", "model_id"]).any(), "duplicate_vine_forecast"),
+        (
+            not np.isfinite(forecast_frame[list(numeric_columns)].to_numpy(dtype=float)).all(),
+            "nonfinite_vine_forecast",
+        ),
+        (
+            bool(
+                (
+                    (forecast_frame["var_95"] > forecast_frame["var_975"])
+                    | (forecast_frame["var_975"] > forecast_frame["var_99"])
+                ).any()
+            ),
+            "nonmonotone_var_forecast",
+        ),
+        (bool((forecast_frame["es_975"] < forecast_frame["var_975"]).any()), "es_below_var"),
+        (
+            set(date_counts) != expected_models or len(set(date_counts.values())) != 1,
+            "incomplete_matched_model_coverage",
+        ),
+    ]
+    realised = forecast_frame.pivot(
+        index="date", columns="model_id", values="realised_simple_return"
+    )
+    if realised.isna().any().any() or not expected_models.issubset(realised.columns):
+        checks.append((True, "incomplete_realised_portfolio_identity"))
+        maximum_identity_error = float("inf")
+    else:
+        reference_model = sorted(expected_models)[0]
+        maximum_identity_error = float(
+            realised.loc[:, sorted(expected_models)]
+            .sub(realised[reference_model], axis="index")
+            .abs()
+            .to_numpy(dtype=float)
+            .max()
+        )
+        checks.append(
+            (
+                maximum_identity_error > reconstruction_tolerance,
+                "grouping_portfolio_identity_failed",
+            )
+        )
+    return [issue for failed, issue in checks if failed], date_counts, maximum_identity_error
+
+
 def build_vine_outputs(
     training_pits: pd.DataFrame,
     marginal_refits: pd.DataFrame,
@@ -700,29 +1029,7 @@ def build_vine_outputs(
 ) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
     """Build monthly vine fits, daily risk forecasts, and quality checks."""
 
-    model_registry = dict(
-        VINE_MODEL_BY_GROUPING if model_by_grouping is None else model_by_grouping
-    )
-    if not model_registry or any(
-        not isinstance(input_grouping, str)
-        or not input_grouping
-        or not isinstance(value, tuple)
-        or len(value) != 3
-        or any(not isinstance(item, str) or not item for item in value)
-        for input_grouping, value in model_registry.items()
-    ):
-        raise ValueError(
-            "vine model registry must map groupings to model/grouping/baseline triples"
-        )
-    expected_models = {model_id for model_id, _, _ in model_registry.values()}
-    if len(expected_models) != len(model_registry):
-        raise ValueError("vine model registry contains duplicate model IDs")
-    output_groupings = {grouping_id for _, grouping_id, _ in model_registry.values()}
-    if len(output_groupings) != len(model_registry):
-        raise ValueError("vine model registry contains duplicate output groupings")
-    baseline_models = {baseline_id for _, _, baseline_id in model_registry.values()}
-    if len(baseline_models) != len(model_registry):
-        raise ValueError("vine model registry contains duplicate Gaussian baselines")
+    model_registry, expected_models = _validated_vine_registry(model_by_grouping)
     vine, simulation, forecast, marginal, truncation = validate_vine_protocol(
         model_config, truncation_level=truncation_level
     )
@@ -746,26 +1053,15 @@ def build_vine_outputs(
     maximum_pair_failure = float(vine["maximum_failed_pair_fraction"])
     fit_rows: list[dict[str, Any]] = []
     forecast_rows: list[dict[str, Any]] = []
-    issues: list[str] = []
     block_columns = ["year", "month", "universe_variant", "grouping_id"]
     grouped = training.groupby(block_columns, sort=True)
     for block_index, (identifiers, block) in enumerate(grouped, start=1):
         year, month, _, input_grouping = identifiers
         year, month = int(year), int(month)
         model_id, output_grouping, baseline_model_id = model_registry[str(input_grouping)]
-        group_order = sorted(str(value) for value in block["group_id"].unique())
-        if len(group_order) != dimension:
-            raise ValueError(f"{identifiers} has {len(group_order)} groups; expected {dimension}")
-        pivot = block.pivot(index="training_date", columns="group_id", values="pit")
-        pivot = pivot.reindex(columns=group_order).sort_index()
-        if pivot.isna().any().any() or pivot.shape[1] != dimension:
-            raise ValueError(f"{identifiers} does not form a complete PIT matrix")
-        refit_dates = block["refit_date"].drop_duplicates()
-        copula_ids = block["copula_refit_id"].drop_duplicates()
-        if len(refit_dates) != 1 or len(copula_ids) != 1:
-            raise ValueError(f"{identifiers} has inconsistent refit metadata")
-        refit_date = pd.Timestamp(refit_dates.iloc[0])
-        source_copula_refit_id = str(copula_ids.iloc[0])
+        group_order, pivot, refit_date, source_copula_refit_id = _validated_vine_training_block(
+            identifiers, block, dimension
+        )
         vine_refit_id = f"{source_copula_refit_id}:vine_t{truncation}"
         monthly_refits = refits.loc[
             (refits["year"] == year)
@@ -786,20 +1082,14 @@ def build_vine_outputs(
             copula_refit_id=source_copula_refit_id,
         )
 
-        seed_key = (year, month)
-        if seed_key not in seed_records:
-            raise ValueError(f"missing common-random-number record for {seed_key}")
-        independent = common_uniforms(
+        independent, uniform_hash = _validated_common_uniforms(
             year,
             month,
+            seed_records=seed_records,
             draws=draws,
             dimension=dimension,
             base_seed=base_seed,
         )
-        uniform_hash = _array_sha256(independent)
-        seed_record = seed_records[seed_key]
-        if seed_record.get("base_uniform_sha256") != uniform_hash:
-            raise ValueError(f"common-random-number hash differs for {seed_key}")
         matched_gaussian_id, gaussian_correlation = _matched_gaussian(
             gaussian,
             year=year,
@@ -810,72 +1100,30 @@ def build_vine_outputs(
         )
 
         pair_count = sum(dimension - tree for tree in range(1, truncation + 1))
-        failed_pairs: tuple[dict[str, Any], ...] = ()
-        family_counts: dict[str, int] = {}
-        rotation_counts: dict[str, int] = {}
-        fit_result: VineFitResult | None = None
-        fallback_reason: str | None = None
-        model_json: str | None = None
-        structure_json: str | None = None
-        loglikelihood: float | None = None
-        aic: float | None = None
-        bic: float | None = None
-        number_parameters: float | None = None
-        try:
-            fit_result = vine_fitter(
-                pivot.to_numpy(dtype=float),
-                vine,
-                truncation_level=truncation,
-                fit_seeds=[base_seed, year, month],
-            )
-            pair_count = fit_result.pair_count
-            failed_pairs = fit_result.failed_pairs
-            family_counts = fit_result.family_counts
-            rotation_counts = fit_result.rotation_counts
-            loglikelihood = fit_result.loglikelihood
-            aic = fit_result.aic
-            bic = fit_result.bic
-            number_parameters = float(fit_result.model.npars)
-            model_json = fit_result.model.to_json()
-            structure_json = json.dumps(
-                np.asarray(fit_result.model.matrix, dtype=int).tolist(), separators=(",", ":")
-            )
-            if fit_result.failed_pair_fraction > maximum_pair_failure:
-                fallback_reason = "failed_pair_fraction_exceeded"
-        except VineFitError as exc:
-            fallback_reason = f"structure_or_fit_failure:{type(exc).__name__}"
+        fit_result, fallback_reason = _attempt_vine_fit(
+            pivot,
+            vine,
+            truncation=truncation,
+            fit_seeds=[base_seed, year, month],
+            maximum_pair_failure=maximum_pair_failure,
+            vine_fitter=vine_fitter,
+        )
 
         daily_pits = daily_block.pivot(index="date", columns="group_id", values="pit")
         daily_pits = daily_pits.reindex(columns=group_order).sort_index()
         if daily_pits.isna().any().any() or daily_pits.shape[1] != dimension:
             raise ValueError(f"incomplete daily PIT matrix for {vine_refit_id}")
-        whole_vine_fallback = fallback_reason is not None
-        if not whole_vine_fallback:
-            if fit_result is None:
-                raise RuntimeError("successful vine fit has no result")
-            try:
-                dependent = vine_dependence_uniforms(
-                    independent,
-                    fit_result.model,
-                    lower=lower,
-                    upper=upper,
-                )
-                log_density_values = vine_log_density(
-                    daily_pits.to_numpy(dtype=float), fit_result.model
-                )
-            except VineEvaluationError as exc:
-                fallback_reason = f"vine_evaluation_failure:{type(exc).__name__}"
-                whole_vine_fallback = True
-        if whole_vine_fallback:
-            dependent = gaussian_dependence_uniforms(
+        dependent, log_density_values, whole_vine_fallback, fallback_reason = (
+            _vine_or_gaussian_dependence(
                 independent,
+                daily_pits,
+                fit_result,
+                fallback_reason,
                 gaussian_correlation,
                 lower=lower,
                 upper=upper,
             )
-            log_density_values = gaussian_copula_log_density(
-                daily_pits.to_numpy(dtype=float), gaussian_correlation
-            )
+        )
         innovations = marginal_innovation_draws(
             dependent,
             group_order,
@@ -905,103 +1153,39 @@ def build_vine_outputs(
             )
         )
         fit_rows.append(
-            {
-                "vine_refit_id": vine_refit_id,
-                "source_copula_refit_id": source_copula_refit_id,
-                "matched_gaussian_refit_id": matched_gaussian_id,
-                "refit_date": refit_date,
-                "year": year,
-                "month": month,
-                "universe_variant": universe_variant,
-                "model_id": model_id,
-                "grouping_id": output_grouping,
-                "training_start": pivot.index.min(),
-                "training_end": pivot.index.max(),
-                "training_observations": len(pivot),
-                "dimension": dimension,
-                "truncation_level": truncation,
-                "group_order_json": json.dumps(group_order, separators=(",", ":")),
-                "structure_matrix_json": structure_json,
-                "vine_model_json": model_json,
-                "pair_count": pair_count,
-                "failed_pair_count": len(failed_pairs),
-                "failed_pair_fraction": len(failed_pairs) / pair_count,
-                "failed_pairs_json": json.dumps(failed_pairs, separators=(",", ":")),
-                "family_counts_json": json.dumps(family_counts, separators=(",", ":")),
-                "rotation_counts_json": json.dumps(rotation_counts, separators=(",", ":")),
-                "number_parameters": number_parameters,
-                "loglikelihood": loglikelihood,
-                "aic": aic,
-                "bic": bic,
-                "library": "pyvinecopulib",
-                "library_version": pv.__version__,
-                "fit_seed_components": [base_seed, year, month],
-                "base_uniform_sha256": uniform_hash,
-                "whole_vine_fallback": whole_vine_fallback,
-                "fallback_reason": fallback_reason,
-                "fit_status": (
-                    "gaussian_fallback"
-                    if whole_vine_fallback
-                    else "pair_fallback"
-                    if failed_pairs
-                    else "ok"
-                ),
-            }
+            _vine_refit_row(
+                fit_result=fit_result,
+                fallback_reason=fallback_reason,
+                pair_count=pair_count,
+                vine_refit_id=vine_refit_id,
+                source_copula_refit_id=source_copula_refit_id,
+                matched_gaussian_id=matched_gaussian_id,
+                refit_date=refit_date,
+                year=year,
+                month=month,
+                universe_variant=universe_variant,
+                model_id=model_id,
+                output_grouping=output_grouping,
+                pivot=pivot,
+                dimension=dimension,
+                truncation=truncation,
+                group_order=group_order,
+                base_seed=base_seed,
+                uniform_hash=uniform_hash,
+                whole_vine_fallback=whole_vine_fallback,
+            )
         )
         if progress_every and block_index % progress_every == 0:
             print(f"vine_progress={block_index}/{len(grouped)}")
 
     fit_frame = pd.DataFrame(fit_rows).sort_values(["year", "month", "model_id"])
     forecast_frame = pd.DataFrame(forecast_rows).sort_values(["date", "model_id"])
-    if fit_frame.duplicated(["year", "month", "model_id"]).any():
-        issues.append("duplicate_vine_refit")
-    if forecast_frame.duplicated(["date", "model_id"]).any():
-        issues.append("duplicate_vine_forecast")
-    numeric = forecast_frame[
-        [
-            "var_95",
-            "var_975",
-            "var_99",
-            "es_975",
-            "realised_simple_return",
-            "realised_loss",
-            "copula_log_score",
-        ]
-    ].to_numpy(dtype=float)
-    if not np.isfinite(numeric).all():
-        issues.append("nonfinite_vine_forecast")
-    if bool(
-        (
-            (forecast_frame["var_95"] > forecast_frame["var_975"])
-            | (forecast_frame["var_975"] > forecast_frame["var_99"])
-        ).any()
-    ):
-        issues.append("nonmonotone_var_forecast")
-    if bool((forecast_frame["es_975"] < forecast_frame["var_975"]).any()):
-        issues.append("es_below_var")
-    date_counts = {
-        str(key): int(value)
-        for key, value in forecast_frame.groupby("model_id")["date"].nunique().items()
-    }
-    if set(date_counts) != expected_models or len(set(date_counts.values())) != 1:
-        issues.append("incomplete_matched_model_coverage")
-    realised_wide = forecast_frame.pivot(
-        index="date", columns="model_id", values="realised_simple_return"
+    issues, date_counts, maximum_identity_error = _vine_quality_metrics(
+        fit_frame,
+        forecast_frame,
+        expected_models,
+        float(model_config["portfolio"]["reconstruction_tolerance"]),
     )
-    if realised_wide.isna().any().any() or not expected_models.issubset(realised_wide.columns):
-        issues.append("incomplete_realised_portfolio_identity")
-        maximum_identity_error = float("inf")
-    else:
-        reference_model = sorted(expected_models)[0]
-        maximum_identity_error = float(
-            realised_wide.loc[:, sorted(expected_models)]
-            .sub(realised_wide[reference_model], axis="index")
-            .abs()
-            .to_numpy(dtype=float)
-            .max()
-        )
-        if maximum_identity_error > float(model_config["portfolio"]["reconstruction_tolerance"]):
-            issues.append("grouping_portfolio_identity_failed")
     evaluation_dates = int(forecast_frame["date"].nunique())
     fallback_date_counts = {
         str(model_id): int(rows.loc[rows["whole_vine_fallback"], "date"].nunique())

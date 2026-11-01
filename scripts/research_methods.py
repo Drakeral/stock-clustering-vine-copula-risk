@@ -284,17 +284,8 @@ def correlation_distance(correlation: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(distances, index=columns, columns=columns)
 
 
-def average_linkage_clusters(
-    distance: pd.DataFrame,
-    cluster_count: int,
-) -> tuple[dict[str, str], list[dict[str, Any]]]:
-    """Deterministic UPGMA clustering with lexicographic tie-breaking.
-
-    The Lance-Williams update is weighted by the numbers of securities in the
-    two merged clusters, so each original unordered security pair has equal
-    weight. Final cluster IDs are ordered by their sorted member tuples and do
-    not depend on transient merge IDs.
-    """
+def _validated_distance_names(distance: pd.DataFrame, cluster_count: int) -> list[str]:
+    """Validate a clustering distance matrix and return stable label order."""
 
     names = list(distance.columns)
     if list(distance.index) != names:
@@ -308,59 +299,108 @@ def average_linkage_clusters(
         raise ValueError("distance matrix must be finite and symmetric")
     if bool((values < -1e-12).any()) or not np.allclose(np.diag(values), 0.0, atol=1e-12):
         raise ValueError("distance matrix must be nonnegative with a zero diagonal")
+    return sorted(names)
 
-    ordered_names = sorted(names)
+
+def _pair_key(left: int, right: int) -> tuple[int, int]:
+    return (left, right) if left < right else (right, left)
+
+
+def _initial_pair_distances(source: pd.DataFrame, names: list[str]) -> dict[tuple[int, int], float]:
+    return {
+        (left, right): float(source.iloc[left, right])
+        for left in range(len(names))
+        for right in range(left + 1, len(names))
+    }
+
+
+def _next_average_linkage_pair(
+    clusters: dict[int, tuple[str, ...]],
+    pair_distances: dict[tuple[int, int], float],
+) -> tuple[float, tuple[str, ...], tuple[str, ...], int, int]:
+    """Select the next merge using distance then lexicographic membership ties."""
+
+    candidates = []
+    cluster_ids = list(clusters)
+    for offset, left in enumerate(cluster_ids):
+        for right in cluster_ids[offset + 1 :]:
+            first_members, second_members = sorted((clusters[left], clusters[right]))
+            candidates.append(
+                (
+                    pair_distances[_pair_key(left, right)],
+                    first_members,
+                    second_members,
+                    left,
+                    right,
+                )
+            )
+    return min(candidates)
+
+
+def _apply_average_linkage_merge(
+    clusters: dict[int, tuple[str, ...]],
+    sizes: dict[int, int],
+    pair_distances: dict[tuple[int, int], float],
+    *,
+    left: int,
+    right: int,
+    next_id: int,
+) -> None:
+    """Apply one Lance-Williams update in place."""
+
+    left_size, right_size = sizes[left], sizes[right]
+    other_ids = [identifier for identifier in clusters if identifier not in {left, right}]
+    new_distances = {
+        other: (
+            left_size * pair_distances[_pair_key(left, other)]
+            + right_size * pair_distances[_pair_key(right, other)]
+        )
+        / (left_size + right_size)
+        for other in other_ids
+    }
+    merged_members = tuple(sorted((*clusters[left], *clusters[right])))
+    for pair in [pair for pair in pair_distances if left in pair or right in pair]:
+        del pair_distances[pair]
+    del clusters[left], clusters[right]
+    del sizes[left], sizes[right]
+    clusters[next_id] = merged_members
+    sizes[next_id] = left_size + right_size
+    for other, value in new_distances.items():
+        pair_distances[_pair_key(other, next_id)] = value
+
+
+def average_linkage_clusters(
+    distance: pd.DataFrame,
+    cluster_count: int,
+) -> tuple[dict[str, str], list[dict[str, Any]]]:
+    """Deterministic UPGMA clustering with lexicographic tie-breaking.
+
+    The Lance-Williams update is weighted by the numbers of securities in the
+    two merged clusters, so each original unordered security pair has equal
+    weight. Final cluster IDs are ordered by their sorted member tuples and do
+    not depend on transient merge IDs.
+    """
+
+    ordered_names = _validated_distance_names(distance, cluster_count)
     source = distance.loc[ordered_names, ordered_names]
     clusters: dict[int, tuple[str, ...]] = {
         index: (name,) for index, name in enumerate(ordered_names)
     }
     sizes = dict.fromkeys(clusters, 1)
-    pair_distances: dict[tuple[int, int], float] = {}
-    for left in range(len(ordered_names)):
-        for right in range(left + 1, len(ordered_names)):
-            pair_distances[(left, right)] = float(source.iloc[left, right])
-
-    def key(left: int, right: int) -> tuple[int, int]:
-        return (left, right) if left < right else (right, left)
+    pair_distances = _initial_pair_distances(source, ordered_names)
 
     merges: list[dict[str, Any]] = []
     next_id = len(ordered_names)
     while len(clusters) > cluster_count:
-        candidates = []
-        cluster_ids = list(clusters)
-        for offset, left in enumerate(cluster_ids):
-            for right in cluster_ids[offset + 1 :]:
-                first_members, second_members = sorted((clusters[left], clusters[right]))
-                candidates.append(
-                    (
-                        pair_distances[key(left, right)],
-                        first_members,
-                        second_members,
-                        left,
-                        right,
-                    )
-                )
         (
             merge_distance,
             canonical_left_members,
             canonical_right_members,
             left,
             right,
-        ) = min(candidates)
-        left_members = clusters[left]
-        right_members = clusters[right]
+        ) = _next_average_linkage_pair(clusters, pair_distances)
         left_size = sizes[left]
         right_size = sizes[right]
-        other_ids = [identifier for identifier in clusters if identifier not in {left, right}]
-        new_distances = {
-            other: (
-                left_size * pair_distances[key(left, other)]
-                + right_size * pair_distances[key(right, other)]
-            )
-            / (left_size + right_size)
-            for other in other_ids
-        }
-        merged_members = tuple(sorted((*left_members, *right_members)))
         merges.append(
             {
                 "left_members": list(canonical_left_members),
@@ -369,14 +409,14 @@ def average_linkage_clusters(
                 "merged_size": left_size + right_size,
             }
         )
-        for pair in [pair for pair in pair_distances if left in pair or right in pair]:
-            del pair_distances[pair]
-        del clusters[left], clusters[right]
-        del sizes[left], sizes[right]
-        clusters[next_id] = merged_members
-        sizes[next_id] = left_size + right_size
-        for other, value in new_distances.items():
-            pair_distances[key(other, next_id)] = value
+        _apply_average_linkage_merge(
+            clusters,
+            sizes,
+            pair_distances,
+            left=left,
+            right=right,
+            next_id=next_id,
+        )
         next_id += 1
 
     final_clusters = sorted(clusters.values())

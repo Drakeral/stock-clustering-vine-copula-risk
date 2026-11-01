@@ -37,6 +37,25 @@ disclosed absence of a licensed point-in-time universe/GICS extract. That
 boundary limits provenance strength but is not silently treated as passed under
 protocol amendment PA-001.
 
+## Maintainability re-audit: 31 October 2026
+
+A behaviour-preserving cleanup removed the remaining repository-wide complexity
+exceptions. The foundation verifier, lifecycle and return constructor, annual
+grouping and historical-simulation builders, marginal fitter, Gaussian and vine
+builders, universe preparation, Yahoo reference builder, portfolio arithmetic
+validator, foundation-status aggregator, and WBA sensitivity constructor now
+separate validation, transformation, forecasting, and quality summarisation into
+focused helpers. Numerical formulas, random-number construction, artifact
+schemas, and fallback rules were not changed.
+
+The Ruff `C901` gate now covers every module under `scripts/` locally, in the
+single validation entry point, and in GitHub Actions. The completed checkpoint
+passed lint, repository-wide complexity, security, formatting, compilation, and
+all 189 tests without skips in the artifact-complete checkout. The provisional
+foundation gate, deterministic report rebuild, and recursive lineage scan also
+passed; the latter verified 360 hash records across 33 documents with zero
+issues. No generated research result changed during the cleanup.
+
 ## Scope reviewed
 
 The review covered universe construction and provenance, market-input

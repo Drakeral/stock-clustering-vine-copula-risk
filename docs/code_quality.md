@@ -11,7 +11,7 @@ Run the checkpoint from the repository root:
 ```zsh
 uv sync --frozen
 uv run ruff check scripts tests
-uv run ruff check scripts/evaluate_risk_models.py scripts/evaluate_full_vine_robustness.py scripts/evaluate_ml_risk_models.py scripts/evaluate_group_balanced_robustness.py scripts/evaluate_current_composition_historical_simulation.py scripts/build_group_balanced_portfolios.py scripts/build_report_artifacts.py scripts/download_market_data.py scripts/pipeline_io.py scripts/run_pipeline.py --select C901
+uv run ruff check scripts --select C901
 uv run ruff check scripts --select S
 uv run ruff format --check scripts tests
 uv run python -m compileall -q scripts tests
@@ -39,13 +39,11 @@ tracked changes after the manifest is committed.
 
 ## Automated clean-clone checks
 
-GitHub Actions runs the portable lint, security, format, compilation and unit-test checks
-on every push to `main` and on every pull request under both supported Python
-3.12 and 3.13 versions. The workflow installs the pinned uv version, then
-reconstructs each environment from `uv.lock` with `uv sync --frozen`. It also
-enforces Ruff's cyclomatic-complexity limit on the model-evaluation modules,
-group-balanced portfolio constructor, report generator, provider boundary, and
-shared filesystem/lineage helpers.
+GitHub Actions runs the portable lint, security, format, compilation and unit-test
+checks on every push to `main` and on every pull request under both supported
+Python 3.12 and 3.13 versions. The workflow installs the pinned uv version, then
+reconstructs each environment from `uv.lock` with `uv sync --frozen`. Ruff's
+cyclomatic-complexity threshold is enforced across every module under `scripts/`.
 
 Thirteen acceptance-test classes bind the checked-in audit records to large generated
 Parquet artifacts. Those files are intentionally excluded from Git, so the
@@ -81,19 +79,37 @@ being replaced, and records the result in its completeness decision.
 - Catch only expected numerical and solver exceptions at model-fallback
   boundaries. Programming defects must propagate so tests and CI expose them.
 
-## Current bounded technical debt
+## Architecture map for reviewers
 
-Some mature ingestion and return-construction functions are long because they
-encode tightly coupled lifecycle, corporate-action and audit rules. They are
-covered by targeted acceptance tests and should be decomposed only alongside
-new behavioural tests, not as an unrelated formatting exercise. New modelling
-modules should prefer small pure functions, explicit input validation and typed
-structured records.
+The repository is organized as a fail-closed sequence rather than one monolithic
+program:
 
-A repository-wide advisory `C901` scan currently identifies 23 legacy
-functions, concentrated in foundation verification, lifecycle construction,
-and Gaussian/vine/marginal orchestration. The largest are orchestration
-functions rather than numerical kernels. They remain bounded technical debt:
-the enforced maintained-module list above must stay clean, and any future
-decomposition of the legacy set must preserve artifact hashes or explicitly
-document an authorized numerical change.
+1. `prepare_universe.py`, `download_market_data.py`, and
+   `verify_foundation_inputs.py` establish source provenance and input integrity.
+2. `build_return_panel.py` applies lifecycle and corporate-action rules;
+   `validate_portfolio_arithmetic.py` independently checks the resulting return
+   identities.
+3. `build_annual_groupings.py` and `build_ml_groupings.py` create leakage-free
+   annual assignments and group-return panels.
+4. `build_marginal_models.py`, `build_gaussian_copula.py`, and
+   `build_vine_copula.py` fit the monthly risk models. Validation, fitting,
+   forecasting, fallback handling, and quality summaries are separate helpers.
+5. The `evaluate_*` modules perform frozen inference and robustness comparisons;
+   `build_report_artifacts.py` only renders passed, hash-bound results.
+6. `run_pipeline.py` supplies the single fail-fast entry point, while
+   `pipeline_io.py` centralizes safe paths, hashes, reporting scope, and atomic
+   writes.
+
+Every stage validates its own input schema and upstream bindings. Expected
+numerical failures can invoke an explicitly recorded fallback; programming
+errors propagate. Large numerical outputs stay untracked but are bound to public
+audit records by SHA-256.
+
+## Maintainability boundary
+
+All pipeline functions now pass the repository-wide Ruff `C901` threshold. The
+former long ingestion, lifecycle, marginal, Gaussian, and vine orchestration
+functions were decomposed into focused validation, transformation, forecasting,
+and quality-gate helpers under their existing characterization tests. This was a
+structural cleanup only: future refactors must continue to preserve numerical
+outputs and artifact schemas unless a protocol change is explicitly authorized.

@@ -144,6 +144,55 @@ def validate_historical_protocol(
     return forecast, historical, portfolio, clustering
 
 
+def _validated_active_year(
+    raw: Mapping[str, Any],
+    existing_years: Mapping[int, tuple[str, ...]],
+    previous_year: int | None,
+) -> int:
+    year = raw.get("year")
+    if isinstance(year, bool) or not isinstance(year, int):
+        raise ValueError("active-universe year must be an integer")
+    if year in existing_years:
+        raise ValueError(f"duplicate active-universe year: {year}")
+    if previous_year is not None and year != previous_year + 1:
+        raise ValueError("active-universe years must be consecutive and increasing")
+    return year
+
+
+def _validated_active_tickers(
+    raw: Mapping[str, Any],
+    year: int,
+    available: set[str],
+    previous_active: set[str] | None,
+) -> tuple[str, ...]:
+    tickers = raw.get("active_tickers")
+    if not isinstance(tickers, list) or not tickers:
+        raise ValueError(f"active-universe year {year} has no tickers")
+    normalized = tuple(str(ticker) for ticker in tickers)
+    if len(normalized) != len(set(normalized)):
+        raise ValueError(f"active-universe year {year} contains duplicate tickers")
+    count = raw.get("security_count")
+    if isinstance(count, bool) or not isinstance(count, int) or count != len(normalized):
+        raise ValueError(f"active-universe year {year} has an inconsistent security count")
+    missing = sorted(set(normalized) - available)
+    if missing:
+        raise ValueError(f"active-universe year {year} is missing panel columns: {missing}")
+    current_active = set(normalized)
+    if previous_active is not None and not current_active.issubset(previous_active):
+        additions = sorted(current_active - previous_active)
+        raise ValueError(f"active-universe year {year} introduces later additions: {additions}")
+    return normalized
+
+
+def _validate_rebalance_date(raw: Mapping[str, Any], year: int) -> None:
+    try:
+        rebalance = pd.Timestamp(raw.get("rebalance_date"))
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"active-universe year {year} has an invalid rebalance date") from exc
+    if rebalance.year != year:
+        raise ValueError(f"active-universe year {year} has an out-of-year rebalance date")
+
+
 def annual_active_sets(
     active_schedule: Mapping[str, Any],
     available_tickers: Sequence[str],
@@ -164,48 +213,16 @@ def annual_active_sets(
     for raw in rows:
         if not isinstance(raw, Mapping):
             raise TypeError("active-universe row must be an object")
-        year = raw.get("year")
-        tickers = raw.get("active_tickers")
-        count = raw.get("security_count")
-        rebalance_date = raw.get("rebalance_date")
-        if isinstance(year, bool) or not isinstance(year, int):
-            raise ValueError("active-universe year must be an integer")
-        if year in result:
-            raise ValueError(f"duplicate active-universe year: {year}")
-        if previous_year is not None and year != previous_year + 1:
-            raise ValueError("active-universe years must be consecutive and increasing")
-        if not isinstance(tickers, list) or not tickers:
-            raise ValueError(f"active-universe year {year} has no tickers")
-        normalized = tuple(str(ticker) for ticker in tickers)
-        if len(normalized) != len(set(normalized)):
-            raise ValueError(f"active-universe year {year} contains duplicate tickers")
-        if isinstance(count, bool) or not isinstance(count, int) or count != len(normalized):
-            raise ValueError(f"active-universe year {year} has an inconsistent security count")
-        missing = sorted(set(normalized) - available)
-        if missing:
-            raise ValueError(f"active-universe year {year} is missing panel columns: {missing}")
-        current_active = set(normalized)
-        if previous_active is not None and not current_active.issubset(previous_active):
-            additions = sorted(current_active - previous_active)
-            raise ValueError(f"active-universe year {year} introduces later additions: {additions}")
-        try:
-            rebalance = pd.Timestamp(rebalance_date)
-        except (TypeError, ValueError) as exc:
-            raise ValueError(f"active-universe year {year} has an invalid rebalance date") from exc
-        if rebalance.year != year:
-            raise ValueError(f"active-universe year {year} has an out-of-year rebalance date")
+        year = _validated_active_year(raw, result, previous_year)
+        normalized = _validated_active_tickers(raw, year, available, previous_active)
+        _validate_rebalance_date(raw, year)
         result[year] = normalized
-        previous_active = current_active
+        previous_active = set(normalized)
         previous_year = year
     return result
 
 
-def daily_portfolio_simple_returns(
-    stock_simple_returns: pd.DataFrame,
-    active_schedule: Mapping[str, Any],
-) -> tuple[pd.Series, pd.Series]:
-    """Construct the canonical daily-rebalanced portfolio and annual counts."""
-
+def _validated_stock_return_panel(stock_simple_returns: pd.DataFrame) -> pd.DataFrame:
     if stock_simple_returns.empty:
         raise ValueError("stock simple-return panel must not be empty")
     panel = stock_simple_returns.copy()
@@ -217,6 +234,41 @@ def daily_portfolio_simple_returns(
         raise ValueError("stock simple-return dates must be unique and increasing")
     if panel.columns.has_duplicates:
         raise ValueError("stock simple-return panel has duplicate ticker columns")
+    return panel
+
+
+def _annual_portfolio_part(
+    panel: pd.DataFrame,
+    year: int,
+    tickers: tuple[str, ...],
+    rebalance_date: pd.Timestamp,
+    earliest_date: pd.Timestamp,
+) -> tuple[pd.Series, pd.Series]:
+    """Construct one year's equal-weight return and active-count series."""
+
+    annual = panel.loc[panel.index.year == year, list(tickers)]
+    if annual.empty or rebalance_date != annual.index.min():
+        raise ValueError(f"active-universe year {year} does not begin on its first session")
+    values = annual.to_numpy(dtype=float)
+    complete = np.isfinite(values).all(axis=1)
+    allowed_initial = np.isnan(values).all(axis=1) & (annual.index == earliest_date)
+    invalid = ~(complete | allowed_initial)
+    if bool(invalid.any()):
+        dates = [date.date().isoformat() for date in annual.index[invalid]]
+        raise ValueError(f"active security returns are incomplete on: {dates[:10]}")
+    defined = annual.loc[complete]
+    returns = defined.mean(axis=1)
+    counts = pd.Series(len(tickers), index=defined.index, dtype="int64")
+    return returns, counts
+
+
+def daily_portfolio_simple_returns(
+    stock_simple_returns: pd.DataFrame,
+    active_schedule: Mapping[str, Any],
+) -> tuple[pd.Series, pd.Series]:
+    """Construct the canonical daily-rebalanced portfolio and annual counts."""
+
+    panel = _validated_stock_return_panel(stock_simple_returns)
     active_by_year = annual_active_sets(active_schedule, panel.columns.astype(str).tolist())
     if set(panel.index.year) != set(active_by_year):
         raise ValueError("stock return years and active-universe years do not agree")
@@ -229,21 +281,15 @@ def daily_portfolio_simple_returns(
         int(row["year"]): pd.Timestamp(row["rebalance_date"]) for row in schedule_rows
     }
     for year in sorted(active_by_year):
-        tickers = list(active_by_year[year])
-        annual = panel.loc[panel.index.year == year, tickers]
-        if annual.empty or rebalance_by_year[year] != annual.index.min():
-            raise ValueError(f"active-universe year {year} does not begin on its first session")
-        values = annual.to_numpy(dtype=float)
-        complete = np.isfinite(values).all(axis=1)
-        allowed_initial = np.isnan(values).all(axis=1) & (annual.index == earliest_date)
-        if bool((~(complete | allowed_initial)).any()):
-            dates = [
-                date.date().isoformat() for date in annual.index[~(complete | allowed_initial)]
-            ]
-            raise ValueError(f"active security returns are incomplete on: {dates[:10]}")
-        defined = annual.loc[complete]
-        portfolio_parts.append(defined.mean(axis=1))
-        count_parts.append(pd.Series(len(tickers), index=defined.index, dtype="int64"))
+        returns, counts = _annual_portfolio_part(
+            panel,
+            year,
+            active_by_year[year],
+            rebalance_by_year[year],
+            earliest_date,
+        )
+        portfolio_parts.append(returns)
+        count_parts.append(counts)
     portfolio = pd.concat(portfolio_parts).sort_index().rename("simple_return")
     counts = pd.concat(count_parts).sort_index().rename("active_security_count")
     if portfolio.index.has_duplicates or not portfolio.index.is_monotonic_increasing:
@@ -253,28 +299,19 @@ def daily_portfolio_simple_returns(
     return portfolio, counts
 
 
-def build_historical_simulation_outputs(
-    stock_simple_returns: pd.DataFrame,
-    active_schedule: Mapping[str, Any],
-    model_config: Mapping[str, Any],
-) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
-    """Build M0 forecasts, daily window records, and computational audit fields."""
+def _historical_forecast_rows(
+    portfolio: pd.Series,
+    active_counts: pd.Series,
+    evaluation_dates: pd.DatetimeIndex,
+    *,
+    calendar_years: int,
+    minimum_observations: int,
+    confidence_levels: list[float],
+    es_confidence: float,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Build matched M0 forecast and training-window records."""
 
-    forecast, _, _, clustering = validate_historical_protocol(model_config)
-    portfolio, active_counts = daily_portfolio_simple_returns(stock_simple_returns, active_schedule)
-    calendar_years = int(forecast["training_window_calendar_years"])
-    minimum_observations = int(forecast["minimum_training_observations"])
-    confidence_levels = [float(value) for value in forecast["var_confidence_levels"]]
-    es_confidence = float(forecast["es_confidence_level"])
-    start_year = int(clustering["evaluation_start_year"])
-    end_year = int(clustering["evaluation_end_year"])
     losses = -portfolio
-    evaluation_dates = portfolio.index[
-        (portfolio.index.year >= start_year) & (portfolio.index.year <= end_year)
-    ]
-    if evaluation_dates.empty:
-        raise ValueError("portfolio panel contains no M0 evaluation dates")
-
     forecast_rows: list[dict[str, Any]] = []
     window_rows: list[dict[str, Any]] = []
     for date in evaluation_dates:
@@ -290,8 +327,7 @@ def build_historical_simulation_outputs(
             )
             for confidence in confidence_levels
         }
-        observation_counts = {risk.observations for risk in risks.values()}
-        if observation_counts != {len(sample)}:
+        if {risk.observations for risk in risks.values()} != {len(sample)}:
             raise AssertionError("historical-risk observation counts are inconsistent")
         refit_id = f"M0:{date.date().isoformat()}:rolling_{calendar_years}y"
         realised_return = float(portfolio.loc[date])
@@ -325,56 +361,122 @@ def build_historical_simulation_outputs(
                 "active_security_count": int(active_counts.loc[date]),
             }
         )
+    return forecast_rows, window_rows
+
+
+def _historical_quality_issues(
+    forecasts: pd.DataFrame,
+    windows: pd.DataFrame,
+    expected_dates: pd.DatetimeIndex,
+    minimum_observations: int,
+) -> tuple[list[str], float]:
+    """Evaluate deterministic M0 artifact invariants."""
+
+    numeric_columns = (
+        "var_95",
+        "var_975",
+        "var_99",
+        "es_975",
+        "realised_simple_return",
+        "realised_loss",
+    )
+    maximum_identity_error = float(
+        np.max(np.abs(forecasts["realised_loss"] + forecasts["realised_simple_return"]))
+    )
+    checks = (
+        (
+            forecasts.duplicated(["date", "model_id"]).any()
+            or forecasts["refit_id"].duplicated().any(),
+            "duplicate_historical_forecast",
+        ),
+        (
+            windows["refit_id"].duplicated().any()
+            or set(windows["refit_id"]) != set(forecasts["refit_id"]),
+            "invalid_historical_window_binding",
+        ),
+        (
+            not np.isfinite(forecasts[list(numeric_columns)].to_numpy(dtype=float)).all(),
+            "nonfinite_historical_forecast",
+        ),
+        (
+            bool(
+                (
+                    (forecasts["var_95"] > forecasts["var_975"])
+                    | (forecasts["var_975"] > forecasts["var_99"])
+                ).any()
+            ),
+            "nonmonotone_historical_var",
+        ),
+        (bool((forecasts["es_975"] < forecasts["var_975"]).any()), "historical_es_below_var"),
+        (maximum_identity_error > 1e-15, "historical_realised_loss_identity_failed"),
+        (
+            int(windows["training_observations"].min()) < minimum_observations,
+            "historical_minimum_training_observations_failed",
+        ),
+        (
+            bool((windows["training_end"] >= windows["forecast_date"]).any()),
+            "historical_training_lookahead",
+        ),
+        (
+            not forecasts["date"].equals(pd.Series(expected_dates, name="date")),
+            "incomplete_historical_forecast_coverage",
+        ),
+        (
+            bool(
+                (
+                    windows.groupby(windows["forecast_date"].dt.year)[
+                        "active_security_count"
+                    ].nunique()
+                    != 1
+                ).any()
+            ),
+            "within_year_active_security_count_changed",
+        ),
+    )
+    return [issue for failed, issue in checks if failed], maximum_identity_error
+
+
+def build_historical_simulation_outputs(
+    stock_simple_returns: pd.DataFrame,
+    active_schedule: Mapping[str, Any],
+    model_config: Mapping[str, Any],
+) -> tuple[pd.DataFrame, pd.DataFrame, dict[str, Any]]:
+    """Build M0 forecasts, daily window records, and computational audit fields."""
+
+    forecast, _, _, clustering = validate_historical_protocol(model_config)
+    portfolio, active_counts = daily_portfolio_simple_returns(stock_simple_returns, active_schedule)
+    calendar_years = int(forecast["training_window_calendar_years"])
+    minimum_observations = int(forecast["minimum_training_observations"])
+    confidence_levels = [float(value) for value in forecast["var_confidence_levels"]]
+    es_confidence = float(forecast["es_confidence_level"])
+    start_year = int(clustering["evaluation_start_year"])
+    end_year = int(clustering["evaluation_end_year"])
+    evaluation_dates = portfolio.index[
+        (portfolio.index.year >= start_year) & (portfolio.index.year <= end_year)
+    ]
+    if evaluation_dates.empty:
+        raise ValueError("portfolio panel contains no M0 evaluation dates")
+    forecast_rows, window_rows = _historical_forecast_rows(
+        portfolio,
+        active_counts,
+        evaluation_dates,
+        calendar_years=calendar_years,
+        minimum_observations=minimum_observations,
+        confidence_levels=confidence_levels,
+        es_confidence=es_confidence,
+    )
 
     forecasts = pd.DataFrame(forecast_rows, columns=FORECAST_COLUMNS)
     windows = pd.DataFrame(window_rows, columns=WINDOW_COLUMNS)
-    issues: list[str] = []
-    if forecasts.duplicated(["date", "model_id"]).any() or forecasts["refit_id"].duplicated().any():
-        issues.append("duplicate_historical_forecast")
-    if windows["refit_id"].duplicated().any() or set(windows["refit_id"]) != set(
-        forecasts["refit_id"]
-    ):
-        issues.append("invalid_historical_window_binding")
-    numeric = forecasts[
-        [
-            "var_95",
-            "var_975",
-            "var_99",
-            "es_975",
-            "realised_simple_return",
-            "realised_loss",
-        ]
-    ].to_numpy(dtype=float)
-    if not np.isfinite(numeric).all():
-        issues.append("nonfinite_historical_forecast")
-    if bool(
-        (
-            (forecasts["var_95"] > forecasts["var_975"])
-            | (forecasts["var_975"] > forecasts["var_99"])
-        ).any()
-    ):
-        issues.append("nonmonotone_historical_var")
-    if bool((forecasts["es_975"] < forecasts["var_975"]).any()):
-        issues.append("historical_es_below_var")
-    maximum_loss_identity_error = float(
-        np.max(np.abs(forecasts["realised_loss"] + forecasts["realised_simple_return"]))
-    )
-    if maximum_loss_identity_error > 1e-15:
-        issues.append("historical_realised_loss_identity_failed")
-    if int(windows["training_observations"].min()) < minimum_observations:
-        issues.append("historical_minimum_training_observations_failed")
-    if bool((windows["training_end"] >= windows["forecast_date"]).any()):
-        issues.append("historical_training_lookahead")
     expected_dates = portfolio.loc[
         (portfolio.index.year >= start_year) & (portfolio.index.year <= end_year)
     ].index
-    if not forecasts["date"].equals(pd.Series(expected_dates, name="date")):
-        issues.append("incomplete_historical_forecast_coverage")
-    annual_count_variants = windows.groupby(windows["forecast_date"].dt.year)[
-        "active_security_count"
-    ].nunique()
-    if bool((annual_count_variants != 1).any()):
-        issues.append("within_year_active_security_count_changed")
+    issues, maximum_loss_identity_error = _historical_quality_issues(
+        forecasts,
+        windows,
+        expected_dates,
+        minimum_observations,
+    )
     annual_forecast_counts = {
         str(year): int(count)
         for year, count in forecasts.groupby(forecasts["date"].dt.year).size().items()

@@ -18,7 +18,7 @@ import re
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 try:
     import tomllib
@@ -274,22 +274,7 @@ def inspect_reference(
     results = payload.get("results")
     if not isinstance(results, list):
         raise ValueError("reference results are not a list")
-    date_field = "execution_date" if event_type == "splits" else "ex_dividend_date"
-    if any(not isinstance(row, dict) or not row.get(date_field) for row in results):
-        raise ValueError(f"reference result lacks {date_field}")
-    lower = dt.date.fromisoformat(sample_start)
-    upper = dt.date.fromisoformat(sample_end)
-    event_dates: list[dt.date] = []
-    for index, row in enumerate(results):
-        try:
-            event_date = dt.date.fromisoformat(str(row[date_field]))
-        except ValueError as exc:
-            raise ValueError(f"reference result {index} has invalid {date_field}") from exc
-        if not lower <= event_date <= upper:
-            raise ValueError(f"reference result {index} is outside the frozen sample")
-        event_dates.append(event_date)
-    if event_dates != sorted(event_dates):
-        raise ValueError(f"reference results are not sorted by {date_field}")
+    _validate_reference_event_dates(results, event_type, sample_start, sample_end)
     return {
         "schema_version": payload["schema_version"],
         "rows": len(results),
@@ -298,6 +283,34 @@ def inspect_reference(
         "sample_start": payload.get("sample_start"),
         "sample_end": payload.get("sample_end"),
     }
+
+
+def _validate_reference_event_dates(
+    results: list[object],
+    event_type: str,
+    sample_start: str,
+    sample_end: str,
+) -> None:
+    """Validate event-date presence, range, and ordering for one reference payload."""
+
+    date_field = "execution_date" if event_type == "splits" else "ex_dividend_date"
+    if any(not isinstance(row, dict) or not row.get(date_field) for row in results):
+        raise ValueError(f"reference result lacks {date_field}")
+
+    lower = dt.date.fromisoformat(sample_start)
+    upper = dt.date.fromisoformat(sample_end)
+    event_dates: list[dt.date] = []
+    for index, row in enumerate(results):
+        row_dict = cast(dict[str, Any], row)
+        try:
+            event_date = dt.date.fromisoformat(str(row_dict[date_field]))
+        except ValueError as exc:
+            raise ValueError(f"reference result {index} has invalid {date_field}") from exc
+        if not lower <= event_date <= upper:
+            raise ValueError(f"reference result {index} is outside the frozen sample")
+        event_dates.append(event_date)
+    if event_dates != sorted(event_dates):
+        raise ValueError(f"reference results are not sorted by {date_field}")
 
 
 def expected_reference_keys(
@@ -376,6 +389,271 @@ def enrich_legacy_operational_manifest(
     return upgraded
 
 
+def _record_list(
+    manifest: dict[str, Any],
+    primary_key: str,
+    *,
+    errors: list[dict[str, str]],
+    scope: str,
+    fallback_key: str | None = None,
+) -> list[dict[str, Any]]:
+    """Return one manifest record list while recording structural defects."""
+
+    if fallback_key and primary_key in manifest and fallback_key in manifest:
+        errors.append({"scope": scope, "reason": "ambiguous_reference_lists"})
+    selected_key = primary_key if primary_key in manifest or fallback_key is None else fallback_key
+    value = manifest.get(selected_key)
+    if not isinstance(value, list):
+        errors.append({"scope": scope, "reason": f"{selected_key}_not_list"})
+        return []
+    return value
+
+
+def _require_integer_fields(record: dict[str, Any], fields: tuple[str, ...]) -> None:
+    """Require genuine integers, rejecting booleans despite their integer subtype."""
+
+    for field in fields:
+        if not isinstance(record[field], int) or isinstance(record[field], bool):
+            raise ValueError(f"{field} is not an integer")
+
+
+def _require_sha256(record: dict[str, Any]) -> None:
+    """Require the canonical lowercase SHA-256 representation."""
+
+    value = record["sha256"]
+    if not isinstance(value, str) or not SHA256_PATTERN.fullmatch(value):
+        raise ValueError("sha256 is not a lowercase hexadecimal digest")
+
+
+def _require_operational_status(record: dict[str, Any]) -> None:
+    """Reject operational states outside the frozen download vocabulary."""
+
+    status = record.get("status")
+    if status not in {None, "existing", "downloaded", "verified"}:
+        raise ValueError(f"invalid operational status: {status}")
+
+
+def _validate_daily_record(
+    project_root: Path,
+    record: dict[str, Any],
+    *,
+    frozen: FrozenInputSpec,
+    required_tickers: set[str],
+) -> tuple[dt.date, dict[str, Any]]:
+    """Validate one daily manifest record and return its observed public fields."""
+
+    missing_fields = _missing_fields(record, REQUIRED_DAILY_FIELDS)
+    if missing_fields:
+        raise ValueError(f"missing required fields: {','.join(missing_fields)}")
+    day = dt.date.fromisoformat(str(record["date"]))
+    canonical_key, canonical_path = _canonical_daily_identity(frozen, day)
+    if record["key"] != canonical_key:
+        raise ValueError("key differs from canonical provider key")
+    if record["local_path"] != canonical_path:
+        raise ValueError("local_path differs from canonical configured path")
+    _require_integer_fields(record, ("size", "row_count"))
+    _require_sha256(record)
+    if record["columns"] != sorted(EXPECTED_DAILY_COLUMNS):
+        raise ValueError("columns differ from frozen daily schema")
+
+    path = _safe_project_path(project_root, str(record["local_path"]))
+    if not path.is_file():
+        raise ValueError("file is absent")
+    observed = inspect_daily(path, day, required_tickers)
+    for field in ("size", "row_count", "sha256", "columns"):
+        if record[field] != observed[field]:
+            raise ValueError(f"{field} differs from manifest")
+    _require_operational_status(record)
+    verified = {
+        "date": day.isoformat(),
+        "key": record["key"],
+        "local_path": record["local_path"],
+        "etag": record.get("etag"),
+        **observed,
+    }
+    return day, verified
+
+
+def _verify_daily_records(
+    project_root: Path,
+    manifest: dict[str, Any],
+    records: list[dict[str, Any]],
+    *,
+    frozen: FrozenInputSpec,
+    required_tickers: set[str],
+    errors: list[dict[str, str]],
+) -> tuple[list[dt.date], list[dict[str, Any]]]:
+    """Verify all daily records, collecting every independently observable defect."""
+
+    if manifest.get("daily_file_count") != len(records):
+        errors.append({"scope": "daily_manifest", "reason": "daily_file_count_mismatch"})
+    recorded_dates: list[dt.date] = []
+    verified: list[dict[str, Any]] = []
+    declared_bytes = 0
+    for record in records:
+        if not isinstance(record, dict):
+            errors.append({"scope": "daily:unknown", "reason": "record_not_object"})
+            continue
+        date_text = str(record.get("date", ""))
+        try:
+            day, observed = _validate_daily_record(
+                project_root,
+                record,
+                frozen=frozen,
+                required_tickers=required_tickers,
+            )
+            recorded_dates.append(day)
+            verified.append(observed)
+            declared_bytes += int(record["size"])
+        except (KeyError, OSError, ValueError, json.JSONDecodeError) as exc:
+            errors.append({"scope": f"daily:{date_text or 'unknown'}", "reason": str(exc)})
+    if manifest.get("daily_compressed_bytes") != declared_bytes:
+        errors.append({"scope": "daily_manifest", "reason": "daily_compressed_bytes_mismatch"})
+    return recorded_dates, verified
+
+
+def _append_calendar_errors(
+    recorded_dates: list[dt.date],
+    expected_dates: list[dt.date],
+    errors: list[dict[str, str]],
+) -> None:
+    """Record duplicate, missing, and non-session dates without short-circuiting."""
+
+    if len(recorded_dates) != len(set(recorded_dates)):
+        errors.append({"scope": "daily_calendar", "reason": "duplicate_dates"})
+    expected_set, recorded_set = set(expected_dates), set(recorded_dates)
+    errors.extend(
+        {"scope": "daily_calendar", "reason": f"missing_xnys_session:{day}"}
+        for day in sorted(expected_set - recorded_set)
+    )
+    errors.extend(
+        {"scope": "daily_calendar", "reason": f"non_xnys_date:{day}"}
+        for day in sorted(recorded_set - expected_set)
+    )
+
+
+def _append_reference_manifest_errors(
+    manifest: dict[str, Any],
+    records: list[dict[str, Any]],
+    expected_keys: set[tuple[str, str]],
+    errors: list[dict[str, str]],
+) -> None:
+    """Validate reference-list completeness and uniqueness."""
+
+    sequence = [
+        (str(record.get("ticker")), str(record.get("event_type")))
+        for record in records
+        if isinstance(record, dict)
+    ]
+    recorded_keys = set(sequence)
+    for ticker, event_type in sorted(key for key, count in Counter(sequence).items() if count > 1):
+        errors.append(
+            {"scope": "reference_manifest", "reason": f"duplicate_identity:{ticker}:{event_type}"}
+        )
+    checks = (
+        (manifest.get("reference_status") == "complete", "reference_status_not_complete"),
+        (manifest.get("reference_file_count") == len(records), "reference_file_count_mismatch"),
+        (len(records) == len(expected_keys), "reference_count_mismatch"),
+    )
+    errors.extend(
+        {"scope": "reference_manifest", "reason": reason}
+        for condition, reason in checks
+        if not condition
+    )
+    errors.extend(
+        {"scope": "reference_manifest", "reason": f"missing_record:{ticker}:{event_type}"}
+        for ticker, event_type in sorted(expected_keys - recorded_keys)
+    )
+    errors.extend(
+        {"scope": "reference_manifest", "reason": f"unexpected_record:{ticker}:{event_type}"}
+        for ticker, event_type in sorted(recorded_keys - expected_keys)
+    )
+
+
+def _validate_reference_record(
+    project_root: Path,
+    reference_root: Path,
+    record: dict[str, Any],
+    *,
+    frozen: FrozenInputSpec,
+) -> dict[str, Any]:
+    """Validate one corporate-action reference record and return public fields."""
+
+    missing_fields = _missing_fields(record, REQUIRED_REFERENCE_FIELDS)
+    if missing_fields:
+        raise ValueError(f"missing required fields: {','.join(missing_fields)}")
+    ticker = str(record["ticker"])
+    event_type = str(record["event_type"])
+    inferred = reference_root / event_type / f"{ticker.replace('.', '_')}.json"
+    canonical_relative = inferred.resolve().relative_to(project_root.resolve()).as_posix()
+    if record["local_path"] != canonical_relative:
+        raise ValueError("local_path differs from canonical reference identity")
+    _require_integer_fields(record, ("payload_bytes", "rows"))
+    _require_sha256(record)
+    expected_values = {
+        "schema_version": 1,
+        "sample_start": frozen.sample_start,
+        "sample_end": frozen.sample_end,
+    }
+    for field, expected in expected_values.items():
+        if record[field] != expected:
+            raise ValueError(f"{field} differs from frozen reference configuration")
+
+    path = _safe_project_path(project_root, str(record["local_path"]))
+    if not path.is_file():
+        raise ValueError("file is absent")
+    observed = inspect_reference(
+        path,
+        ticker,
+        event_type,
+        frozen.sample_start,
+        frozen.sample_end,
+        frozen.provider,
+    )
+    for field in ("payload_bytes", "rows", "sha256", *expected_values):
+        if record[field] != observed[field]:
+            raise ValueError(f"{field} differs from manifest")
+    _require_operational_status(record)
+    return {
+        "ticker": ticker,
+        "event_type": event_type,
+        "local_path": path.relative_to(project_root.resolve()).as_posix(),
+        "request": record.get("request"),
+        **observed,
+    }
+
+
+def _verify_reference_records(
+    project_root: Path,
+    reference_root: Path,
+    records: list[dict[str, Any]],
+    *,
+    frozen: FrozenInputSpec,
+    errors: list[dict[str, str]],
+) -> list[dict[str, Any]]:
+    """Verify corporate-action payload records while retaining all discovered errors."""
+
+    verified: list[dict[str, Any]] = []
+    for record in records:
+        if not isinstance(record, dict):
+            errors.append({"scope": "reference:unknown:unknown", "reason": "record_not_object"})
+            continue
+        ticker = str(record.get("ticker", ""))
+        event_type = str(record.get("event_type", ""))
+        try:
+            verified.append(
+                _validate_reference_record(
+                    project_root,
+                    reference_root,
+                    record,
+                    frozen=frozen,
+                )
+            )
+        except (KeyError, OSError, ValueError, json.JSONDecodeError) as exc:
+            errors.append({"scope": f"reference:{ticker}:{event_type}", "reason": str(exc)})
+    return verified
+
+
 def verify_foundation_inputs(
     project_root: Path,
     manifest: dict[str, Any],
@@ -384,6 +662,8 @@ def verify_foundation_inputs(
     reference_root: Path,
     frozen: FrozenInputSpec,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Verify operational inputs and return a sanitised manifest plus gate audit."""
+
     errors: list[dict[str, str]] = []
     expected_metadata = {
         "schema_version": frozen.manifest_schema_version,
@@ -400,194 +680,43 @@ def verify_foundation_inputs(
                 }
             )
 
-    daily_value = manifest.get("daily_files")
-    if not isinstance(daily_value, list):
-        errors.append({"scope": "daily_manifest", "reason": "daily_files_not_list"})
-        daily_records: list[dict[str, Any]] = []
-    else:
-        daily_records = daily_value
-
-    has_reference_downloads = "reference_downloads" in manifest
-    has_reference_files = "reference_files" in manifest
-    if has_reference_downloads and has_reference_files:
-        errors.append({"scope": "reference_manifest", "reason": "ambiguous_reference_lists"})
-    reference_value = (
-        manifest.get("reference_downloads")
-        if has_reference_downloads
-        else manifest.get("reference_files")
+    daily_records = _record_list(
+        manifest,
+        "daily_files",
+        errors=errors,
+        scope="daily_manifest",
     )
-    if not isinstance(reference_value, list):
-        errors.append({"scope": "reference_manifest", "reason": "reference_files_not_list"})
-        reference_records: list[dict[str, Any]] = []
-    else:
-        reference_records = reference_value
+    reference_records = _record_list(
+        manifest,
+        "reference_downloads",
+        fallback_key="reference_files",
+        errors=errors,
+        scope="reference_manifest",
+    )
 
     start = dt.date.fromisoformat(frozen.sample_start)
     end = dt.date.fromisoformat(frozen.sample_end)
     expected_dates = xnys_sessions(start, end)
     expected_references = expected_reference_keys(universe_path, security_master_path)
     required_tickers = {ticker for ticker, _ in expected_references}
-    recorded_dates: list[dt.date] = []
-    verified_daily: list[dict[str, Any]] = []
 
-    if manifest.get("daily_file_count") != len(daily_records):
-        errors.append({"scope": "daily_manifest", "reason": "daily_file_count_mismatch"})
-    declared_daily_bytes = 0
-    for record in daily_records:
-        if not isinstance(record, dict):
-            errors.append({"scope": "daily:unknown", "reason": "record_not_object"})
-            continue
-        date_text = str(record.get("date", ""))
-        try:
-            missing_fields = _missing_fields(record, REQUIRED_DAILY_FIELDS)
-            if missing_fields:
-                raise ValueError(f"missing required fields: {','.join(missing_fields)}")
-            day = dt.date.fromisoformat(date_text)
-            recorded_dates.append(day)
-            canonical_key, canonical_path = _canonical_daily_identity(frozen, day)
-            if record["key"] != canonical_key:
-                raise ValueError("key differs from canonical provider key")
-            if record["local_path"] != canonical_path:
-                raise ValueError("local_path differs from canonical configured path")
-            if not isinstance(record["size"], int) or isinstance(record["size"], bool):
-                raise ValueError("size is not an integer")
-            if not isinstance(record["row_count"], int) or isinstance(record["row_count"], bool):
-                raise ValueError("row_count is not an integer")
-            if not isinstance(record["sha256"], str) or not SHA256_PATTERN.fullmatch(
-                record["sha256"]
-            ):
-                raise ValueError("sha256 is not a lowercase hexadecimal digest")
-            if record["columns"] != sorted(EXPECTED_DAILY_COLUMNS):
-                raise ValueError("columns differ from frozen daily schema")
-            path = _safe_project_path(project_root, record["local_path"])
-            if not path.is_file():
-                raise ValueError("file is absent")
-            observed = inspect_daily(path, day, required_tickers)
-            for field in ("size", "row_count", "sha256", "columns"):
-                if record[field] != observed[field]:
-                    raise ValueError(f"{field} differs from manifest")
-            if record.get("status") not in {None, "existing", "downloaded", "verified"}:
-                raise ValueError(f"invalid operational status: {record.get('status')}")
-            declared_daily_bytes += record["size"]
-            verified_daily.append(
-                {
-                    "date": date_text,
-                    "key": record["key"],
-                    "local_path": record["local_path"],
-                    "etag": record.get("etag"),
-                    **observed,
-                }
-            )
-        except (KeyError, OSError, ValueError, json.JSONDecodeError) as exc:
-            errors.append({"scope": f"daily:{date_text or 'unknown'}", "reason": str(exc)})
-
-    if manifest.get("daily_compressed_bytes") != declared_daily_bytes:
-        errors.append({"scope": "daily_manifest", "reason": "daily_compressed_bytes_mismatch"})
-
-    if len(recorded_dates) != len(set(recorded_dates)):
-        errors.append({"scope": "daily_calendar", "reason": "duplicate_dates"})
-    expected_set, recorded_set = set(expected_dates), set(recorded_dates)
-    for missing in sorted(expected_set - recorded_set):
-        errors.append({"scope": "daily_calendar", "reason": f"missing_xnys_session:{missing}"})
-    for extra in sorted(recorded_set - expected_set):
-        errors.append({"scope": "daily_calendar", "reason": f"non_xnys_date:{extra}"})
-
-    recorded_reference_sequence = [
-        (str(record.get("ticker")), str(record.get("event_type")))
-        for record in reference_records
-        if isinstance(record, dict)
-    ]
-    recorded_reference_keys = set(recorded_reference_sequence)
-    duplicate_reference_keys = sorted(
-        key for key, count in Counter(recorded_reference_sequence).items() if count > 1
+    recorded_dates, verified_daily = _verify_daily_records(
+        project_root,
+        manifest,
+        daily_records,
+        frozen=frozen,
+        required_tickers=required_tickers,
+        errors=errors,
     )
-    for ticker, event_type in duplicate_reference_keys:
-        errors.append(
-            {
-                "scope": "reference_manifest",
-                "reason": f"duplicate_identity:{ticker}:{event_type}",
-            }
-        )
-    if manifest.get("reference_status") != "complete":
-        errors.append({"scope": "reference_manifest", "reason": "reference_status_not_complete"})
-    if manifest.get("reference_file_count") != len(reference_records):
-        errors.append({"scope": "reference_manifest", "reason": "reference_file_count_mismatch"})
-    if len(reference_records) != len(expected_references):
-        errors.append({"scope": "reference_manifest", "reason": "reference_count_mismatch"})
-    for key in sorted(expected_references - recorded_reference_keys):
-        errors.append(
-            {"scope": "reference_manifest", "reason": f"missing_record:{key[0]}:{key[1]}"}
-        )
-    for key in sorted(recorded_reference_keys - expected_references):
-        errors.append(
-            {"scope": "reference_manifest", "reason": f"unexpected_record:{key[0]}:{key[1]}"}
-        )
-
-    verified_references: list[dict[str, Any]] = []
-    for record in reference_records:
-        if not isinstance(record, dict):
-            errors.append({"scope": "reference:unknown:unknown", "reason": "record_not_object"})
-            continue
-        ticker, event_type = str(record.get("ticker", "")), str(record.get("event_type", ""))
-        inferred = reference_root / event_type / f"{ticker.replace('.', '_')}.json"
-        try:
-            missing_fields = _missing_fields(record, REQUIRED_REFERENCE_FIELDS)
-            if missing_fields:
-                raise ValueError(f"missing required fields: {','.join(missing_fields)}")
-            canonical_path = inferred.resolve()
-            canonical_relative = canonical_path.relative_to(project_root.resolve()).as_posix()
-            if record["local_path"] != canonical_relative:
-                raise ValueError("local_path differs from canonical reference identity")
-            if not isinstance(record["payload_bytes"], int) or isinstance(
-                record["payload_bytes"], bool
-            ):
-                raise ValueError("payload_bytes is not an integer")
-            if not isinstance(record["rows"], int) or isinstance(record["rows"], bool):
-                raise ValueError("rows is not an integer")
-            if not isinstance(record["sha256"], str) or not SHA256_PATTERN.fullmatch(
-                record["sha256"]
-            ):
-                raise ValueError("sha256 is not a lowercase hexadecimal digest")
-            if record["schema_version"] != 1:
-                raise ValueError("schema_version differs from frozen reference schema")
-            if record["sample_start"] != frozen.sample_start:
-                raise ValueError("sample_start differs from frozen configuration")
-            if record["sample_end"] != frozen.sample_end:
-                raise ValueError("sample_end differs from frozen configuration")
-            path = _safe_project_path(project_root, record["local_path"])
-            if not path.is_file():
-                raise ValueError("file is absent")
-            observed = inspect_reference(
-                path,
-                ticker,
-                event_type,
-                frozen.sample_start,
-                frozen.sample_end,
-                frozen.provider,
-            )
-            for field in (
-                "payload_bytes",
-                "rows",
-                "sha256",
-                "schema_version",
-                "sample_start",
-                "sample_end",
-            ):
-                if record[field] != observed[field]:
-                    raise ValueError(f"{field} differs from manifest")
-            if record.get("status") not in {None, "existing", "downloaded", "verified"}:
-                raise ValueError(f"invalid operational status: {record.get('status')}")
-            verified_references.append(
-                {
-                    "ticker": ticker,
-                    "event_type": event_type,
-                    "local_path": str(path.relative_to(project_root.resolve())),
-                    "request": record.get("request"),
-                    **observed,
-                }
-            )
-        except (OSError, ValueError, json.JSONDecodeError) as exc:
-            errors.append({"scope": f"reference:{ticker}:{event_type}", "reason": str(exc)})
+    _append_calendar_errors(recorded_dates, expected_dates, errors)
+    _append_reference_manifest_errors(manifest, reference_records, expected_references, errors)
+    verified_references = _verify_reference_records(
+        project_root,
+        reference_root,
+        reference_records,
+        frozen=frozen,
+        errors=errors,
+    )
 
     verified_daily.sort(key=lambda row: row["date"])
     verified_references.sort(key=lambda row: (row["ticker"], row["event_type"]))
