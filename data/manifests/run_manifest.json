@@ -1,7 +1,7 @@
 {
   "artifact_lineage": {
     "document_count": 32,
-    "hash_record_count": 232,
+    "hash_record_count": 234,
     "issues": [],
     "status": "pass"
   },
@@ -93,9 +93,9 @@
       "status": "present"
     },
     {
-      "bytes": 1741,
+      "bytes": 1809,
       "path": "config/reporting_config.toml",
-      "sha256": "ede3de901064eb12a25999b3654bfd5d456313370b24f1671e7331006d6e7a9d",
+      "sha256": "25d8b86c19ec84563642776011fae2871d5b3f91b462cbe2a2f17c0c1381561d",
       "status": "present"
     },
     {
@@ -209,9 +209,9 @@
     "run_scope": "provisional_research_results",
     "status": "provisional_pass"
   },
-  "generated_at_utc": "2026-10-31T14:14:36.622506+00:00",
+  "generated_at_utc": "2026-11-01T02:35:44.580801+00:00",
   "git": {
-    "commit": "8278c67b192f90e703c9775281dabf8b094cbd93",
+    "commit": "bf811ceb3a62b21f1ac66e9cc464561a3d514e8f",
     "commit_present": true,
     "repository_initialized": true,
     "worktree_clean": true
@@ -763,15 +763,15 @@
       "status": "present"
     },
     {
-      "bytes": 5037,
+      "bytes": 5496,
       "path": "reports/report_manifest.json",
-      "sha256": "8b25e9ffe20e117a6c738b783feadf645cffa6bd41a950945939ab393b7c59ff",
+      "sha256": "fa2de70ba6632fd319b05e19d3dbf84357b77b0eed2df708b2376b5f8a1ff433",
       "status": "present"
     },
     {
-      "bytes": 2155,
+      "bytes": 2333,
       "path": "reports/results_summary.md",
-      "sha256": "8a4a6395e6ea1472cdb358e930f066187bf1132fa00c69b24d78e6ff14956e42",
+      "sha256": "ba687693fce6e05741c7cd89ff4fa8365e882b09b4814e49154680a801090f78",
       "status": "present"
     },
     {
