@@ -25,6 +25,20 @@ def load_json(path: str) -> dict:
     return json.loads((ROOT / path).read_text(encoding="utf-8"))
 
 
+def source_artifact_issues(source_payloads: list[dict]) -> list[str]:
+    """Return stale or missing bindings for report-source payloads."""
+
+    return [
+        issue
+        for index, payload in enumerate(source_payloads)
+        for issue in artifact_hash_issues(
+            payload,
+            project_root=ROOT,
+            source_name=f"report_source_{index}",
+        )
+    ]
+
+
 class ReportArtifactTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -99,6 +113,8 @@ class ReportArtifactTests(unittest.TestCase):
         require_current_hash_records(manifest, project_root=ROOT, source_name="report_manifest")
 
     def test_new_figures_use_only_bound_existing_outputs(self):
+        if source_artifact_issues([self.core, self.clustering]):
+            self.skipTest("ignored figure-source artifacts are unavailable in this clone")
         daily = load_bound_daily_evaluation(ROOT, self.core)
         assignments = load_bound_assignments(ROOT, self.clustering)
         self.assertEqual(len(daily), 3016)
@@ -111,16 +127,7 @@ class ReportArtifactTests(unittest.TestCase):
 
     def test_full_report_generation_is_byte_reproducible_when_inputs_exist(self):
         source_payloads = [load_json(path) for path in self.config["sources"].values()]
-        issues = [
-            issue
-            for index, payload in enumerate(source_payloads)
-            for issue in artifact_hash_issues(
-                payload,
-                project_root=ROOT,
-                source_name=f"report_source_{index}",
-            )
-        ]
-        if issues:
+        if source_artifact_issues(source_payloads):
             self.skipTest("ignored upstream modelling artifacts are unavailable in this clone")
         test_output_root = ROOT / "outputs" / "test_report_artifacts"
         test_output_root.mkdir(parents=True, exist_ok=True)
